@@ -5,7 +5,7 @@
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type { ThemePreview } from './types.ts'
-import type { ThemeStudioCard, createThemeStudioRowStore } from './store.ts'
+import type { createThemeStudioRowStore } from './store.ts'
 import { formatLocale, type ThemeStudioKey } from './locales.ts'
 import css from './ThemeStudioRow.module.css'
 
@@ -47,7 +47,7 @@ export function ThemeStudioRow({
   const previewThemeId = useStore(s => s.previewThemeId)
   const previewing = useStore(s => s.previewing)
   const settingsStatus = useStore(s => s.settingsStatus)
-  const previewName = previewLabel(t, cards, previewing, previewThemeId)
+  const previewName = previewLabel(t, previewing, previewThemeId)
 
   return (
     <div className={css.group}>
@@ -135,7 +135,6 @@ function cardClass(
 
 function previewLabel(
   t: (key: ThemeStudioKey) => string,
-  cards: readonly ThemeStudioCard[],
   previewing: boolean,
   previewThemeId: string | null,
 ): string {
