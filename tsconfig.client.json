@@ -1,9 +1,23 @@
 {
-  "extends": "../../../tsconfig.base.client.json",
   "compilerOptions": {
+    "target": "ES2024",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "types": ["node", "react"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "preserveSymlinks": true,
+    "rewriteRelativeImportExtensions": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "rootDir": "src",
-    "outDir": "lib/types",
-    "tsBuildInfoFile": "lib/tsconfig.client.tsbuildinfo"
+    "outDir": "lib/types"
   },
   "files": [
     "src/constants.ts",
@@ -17,14 +31,5 @@
     "src/client/store.ts",
     "src/client/types.ts",
     "src/client/ThemeStudioRow.tsx"
-  ],
-  "references": [
-    { "path": "../../../vendor/cordis" },
-    { "path": "../../client/runtime" },
-    { "path": "../../client/locale" },
-    { "path": "../../client/ui-theme" },
-    { "path": "../../client/ui-settings" },
-    { "path": "../../client/ui-slots" },
-    { "path": "../../client/connection/tsconfig.client.json" }
   ]
 }

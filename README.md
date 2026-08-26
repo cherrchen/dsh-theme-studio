@@ -4,7 +4,7 @@ English | [中文](README.zh.md)
 
 Portable DSH/Cordis plugin that overlays builtin color themes on the official Appearance preference. The package is `platform:web` with no Electron, Node, or Desktop dependency. The npm scope `@dsh-electron/` identifies the publisher, not a runtime requirement.
 
-This repository is the canonical source. [DeepSeek Harness Desktop](https://github.com/cherrchen/deepseek-harness-electron) mirrors it with git subtree and pre-installs Theme Studio. The same package runs unchanged in Desktop and in a standard DSH Web host.
+This repository is the canonical source. [DeepSeek Harness Desktop](https://github.com/cherrchen/deepseek-harness-electron) mirrors it with git subtree under `apps/electron/runtime/plugins/dsh-theme-studio` and rebuilds Host and Client artifacts from source. The same package runs unchanged in Desktop and in a standard DSH Web host.
 
 Stage 1 provides builtin theme browsing, preview, apply, persistence, and plugin lifecycle recovery. Theme Schema, import/export, and Theme Creator Agent are later stages.
 
@@ -12,7 +12,7 @@ Stage 1 provides builtin theme browsing, preview, apply, persistence, and plugin
 
 The package is in experimental development. A public npm release under `@dsh-electron/dsh-theme-studio` is planned; until then, install from this repository.
 
-**DeepSeek Harness Desktop** — Theme Studio is pre-installed and enabled by default. Disable it from **Settings → Plugins** when you do not want overlay themes.
+**DeepSeek Harness Desktop** — Theme Studio is required built-in. Desktop always mounts it from the runtime plugin inventory.
 
 **DSH Web** — add the package to a profile after building `lib/`:
 

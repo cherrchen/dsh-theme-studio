@@ -1,19 +1,27 @@
 {
-  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "target": "ES2024",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2024"],
+    "types": ["node"],
+    "strict": true,
+    "skipLibCheck": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "preserveSymlinks": true,
+    "rewriteRelativeImportExtensions": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "rootDir": "src",
-    "outDir": "lib/types",
-    "tsBuildInfoFile": "lib/tsconfig.host.tsbuildinfo"
+    "outDir": "lib/types"
   },
   "files": [
     "src/index.ts",
     "src/invariant.ts",
     "src/settings.ts",
     "src/constants.ts"
-  ],
-  "references": [
-    { "path": "../../../vendor/cordis" },
-    { "path": "../../settings/settings" },
-    { "path": "../../runtime-diagnostics/invariants" }
   ]
 }

@@ -4,7 +4,7 @@
 
 可移植的 DSH/Cordis 插件：在官方外观偏好之上叠加内置配色主题。包声明 `platform:web`，不依赖 Electron、Node 或 Desktop。npm 作用域 `@dsh-electron/` 标识发布者，不是运行时要求。
 
-本仓库是源码权威。[DeepSeek Harness Desktop](https://github.com/cherrchen/deepseek-harness-electron) 通过 git subtree 镜像本包，并默认预装 Theme Studio。同一包可在 Desktop 与标准 DSH Web Host 中不变地运行。
+本仓库是源码权威。[DeepSeek Harness Desktop](https://github.com/cherrchen/deepseek-harness-electron) 通过 git subtree 镜像到 `apps/electron/runtime/plugins/dsh-theme-studio`，并从源码重新构建 Host 与 Client artifacts。同一包可在 Desktop 与标准 DSH Web Host 中不变地运行。
 
 Stage 1 提供内置主题浏览、预览、应用、持久化与插件生命周期恢复。Theme Schema、导入导出与 Theme Creator Agent 属于后续阶段。
 
@@ -12,7 +12,7 @@ Stage 1 提供内置主题浏览、预览、应用、持久化与插件生命周
 
 本包仍处于试验开发阶段，计划以 `@dsh-electron/dsh-theme-studio` 发布到 npm；在此之前请从本仓库安装。
 
-**DeepSeek Harness Desktop** — Theme Studio 默认预装并启用。不需要覆盖层主题时，可在**设置 → 插件**中禁用。
+**DeepSeek Harness Desktop** — Theme Studio 是必需内置插件。Desktop 始终从 runtime plugin inventory 挂载它。
 
 **DSH Web** — 构建 `lib/` 后加入 profile：
 
