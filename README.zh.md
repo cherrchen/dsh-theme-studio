@@ -10,9 +10,9 @@ Stage 1 提供内置主题浏览、预览、应用、持久化与插件生命周
 
 ## DSH 兼容性
 
-本仓库的 `main` 分支面向 **DeepSeek Harness [`v0.1.1-rc.2`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/v0.1.1-rc.2)**。
+本仓库的 `develop` 分支面向 **DeepSeek Harness `v0.1.2`**（含 [`v0.1.2-alpha.2`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/v0.1.2-alpha.2)）。
 
-若你使用的 DSH 是 **`v0.1.2`**（含 `v0.1.2-alpha.2`），请改用 [`develop`](https://github.com/cherrchen/dsh-theme-studio/tree/develop) 分支。
+若你使用的是 **DeepSeek Harness [`v0.1.1-rc.2`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/v0.1.1-rc.2)**，请改用 [`main`](https://github.com/cherrchen/dsh-theme-studio/tree/main) 分支。
 
 ## 安装
 
