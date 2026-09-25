@@ -11,7 +11,14 @@
 import { createRequire } from 'node:module'
 
 /** Releases verified for this plugin, as exact version strings. */
-export const SUPPORTED_DSH_RELEASES = ['0.1.5-rc.2', '0.1.5-rc.3', '0.1.6-alpha.1'] as const
+export const SUPPORTED_DSH_RELEASES = [
+  '0.1.5-rc.2',
+  '0.1.5-rc.3',
+  '0.1.6-alpha.1',
+  '0.1.6-alpha.2',
+  '0.1.7-alpha.1',
+  '0.1.7-alpha.2',
+] as const
 
 /** One release this plugin claims to support. */
 export type SupportedDshRelease = typeof SUPPORTED_DSH_RELEASES[number]

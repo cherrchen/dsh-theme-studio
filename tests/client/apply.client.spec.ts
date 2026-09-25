@@ -85,14 +85,21 @@ function fakeSlots() {
   }
 }
 
-async function bench(value: ThemeStudioSettings = { activeThemeId: null }) {
+async function bench(
+  value: ThemeStudioSettings = { activeThemeId: null },
+  transport: 'settingsScope' | 'configForms' = 'settingsScope',
+) {
   const ctx = new Context()
   const locale = fakeLocale()
   ctx.provide('locale', locale)
   const overlay = fakeTheme()
   ctx.provide('theme', overlay.theme)
   const host = durableHost(value)
-  ctx.provide('settingsScope', { bind: () => host.scope } as never)
+  if (transport === 'settingsScope') {
+    ctx.provide('settingsScope', { bind: () => host.scope } as never)
+  } else {
+    ctx.provide('configForms', { get: () => host.scope } as never)
+  }
   ctx.provide('connection', { isLoopback: true } as never)
   ctx.provide('remote', { $on: () => () => {} } as never)
   const slots = fakeSlots()
@@ -110,7 +117,7 @@ function faceOf(slots: ReturnType<typeof fakeSlots>) {
 
 describe('Theme Studio client apply', () => {
   it('declares the required services', () => {
-    expect(inject).toEqual(['theme', 'settingsScope', 'slots', 'locale', 'connection', 'remote'])
+    expect(inject).toEqual(['theme', 'slots', 'locale', 'connection', 'remote'])
   })
 
   it('registers localized copy and the Themes row at order 20', async () => {
@@ -121,6 +128,14 @@ describe('Theme Studio client apply', () => {
     expect(b.locale.bind(SETTINGS_NS)('title')).toBe('Themes')
     const entry = b.slots.entries().find(item => item.component === ThemeStudioRow)!
     expect(entry.options).toMatchObject({ id: 'themes', order: 20 })
+  })
+
+  it('restores a durable theme through configForms', async () => {
+    const b = await bench({ activeThemeId: NORDIC }, 'configForms')
+    await b.ctx.plugin({ inject: [...inject], apply }).await()
+    expect(b.overlay.has(ACTIVE_SOURCE)).toBe(true)
+    const { instance } = faceOf(b.slots)
+    expect(instance.getSnapshot().activeThemeId).toBe(NORDIC)
   })
 
   it('restores a durable theme and routes face writes through the runtime', async () => {

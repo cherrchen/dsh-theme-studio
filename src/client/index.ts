@@ -8,7 +8,10 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-theme/client'
-import { THEME_STUDIO_SETTINGS_NAMESPACE, type ThemeStudioSettings } from '../constants.ts'
+import {
+  THEME_STUDIO_SETTINGS_NAMESPACE, type ThemeStudioSettings,
+} from '../constants.ts'
+import type { ConfigFormsCarrier, SettingsScopeCarrier, ThemeSettingsHost } from '../compat/settings-client.ts'
 import { BuiltinPresetRegistry } from './catalog.ts'
 import { en, NS, zh, type ThemeStudioKey } from './locales.ts'
 import { DEFAULT_PREVIEW } from './presets.ts'
@@ -36,8 +39,12 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
   }
 }
 
-/** Required services: ThemeRuntime overlays, settings transport, slots, locale. */
-export const inject = ['theme', 'settingsScope', 'slots', 'locale', 'connection', 'remote']
+/**
+ * Required services besides the settings transport. `settingsScope` and
+ * `configForms` are not present on the same host, so each is waited for
+ * inside `apply` instead of listed here.
+ */
+export const inject = ['theme', 'slots', 'locale', 'connection', 'remote']
 
 function cardsOf(catalog: BuiltinPresetRegistry): ThemeStudioCard[] {
   return [
@@ -67,12 +74,11 @@ function descriptionKeyOf(id: string): string {
 }
 
 /**
- * Client plugin body: restore the durable overlay, then register the Themes row.
- * @param ctx - client cordis context.
+ * Restore the durable overlay and register the Themes row on one context.
+ * @param ctx - client context that already carries theme, slots, and locale.
  */
-export function apply(ctx: ClientContext): void {
+function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> | undefined): void {
   const catalog = new BuiltinPresetRegistry()
-  const host = ctx.settingsScope.bind<ThemeStudioSettings>({ namespace: THEME_STUDIO_SETTINGS_NAMESPACE })
   const runtime = new ThemeStudioRuntime({ theme: ctx.theme, host, catalog })
   ctx.effect(() => () => { runtime.dispose() }, 'theme-studio: runtime')
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'theme-studio: settings row dictionaries')
@@ -104,4 +110,34 @@ export function apply(ctx: ClientContext): void {
     locale: NS,
     inject: injected,
   }, ThemeStudioRow)), 'theme-studio: themes row')
+}
+
+/**
+ * Client plugin body. Whichever settings service the host provides starts the row.
+ * @param ctx - client cordis context.
+ */
+export function apply(ctx: ClientContext): void {
+  let started = false
+  const startOnce = (
+    child: ClientContext,
+    host: ThemeSettingsHost<ThemeStudioSettings> | undefined,
+  ): void => {
+    if (started) return
+    started = true
+    start(child, host)
+  }
+  // Distinct callbacks: cordis keys a plugin runtime by function identity.
+  // Read only the injected service. The context proxy throws on any other name.
+  ctx.inject(['settingsScope'], (child) => {
+    const host = (child as SettingsScopeCarrier).settingsScope?.bind<ThemeStudioSettings>({
+      namespace: THEME_STUDIO_SETTINGS_NAMESPACE,
+    })
+    startOnce(child, host)
+  })
+  ctx.inject(['configForms'], (child) => {
+    const host = (child as ConfigFormsCarrier).configForms?.get<ThemeStudioSettings>(
+      THEME_STUDIO_SETTINGS_NAMESPACE,
+    )
+    startOnce(child, host)
+  })
 }
