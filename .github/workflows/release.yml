@@ -24,7 +24,7 @@ jobs:
           cache: pnpm
       - name: Check that the tag matches package.json
         run: |
-          version="v$(node -p \"require('./package.json').version\")"
+          version="v$(node -p 'require("./package.json").version')"
           if [ "$GITHUB_REF_NAME" != "$version" ]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
             exit 1
