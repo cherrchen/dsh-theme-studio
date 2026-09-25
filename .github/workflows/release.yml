@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: pnpm
+      - name: Check that the tag matches package.json
+        run: |
+          version="v$(node -p \"require('./package.json').version\")"
+          if [ "$GITHUB_REF_NAME" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm compat:check
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - name: Pack and verify the tarball
+        run: |
+          pnpm pack --pack-destination dist
+          tarball="$(ls dist/*.tgz)"
+          echo "TARBALL=$tarball" >> "$GITHUB_ENV"
+          tar -tzf "$tarball" | tee packed-files.txt
+          for required in package/cordis.patch.yml package/lib/index.js package/lib/client.js package/lib/types/index.d.ts package/package.json; do
+            grep -qx "$required" packed-files.txt || {
+              echo "::error::The tarball is missing $required"
+              exit 1
+            }
+          done
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Pack tarball
+        run: |
+          pnpm pack --pack-destination dist
+          echo "TARBALL=./$(ls dist/*.tgz)" >> "$GITHUB_ENV"
+      - name: Publish to npm
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm install --global npm@^11.5.1
+          if [ -n "$NPM_TOKEN" ]; then
+            npm_config_userconfig="$RUNNER_TEMP/npmrc"
+            export npm_config_userconfig
+            printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$npm_config_userconfig"
+          fi
+          npm publish "$TARBALL" --access public --provenance
+      - name: Generate release notes
+        run: node scripts/release-notes.mjs "$GITHUB_REF_NAME" > release-notes.md
+      - name: Create GitHub Release
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file release-notes.md "$TARBALL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -30,6 +30,8 @@
     "cordis.patch.yml",
     "README.md",
     "README.zh.md",
+    "CHANGELOG.md",
+    "CHANGELOG.en.md",
     "LICENSE"
   ],
   "scripts": {
@@ -38,7 +40,13 @@
     "build": "pnpm run build:types && tsdown --config tsdown.standalone.config.ts",
     "build:types": "tsc -p tsconfig.host.json && tsc -p tsconfig.client.json",
     "bundle": "tsdown",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepare": "pnpm run build",
+    "release": "node scripts/bump-version.mjs",
+    "version:set": "pnpm version --no-git-tag-version --no-git-checks",
+    "version:major": "pnpm version:set major",
+    "version:minor": "pnpm version:set minor",
+    "version:patch": "pnpm version:set patch"
   },
   "engines": {
     "node": "^22.19.0 || >=24.0.0"

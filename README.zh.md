@@ -14,7 +14,7 @@ Stage 1 提供内置主题浏览、预览、应用、持久化与插件生命周
 
 ## 安装
 
-本包仍处于试验开发阶段，计划以 `@dsh-electron/dsh-theme-studio` 发布到 npm；在此之前请从本仓库安装。
+本包在 npm 上的包名为 `@dsh-electron/dsh-theme-studio`。tag 驱动的发布流程见[发布说明](docs/development/release-workflow.md)。
 
 **DeepSeek Harness Desktop** — Theme Studio 是必需内置插件。Desktop 始终从 runtime plugin inventory 挂载它。
 
@@ -74,7 +74,7 @@ Host 插件在存在 `ctx.settings` 时注册 `theme-studio` 设置命名空间�
 
 ## npm 发布
 
-本包将以 `@dsh-electron/dsh-theme-studio` 发布到 npm。当前尚未公开发布；请将 API 与版本视为预发布。
+本包在 npm 上的包名为 `@dsh-electron/dsh-theme-studio`。推送与 `package.json` 版本一致的 `v<version>` tag 会触发发布。
 
 ## 开发
 

@@ -14,7 +14,7 @@ Supported releases are the exact versions in `src/compat/dsh-version.ts`: 0.1.5-
 
 ## Installation
 
-The package is in experimental development. A public npm release under `@dsh-electron/dsh-theme-studio` is planned; until then, install from this repository.
+The npm package name is `@dsh-electron/dsh-theme-studio`. See [the release workflow](docs/development/release-workflow.md) for the tag-driven release process.
 
 **DeepSeek Harness Desktop** — Theme Studio is required built-in. Desktop always mounts it from the runtime plugin inventory.
 
@@ -74,7 +74,7 @@ The Host plugin registers the `theme-studio` settings namespace when `ctx.settin
 
 ## npm publication
 
-The package will publish to npm as `@dsh-electron/dsh-theme-studio`. Publication is not available yet; treat API and versioning as pre-release.
+The npm package name is `@dsh-electron/dsh-theme-studio`. Releases are triggered by pushing a `v<version>` tag that matches `package.json`.
 
 ## Development
 
