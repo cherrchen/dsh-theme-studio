@@ -95,16 +95,20 @@ async function bench(
   const overlay = fakeTheme()
   ctx.provide('theme', overlay.theme)
   const host = durableHost(value)
-  if (transport === 'settingsScope') {
-    ctx.provide('settingsScope', { bind: () => host.scope } as never)
-  } else {
-    ctx.provide('configForms', { get: () => host.scope } as never)
-  }
+  const dropTransport = transport === 'settingsScope'
+    ? ctx.provide('settingsScope', { bind: () => host.scope } as never)
+    : ctx.provide('configForms', { get: () => host.scope } as never)
   ctx.provide('connection', { isLoopback: true } as never)
   ctx.provide('remote', { $on: () => () => {} } as never)
   const slots = fakeSlots()
   ctx.provide('slots', slots)
-  return { ctx, overlay, host, locale, slots }
+  return { ctx, overlay, host, locale, slots, dropTransport }
+}
+
+async function settle(ctx: Context): Promise<void> {
+  for (const runtime of ctx.registry.values()) {
+    for (const fiber of runtime.fibers) await fiber.await()
+  }
 }
 
 function faceOf(slots: ReturnType<typeof fakeSlots>) {
@@ -167,6 +171,43 @@ describe('Theme Studio client apply', () => {
     expect(b.overlay.has(ACTIVE_SOURCE)).toBe(true)
     expect(b.locale.bind(SETTINGS_NS)('title')).toBe('主题')
     await second.dispose()
+  })
+
+  it('restores the row after settingsScope stops and is provided again', async () => {
+    const b = await bench({ activeThemeId: NORDIC })
+    const plugin = b.ctx.plugin({ inject: [...inject], apply })
+    await plugin.await()
+    expect(b.slots.entries()).toHaveLength(1)
+    expect(b.overlay.has(ACTIVE_SOURCE)).toBe(true)
+
+    await b.dropTransport()
+    await settle(b.ctx)
+    expect(b.slots.entries()).toHaveLength(0)
+    expect(b.overlay.has(ACTIVE_SOURCE)).toBe(false)
+
+    b.ctx.provide('settingsScope', { bind: () => b.host.scope } as never)
+    await settle(b.ctx)
+    expect(b.slots.entries()).toHaveLength(1)
+    expect(b.overlay.has(ACTIVE_SOURCE)).toBe(true)
+    await plugin.dispose()
+  })
+
+  it('restores the row when the host switches from settingsScope to configForms', async () => {
+    const b = await bench({ activeThemeId: NORDIC })
+    const plugin = b.ctx.plugin({ inject: [...inject], apply })
+    await plugin.await()
+    expect(b.slots.entries()).toHaveLength(1)
+
+    await b.dropTransport()
+    await settle(b.ctx)
+    expect(b.slots.entries()).toHaveLength(0)
+    expect(b.overlay.has(ACTIVE_SOURCE)).toBe(false)
+
+    b.ctx.provide('configForms', { get: () => b.host.scope } as never)
+    await settle(b.ctx)
+    expect(b.slots.entries()).toHaveLength(1)
+    expect(b.overlay.has(ACTIVE_SOURCE)).toBe(true)
+    await plugin.dispose()
   })
 
   it('teardown without a declaration is quiet', async () => {

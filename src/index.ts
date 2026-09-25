@@ -6,7 +6,6 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-settings'
-import { classifyInstallation, warnUnlessSupported } from './compat/dsh-version.ts'
 import { attachThemeStudioSettings, type SettingsServiceFace } from './compat/settings-host.ts'
 import { ThemeStudioSettingsSchema } from './settings.ts'
 
@@ -24,7 +23,6 @@ export const name = 'theme-studio'
  * @param ctx - Host context that may acquire the settings service.
  */
 export function apply(ctx: Context): void {
-  warnUnlessSupported(classifyInstallation())
   ctx.inject(['settings'], (settingsCtx) => {
     return attachThemeStudioSettings(
       settingsCtx.settings as unknown as SettingsServiceFace,

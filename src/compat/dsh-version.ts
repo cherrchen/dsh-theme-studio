@@ -3,12 +3,10 @@
  * against. This module is the only support list. Peer ranges, the development
  * pin, and the README compatibility sections are checked against it.
  *
- * Theme Studio overlays tokens and writes its own settings namespace. A
- * mismatched install is logged and the plugin still starts: the failure does
- * not widen file, command, or network authority.
+ * The published plugin does not probe the install. `scripts/check-dsh-compat.mjs`
+ * reads this allowlist and the installed tree. A mismatched install does not
+ * widen file, command, or network authority, so the plugin still starts.
  */
-
-import { createRequire } from 'node:module'
 
 /** Releases verified for this plugin, as exact version strings. */
 export const SUPPORTED_DSH_RELEASES = [
@@ -78,30 +76,16 @@ export interface CompatReport {
 export type VersionReader = (packageName: string) => string | undefined
 
 /**
- * Read one package's declared version from the copy this module resolves.
- * @param packageName - the package to inspect.
- * @returns the declared version, or `undefined` when it cannot be resolved.
- */
-export function readInstalledVersion(packageName: string): string | undefined {
-  try {
-    const require = createRequire(import.meta.url)
-    const manifest = require(`${packageName}/package.json`) as { version?: unknown }
-    return typeof manifest.version === 'string' ? manifest.version : undefined
-  } catch {
-    return undefined
-  }
-}
-
-/**
  * Judge one installation against the allowlist.
  *
  * Missing required packages are reported before mixed versions, and mixed
  * versions before an allowlist miss: a later check has no single release to
  * name once an earlier check has failed.
- * @param readVersion - version reader; tests pass their own.
+ * @param readVersion - version reader supplied by the caller. This module does
+ * not resolve packages itself.
  * @returns the report; never throws.
  */
-export function classifyInstallation(readVersion: VersionReader = readInstalledVersion): CompatReport {
+export function classifyInstallation(readVersion: VersionReader): CompatReport {
   const packages: InspectedPackage[] = CORE_PACKAGES.map(name => ({
     name,
     version: readVersion(name),
@@ -142,14 +126,6 @@ export function classifyInstallation(readVersion: VersionReader = readInstalledV
   return report('supported', release, packages, [
     `theme-studio: DSH ${release} is a supported release.`,
   ])
-}
-
-/**
- * Log a compatibility failure. A supported install stays quiet.
- * @param report - the judgement to publish.
- */
-export function warnUnlessSupported(report: CompatReport): void {
-  if (report.verdict !== 'supported') console.warn(report.message)
 }
 
 function report(

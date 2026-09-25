@@ -121,23 +121,31 @@ export function apply(ctx: ClientContext): void {
   const startOnce = (
     child: ClientContext,
     host: ThemeSettingsHost<ThemeStudioSettings> | undefined,
-  ): void => {
-    if (started) return
+  ): boolean => {
+    if (started) return false
     started = true
     start(child, host)
+    return true
+  }
+  const releaseWhenStopped = (owns: boolean): (() => void) => {
+    return () => {
+      if (owns) started = false
+    }
   }
   // Distinct callbacks: cordis keys a plugin runtime by function identity.
   // Read only the injected service. The context proxy throws on any other name.
+  // The returned hook clears the guard when that child stops, so a later
+  // re-provide or a switch to the other transport can start the row again.
   ctx.inject(['settingsScope'], (child) => {
     const host = (child as SettingsScopeCarrier).settingsScope?.bind<ThemeStudioSettings>({
       namespace: THEME_STUDIO_SETTINGS_NAMESPACE,
     })
-    startOnce(child, host)
+    return releaseWhenStopped(startOnce(child, host))
   })
   ctx.inject(['configForms'], (child) => {
     const host = (child as ConfigFormsCarrier).configForms?.get<ThemeStudioSettings>(
       THEME_STUDIO_SETTINGS_NAMESPACE,
     )
-    startOnce(child, host)
+    return releaseWhenStopped(startOnce(child, host))
   })
 }
