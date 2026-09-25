@@ -10,9 +10,7 @@ Stage 1 provides builtin theme browsing, preview, apply, persistence, and plugin
 
 ## DSH compatibility
 
-This compatibility branch targets **DeepSeek Harness [`v0.1.2-alpha.4`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/v0.1.2-alpha.4)**.
-
-For **DeepSeek Harness [`v0.1.1-rc.2`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/v0.1.1-rc.2)**, use the [`main`](https://github.com/cherrchen/dsh-theme-studio/tree/main) branch instead.
+Supported releases are the exact versions in `src/compat/dsh-version.ts`: 0.1.5-rc.2, 0.1.5-rc.3, and 0.1.6-alpha.1. `pnpm compat:check` fails when this section and that list disagree. The development install is pinned to the oldest of those releases.
 
 ## Installation
 
@@ -84,6 +82,7 @@ Use Node.js `^22.19` or `>=24` with pnpm 11.
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm compat:check
 pnpm typecheck
 pnpm test
 pnpm build

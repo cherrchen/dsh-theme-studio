@@ -10,9 +10,7 @@ Stage 1 提供内置主题浏览、预览、应用、持久化与插件生命周
 
 ## DSH 兼容性
 
-此兼容分支面向 **DeepSeek Harness [`v0.1.2-alpha.4`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/v0.1.2-alpha.4)**。
-
-若你使用的是 **DeepSeek Harness [`v0.1.1-rc.2`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/v0.1.1-rc.2)**，请改用 [`main`](https://github.com/cherrchen/dsh-theme-studio/tree/main) 分支。
+支持的精确版本以 `src/compat/dsh-version.ts` 为准：0.1.5-rc.2、0.1.5-rc.3、0.1.6-alpha.1。本节与该列表不一致时，`pnpm compat:check` 会失败。开发安装固定在其中最旧的一个版本。
 
 ## 安装
 
@@ -84,6 +82,7 @@ Host 插件在存在 `ctx.settings` 时注册 `theme-studio` 设置命名空间�
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm compat:check
 pnpm typecheck
 pnpm test
 pnpm build
