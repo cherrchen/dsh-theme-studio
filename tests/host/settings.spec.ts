@@ -1,6 +1,6 @@
 import { Context } from '@deepseek-ai/cordis'
 import { describe, expect, it, vi } from 'vitest'
-import { apply, THEME_STUDIO_SETTINGS_NAMESPACE, ThemeStudioSettingsSchema } from '../../src/index.ts'
+import { apply, Config, THEME_STUDIO_SETTINGS_NAMESPACE, ThemeStudioSettingsSchema } from '../../src/index.ts'
 
 describe('Theme Studio host settings', () => {
   it('accepts a persisted theme id and the Default null value', () => {
@@ -23,6 +23,33 @@ describe('Theme Studio host settings', () => {
     expect(register).toHaveBeenCalledWith(THEME_STUDIO_SETTINGS_NAMESPACE, ThemeStudioSettingsSchema)
     await fiber.dispose()
     expect(dispose).toHaveBeenCalledOnce()
+  })
+
+  it('suppresses the generated form when settings only exposes configure', async () => {
+    const ctx = new Context()
+    const dispose = vi.fn()
+    const configure = vi.fn(() => dispose)
+    ctx.provide('settings', { configure } as never)
+    const fiber = ctx.plugin({ apply, Config })
+    await fiber.await()
+    expect(configure).toHaveBeenCalledOnce()
+    expect(configure.mock.calls[0]?.[0]).toEqual({ auto: false })
+    const owner = configure.mock.calls[0]?.[1]
+    expect(owner === fiber || owner === Object.getPrototypeOf(fiber)).toBe(true)
+    await fiber.dispose()
+    expect(dispose).toHaveBeenCalledOnce()
+  })
+
+  it('prefers register when both settings methods exist', async () => {
+    const ctx = new Context()
+    const register = vi.fn(() => () => {})
+    const configure = vi.fn(() => () => {})
+    ctx.provide('settings', { register, configure } as never)
+    const fiber = ctx.plugin({ apply })
+    await fiber.await()
+    expect(register).toHaveBeenCalledWith(THEME_STUDIO_SETTINGS_NAMESPACE, ThemeStudioSettingsSchema)
+    expect(configure).not.toHaveBeenCalled()
+    await fiber.dispose()
   })
 
   it('is a no-op without a settings service', async () => {

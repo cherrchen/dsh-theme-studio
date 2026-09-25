@@ -10,9 +10,7 @@ Stage 1 provides builtin theme browsing, preview, apply, persistence, and plugin
 
 ## DSH compatibility
 
-This compatibility branch targets **DeepSeek Harness [`v0.1.2-alpha.4`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/v0.1.2-alpha.4)**.
-
-For **DeepSeek Harness [`v0.1.1-rc.2`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/v0.1.1-rc.2)**, use the [`main`](https://github.com/cherrchen/dsh-theme-studio/tree/main) branch instead.
+Supported releases are the exact versions in `src/compat/dsh-version.ts`: 0.1.5-rc.2, 0.1.5-rc.3, 0.1.6-alpha.1, 0.1.6-alpha.2, 0.1.7-alpha.1, and 0.1.7-alpha.2. `pnpm compat:check` fails when this section and that list disagree. The development install is pinned to the oldest of those releases.
 
 ## Installation
 
@@ -72,7 +70,7 @@ theme-studio.activeThemeId   null | dsh-theme-studio.*
 
 ## Composition
 
-The Host plugin registers the `theme-studio` settings namespace when `ctx.settings` exists, and is a no-op otherwise. The Client plugin requires `theme`, `settingsScope`, `slots`, `locale`, `connection`, and `remote`. Headless profiles load only the Host half and do not boot the browser UI. The package intentionally has no `./invariant` export because ThemeRuntime owns overlay-layer consistency and the settings service owns persistence.
+The Host plugin registers the `theme-studio` settings namespace when `ctx.settings` exists, and is a no-op otherwise. Hosts through 0.1.6-alpha.2 use `settings.register`. Starting with 0.1.7-alpha.1 the same section is the plugin `Config`, and the generated form is turned off because the Themes row is custom. The Client plugin requires `theme`, `slots`, `locale`, `connection`, and `remote`, then reads whichever settings transport the host provides: `settingsScope` or `configForms`. Headless profiles load only the Host half and do not boot the browser UI. The package intentionally has no `./invariant` export because ThemeRuntime owns overlay-layer consistency and the settings service owns persistence.
 
 ## npm publication
 
@@ -84,6 +82,7 @@ Use Node.js `^22.19` or `>=24` with pnpm 11.
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm compat:check
 pnpm typecheck
 pnpm test
 pnpm build

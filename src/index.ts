@@ -6,13 +6,12 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-settings'
-import {
-  THEME_STUDIO_SETTINGS_NAMESPACE, ThemeStudioSettingsSchema,
-} from './settings.ts'
+import { attachThemeStudioSettings, type SettingsServiceFace } from './compat/settings-host.ts'
+import { ThemeStudioSettingsSchema } from './settings.ts'
 
 export {
   ACTIVE_THEME_ID_FIELD, DEFAULT_THEME_STUDIO_SETTINGS, THEME_STUDIO_SETTINGS_NAMESPACE,
-  ThemeStudioSettingsSchema, type ThemeStudioSettings,
+  Config, ThemeStudioSettingsSchema, type ThemeStudioSettings,
 } from './settings.ts'
 export { ACTIVE_SOURCE, PREVIEW_SOURCE } from './constants.ts'
 
@@ -25,6 +24,10 @@ export const name = 'theme-studio'
  */
 export function apply(ctx: Context): void {
   ctx.inject(['settings'], (settingsCtx) => {
-    return settingsCtx.settings.register(THEME_STUDIO_SETTINGS_NAMESPACE, ThemeStudioSettingsSchema)
+    return attachThemeStudioSettings(
+      settingsCtx.settings as unknown as SettingsServiceFace,
+      ThemeStudioSettingsSchema,
+      ctx.fiber,
+    )
   })
 }

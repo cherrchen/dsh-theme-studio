@@ -10,9 +10,7 @@ Stage 1 提供内置主题浏览、预览、应用、持久化与插件生命周
 
 ## DSH 兼容性
 
-此兼容分支面向 **DeepSeek Harness [`v0.1.2-alpha.4`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/v0.1.2-alpha.4)**。
-
-若你使用的是 **DeepSeek Harness [`v0.1.1-rc.2`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/v0.1.1-rc.2)**，请改用 [`main`](https://github.com/cherrchen/dsh-theme-studio/tree/main) 分支。
+支持的精确版本以 `src/compat/dsh-version.ts` 为准：0.1.5-rc.2、0.1.5-rc.3、0.1.6-alpha.1、0.1.6-alpha.2、0.1.7-alpha.1、0.1.7-alpha.2。本节与该列表不一致时，`pnpm compat:check` 会失败。开发安装固定在其中最旧的一个版本。
 
 ## 安装
 
@@ -72,7 +70,7 @@ theme-studio.activeThemeId   null | dsh-theme-studio.*
 
 ## 组装
 
-Host 插件在存在 `ctx.settings` 时注册 `theme-studio` 设置命名空间，否则为空操作。Client 插件需要 `theme`、`settingsScope`、`slots`、`locale`、`connection` 与 `remote`。Headless profile 只加载 Host 半，不会启动浏览器 UI。本包有意不导出 `./invariant`，因为 ThemeRuntime 负责覆盖层一致性，设置服务负责持久化。
+Host 插件在存在 `ctx.settings` 时注册 `theme-studio` 设置命名空间，否则为空操作。到 0.1.6-alpha.2 为止，Host 使用 `settings.register`。从 0.1.7-alpha.1 起，同一段配置是插件的 `Config`，并且会关闭自动生成的表单，因为主题行是自定义的。Client 插件需要 `theme`、`slots`、`locale`、`connection` 与 `remote`，然后读取宿主实际提供的设置通道：`settingsScope` 或 `configForms`。Headless profile 只加载 Host 半，不会启动浏览器 UI。本包有意不导出 `./invariant`，因为 ThemeRuntime 负责覆盖层一致性，设置服务负责持久化。
 
 ## npm 发布
 
@@ -84,6 +82,7 @@ Host 插件在存在 `ctx.settings` 时注册 `theme-studio` 设置命名空间�
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm compat:check
 pnpm typecheck
 pnpm test
 pnpm build

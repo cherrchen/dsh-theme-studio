@@ -1,6 +1,6 @@
 /** Theme Studio overlay runtime: active/preview layers and settings adoption. */
 
-import type { SettingsScope } from '@deepseek-ai/dsh-client-ui-settings/client'
+import type { ThemeSettingsHost } from '../compat/settings-client.ts'
 import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
 import {
   ACTIVE_SOURCE, ACTIVE_THEME_ID_FIELD, PREVIEW_SOURCE, THEME_STUDIO_SETTINGS_NAMESPACE,
@@ -43,7 +43,7 @@ export interface ThemeStudioRuntimeOptions {
   /** Official ThemeRuntime or a test double. */
   theme: ThemeOverrideSurface
   /** Durable Theme Studio section; omitted when settings are unavailable. */
-  host: SettingsScope<ThemeStudioSettings> | undefined
+  host: ThemeSettingsHost<ThemeStudioSettings> | undefined
   /** Theme lookup used by activate/preview. */
   catalog: ThemeCatalog
 }
@@ -60,7 +60,7 @@ function normalizeId(value: unknown): string | null {
  */
 export class ThemeStudioRuntime {
   private readonly theme: ThemeOverrideSurface
-  private readonly host: SettingsScope<ThemeStudioSettings> | undefined
+  private readonly host: ThemeSettingsHost<ThemeStudioSettings> | undefined
   private readonly catalog: ThemeCatalog
   private readonly listeners = new Set<() => void>()
   private readonly unsubscribeHost: (() => void) | undefined
