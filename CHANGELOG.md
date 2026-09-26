@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-26
+
 ### Added
 
 - 支持 DSH 0.1.7-rc.1 与 0.1.7-rc.2：这些版本会在 profile 安装或启动插件时校验插件声明的 DSH peer 范围。
@@ -25,5 +27,6 @@
 - Host 侧持久化当前主题选择，并兼容受支持 DSH 版本间的 settings / configForms 差异。
 - 发布 standalone Host、Client bundle、TypeScript 声明和 `cordis.patch.yml`，并声明精确的 DSH 兼容版本。
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/cherrchen/dsh-theme-studio/releases/tag/v0.1.1
 [0.1.0]: https://github.com/cherrchen/dsh-theme-studio/releases/tag/v0.1.0

@@ -24,7 +24,7 @@ Releases are triggered by pushing an annotated `v<version>` tag. The tag must ma
    # or: pnpm release 1.2.3 --tag
    ```
 
-   The `--tag` form requires a clean worktree. It commits the version as `chore(release): v<version>` and creates an annotated `v<version>` tag. For the first release, keep the initial `0.1.0` version and create `git tag -a v0.1.0 -m v0.1.0` after preparing and committing the changelog. The first-release changelog entry is dated 2026-09-25.
+   The `--tag` form requires a clean worktree. It commits the version as `chore(release): v<version>` and creates an annotated `v<version>` tag. When the changelog edit is not committed yet, bump without `--tag`, commit the changelog and `package.json` together as `chore(release): v<version>`, and create the annotated tag on that commit.
 
 4. Push the commit and tag to GitHub:
 

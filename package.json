@@ -1,7 +1,7 @@
 {
   "name": "@dsh-electron/dsh-theme-studio",
   "description": "Portable DSH theme overlay plugin: builtin palettes, preview, persistence, and General settings UI",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publishConfig": {
     "access": "public"
   },
