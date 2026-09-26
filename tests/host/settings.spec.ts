@@ -13,16 +13,20 @@ describe('Theme Studio host settings', () => {
     expect(() => ThemeStudioSettingsSchema({ activeThemeId: 1 })).toThrow()
   })
 
-  it('registers the namespace when settings exist and disposes with the fiber', async () => {
+  it('registers the namespace with a host that returns the legacy namespace scope', async () => {
     const ctx = new Context()
-    const dispose = vi.fn()
-    const register = vi.fn(() => dispose)
-    ctx.provide('settings', { register, get: () => undefined } as never)
+    // The legacy API answers with the owner's namespace scope, a plain object
+    // that is not a disposer. Cordis rejects such an object when a plugin apply
+    // returns it, so the adapter must drop it; the provider keeps the
+    // registration alive on the calling fiber. The installed provider's own
+    // lifetime behavior is covered in settings-provider.spec.ts.
+    const scope = { get: () => undefined, watch: () => () => {}, update: () => Promise.resolve(), replace: () => Promise.resolve() }
+    const register = vi.fn(() => scope)
+    ctx.provide('settings', { register } as never)
     const fiber = ctx.plugin({ apply })
     await fiber.await()
     expect(register).toHaveBeenCalledWith(THEME_STUDIO_SETTINGS_NAMESPACE, ThemeStudioSettingsSchema)
     await fiber.dispose()
-    expect(dispose).toHaveBeenCalledOnce()
   })
 
   it('suppresses the generated form when settings only exposes configure', async () => {

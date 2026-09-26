@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- 支持 DSH 0.1.7-rc.1 与 0.1.7-rc.2：这些版本会在 profile 安装或启动插件时校验插件声明的 DSH peer 范围。
+
+### Fixed
+
+- 在使用旧版 `register` API 注册 settings 命名空间的宿主上恢复主题选择持久化：不再把该 API 返回的命名空间 scope 交还给 Cordis，否则 Cordis 会将其判为无效 effect 并静默回滚注册。
+
 ## [0.1.0] - 2026-09-25
 
 首次公开发布，提供可在 DSH Web 与 Desktop 中运行的主题覆盖插件。

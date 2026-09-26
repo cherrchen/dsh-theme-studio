@@ -10,7 +10,7 @@ Stage 1 提供内置主题浏览、预览、应用、持久化与插件生命周
 
 ## DSH 兼容性
 
-支持的精确版本以 `src/compat/dsh-version.ts` 为准：0.1.5-rc.2、0.1.5-rc.3、0.1.6-alpha.1、0.1.6-alpha.2、0.1.7-alpha.1、0.1.7-alpha.2。本节与该列表不一致时，`pnpm compat:check` 会失败。开发安装固定在其中最旧的一个版本。
+支持的精确版本以 `src/compat/dsh-version.ts` 为准：0.1.5-rc.2、0.1.5-rc.3、0.1.6-alpha.1、0.1.6-alpha.2、0.1.7-alpha.1、0.1.7-alpha.2、0.1.7-rc.1、0.1.7-rc.2。本节与该列表不一致时，`pnpm compat:check` 会失败。开发安装固定在其中最旧的一个版本。启用 DSH peer 兼容校验的宿主，仅在运行时版本位于该列表时加载本插件。
 
 ## 安装
 

@@ -10,7 +10,7 @@ Stage 1 provides builtin theme browsing, preview, apply, persistence, and plugin
 
 ## DSH compatibility
 
-Supported releases are the exact versions in `src/compat/dsh-version.ts`: 0.1.5-rc.2, 0.1.5-rc.3, 0.1.6-alpha.1, 0.1.6-alpha.2, 0.1.7-alpha.1, and 0.1.7-alpha.2. `pnpm compat:check` fails when this section and that list disagree. The development install is pinned to the oldest of those releases.
+Supported releases are the exact versions in `src/compat/dsh-version.ts`: 0.1.5-rc.2, 0.1.5-rc.3, 0.1.6-alpha.1, 0.1.6-alpha.2, 0.1.7-alpha.1, 0.1.7-alpha.2, 0.1.7-rc.1, and 0.1.7-rc.2. `pnpm compat:check` fails when this section and that list disagree. The development install is pinned to the oldest of those releases. Hosts that enforce DSH peer compatibility admit the plugin only while the running release is on this list.
 
 ## Installation
 
