@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import { describe, expect, it, vi } from 'vitest'
 import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
@@ -81,6 +83,11 @@ function faceOf(slots: StubSlots) {
 describe('Theme Studio client apply', () => {
   it('declares the required services', () => {
     expect(inject).toEqual(['theme', 'slots', 'locale', 'connection', 'remote'])
+  })
+
+  it('declares the browser bundle through the bare package loader row', () => {
+    const loader = readFileSync(join(import.meta.dirname, '../../cordis.patch.yml'), 'utf8')
+    expect(loader).toMatch(/- id: theme-studio\s+name: '@dsh-electron\/dsh-theme-studio'/)
   })
 
   it('registers localized copy and the Themes row at order 20', async () => {

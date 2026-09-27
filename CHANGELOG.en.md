@@ -6,9 +6,9 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
-### Added
+### Changed
 
-- Show Theme Studio on the official Plugins page: an Official card with its localized title and one-liner, a version and package-name badge on its detail page, and a read-only `Components` section listing the `theme-studio` row. The contributions register only into the slots the running host declares, so DSH 0.1.6-alpha.2 renders the card alone and earlier releases keep the Settings row only.
+- Removed Theme Studio’s custom Plugins-page card and detail contributions. The installed package is listed by the official manager through its package-name loader entry; the General Themes settings row remains.
 
 ## [0.1.1] - 2026-09-26
 

@@ -1,7 +1,6 @@
 /**
- * Theme Studio plugin, browser half: overlay runtime, the General Themes
- * settings row, and the Plugins page's Official card. Presentation stays
- * with `ctx.theme`.
+ * Theme Studio plugin, browser half: overlay runtime and the General Themes
+ * settings row. Presentation stays with `ctx.theme`.
  */
 import type { BoundActions } from '@deepseek-ai/dsh-client-ui-slots'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
@@ -19,7 +18,7 @@ import { DEFAULT_PREVIEW } from './presets.ts'
 import { ThemeStudioRuntime } from './runtime.ts'
 import { createThemeStudioRowStore, type ThemeStudioCard } from './store.ts'
 import { ThemeStudioRow, type ThemeStudioRowInjected } from './ThemeStudioRow.tsx'
-import { registerPluginPage } from './plugin-page/index.ts'
+
 
 export { ThemeStudioRuntime } from './runtime.ts'
 export type { ThemeStudioSnapshot, ThemeOverrideSurface } from './runtime.ts'
@@ -33,8 +32,7 @@ export { NS as SETTINGS_NS } from './locales.ts'
 export type { ThemeStudioKey } from './locales.ts'
 export { ACTIVE_SOURCE, PREVIEW_SOURCE, THEME_STUDIO_SETTINGS_NAMESPACE } from '../constants.ts'
 export type { ThemeStudioSettings } from '../constants.ts'
-export { registerPluginPage, PLUGINS_NS, THEME_STUDIO_ITEM_ID, THEME_STUDIO_ITEM_ORDER, THEME_STUDIO_PACKAGE, THEME_STUDIO_COMPONENTS } from './plugin-page/index.ts'
-export type { ThemeStudioPluginBadgeProps, ThemeStudioPluginCardProps, ThemeStudioPluginSectionProps, ThemeStudioPluginsSubject, ThemeStudioComponent, ThemeStudioPluginsKey } from './plugin-page/index.ts'
+
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -121,7 +119,7 @@ function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> 
  * @param ctx - client cordis context.
  */
 export function apply(ctx: ClientContext): void {
-  registerPluginPage(ctx)
+
   let started = false
   const startOnce = (
     child: ClientContext,
