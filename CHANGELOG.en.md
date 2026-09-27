@@ -6,9 +6,11 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-09-27
+
 ### Changed
 
-- Removed Theme Studio’s custom Plugins-page card and detail contributions. The installed package is listed by the official manager through its package-name loader entry; the General Themes settings row remains.
+- Removed Theme Studio’s custom Plugins-page card and detail contributions; the installed package is listed in the official plugin manager through its package-name loader entry. The General Themes settings row remains.
 
 ## [0.1.1] - 2026-09-26
 
@@ -31,6 +33,7 @@ First public release of the theme overlay plugin for DSH Web and Desktop.
 - Persist the selected theme on the Host and support the settings / configForms differences across supported DSH releases.
 - Publish standalone Host and Client bundles, TypeScript declarations, and `cordis.patch.yml`, with an explicit DSH compatibility list.
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/cherrchen/dsh-theme-studio/releases/tag/v0.1.1
 [0.1.0]: https://github.com/cherrchen/dsh-theme-studio/releases/tag/v0.1.0

@@ -62,23 +62,19 @@ function writeVersion(version) {
   const updated = text.replace(/^(  "version": ")[^"]*(",?)$/m, `$1${version}$2`)
   if (updated === text) throw new Error('Could not find the version field in package.json')
   writeFileSync(path, updated)
-  const constantsPath = new URL('../src/constants.ts', import.meta.url)
-  const constants = readFileSync(constantsPath, 'utf8')
-  const rewritten = constants.replace(/^(export const THEME_STUDIO_VERSION = ')[^']*(')$/m, `$1${version}$2`)
-  if (rewritten === constants) throw new Error('Could not find THEME_STUDIO_VERSION in src/constants.ts')
-  writeFileSync(constantsPath, rewritten)
+
 }
 
 function commitAndTag(version) {
   const status = git(['status', '--porcelain'])
-  const unrelated = status.split('\n').filter((line) => line.trim() && !line.startsWith('??') && line.slice(3) !== 'package.json' && line.slice(3) !== 'src/constants.ts')
-  if (unrelated.length) throw new Error('Refusing to tag: working tree has changes other than package.json and src/constants.ts:\n' + unrelated.join('\n'))
+  const unrelated = status.split('\n').filter((line) => line.trim() && !line.startsWith('??') && line.slice(3) !== 'package.json')
+  if (unrelated.length) throw new Error('Refusing to tag: working tree has changes other than package.json:\n' + unrelated.join('\n'))
   const tag = `v${version}`
   if (git(['tag', '-l', tag]).trim()) throw new Error(`Tag ${tag} already exists`)
-  git(['add', 'package.json', 'src/constants.ts'])
+  git(['add', 'package.json'])
   git(['commit', '-m', `chore(release): ${tag}`])
   git(['tag', '-a', tag, '-m', tag])
-  console.log(`Committed package.json and src/constants.ts and created annotated tag ${tag}.`)
+  console.log(`Committed package.json and created annotated tag ${tag}.`)
   console.log('Publish it with: git push origin main --follow-tags')
 }
 

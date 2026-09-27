@@ -6,9 +6,11 @@
 
 ## [Unreleased]
 
-### Изменено
+## [0.1.2] - 2026-09-27
 
-- Удалена собственная карточка Theme Studio на странице плагинов; установленный пакет отображается в официальном менеджере через запись загрузчика с именем пакета. Сохранён пункт «Настройки → Общие → Темы».
+### Changed
+
+- 移除 Theme Studio 自定义的插件页卡片和详情贡献；安装包通过包名加载器记录显示在官方插件管理器中。保留“设置 → 通用 → 主题”行。
 
 ## [0.1.1] - 2026-09-26
 
@@ -31,6 +33,7 @@
 - Host 侧持久化当前主题选择，并兼容受支持 DSH 版本间的 settings / configForms 差异。
 - 发布 standalone Host、Client bundle、TypeScript 声明和 `cordis.patch.yml`，并声明精确的 DSH 兼容版本。
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/cherrchen/dsh-theme-studio/releases/tag/v0.1.1
 [0.1.0]: https://github.com/cherrchen/dsh-theme-studio/releases/tag/v0.1.0
