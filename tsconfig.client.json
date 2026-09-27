@@ -30,6 +30,7 @@
     "src/client/runtime.ts",
     "src/client/store.ts",
     "src/client/types.ts",
-    "src/client/ThemeStudioRow.tsx"
+    "src/client/ThemeStudioRow.tsx",
+    "src/client/plugin-page/index.ts"
   ]
 }

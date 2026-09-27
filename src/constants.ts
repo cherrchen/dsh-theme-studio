@@ -17,3 +17,6 @@ export const ACTIVE_SOURCE = '@dsh-electron/dsh-theme-studio:active'
 
 /** ThemeRuntime overlay source for the transient preview theme. */
 export const PREVIEW_SOURCE = '@dsh-electron/dsh-theme-studio:preview'
+
+/** Published package version shown on the Plugins page; `pnpm release` rewrites it with package.json. */
+export const THEME_STUDIO_VERSION = '0.1.1'

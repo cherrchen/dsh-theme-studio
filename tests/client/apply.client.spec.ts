@@ -5,7 +5,7 @@ import type { ThemeStudioSettings } from '../../src/constants.ts'
 import { apply, inject, SETTINGS_NS } from '../../src/client/index.ts'
 import { ThemeStudioRow } from '../../src/client/ThemeStudioRow.tsx'
 import { ACTIVE_SOURCE, PREVIEW_SOURCE } from '../../src/client/runtime.ts'
-import { stubSettingsScope } from '../harness.ts'
+import { stubLocale, stubSettingsScope, stubSlots, type StubSlots } from '../harness.ts'
 import type { createThemeStudioRowStore } from '../../src/client/store.ts'
 import type { ThemeStudioRowInjected } from '../../src/client/ThemeStudioRow.tsx'
 
@@ -44,53 +44,12 @@ function durableHost(value: ThemeStudioSettings) {
   return host
 }
 
-function fakeLocale() {
-  let locale = 'zh'
-  const packs = new Map<string, { zh: Record<string, string>; en: Record<string, string> }>()
-  return {
-    setLocale(next: string) { locale = next },
-    register(ns: string, dicts: { zh: Record<string, string>; en: Record<string, string> }) {
-      packs.set(ns, dicts)
-      return () => { packs.delete(ns) }
-    },
-    bind(ns: string) {
-      return (key: string) => packs.get(ns)?.[locale === 'en' ? 'en' : 'zh']?.[key] ?? key
-    },
-  }
-}
-
-function fakeSlots() {
-  const items: Array<{
-    options: { id?: string; order?: number; locale?: string }
-    component: unknown
-    store: unknown
-    inject: unknown
-  }> = []
-  return {
-    inject(_name: string, factory: () => () => void) {
-      return factory()
-    },
-    register(
-      options: { name: string; id?: string; order?: number; locale?: string; store?: unknown; inject?: unknown },
-      component: unknown,
-    ) {
-      const entry = { options, component, store: options.store, inject: options.inject }
-      items.push(entry)
-      return () => {
-        const index = items.indexOf(entry)
-        if (index >= 0) items.splice(index, 1)
-      }
-    },
-    entries() { return items },
-  }
-}
-
 async function bench(
   value: ThemeStudioSettings = { activeThemeId: null },
   transport: 'settingsScope' | 'configForms' = 'settingsScope',
 ) {
   const ctx = new Context()
-  const locale = fakeLocale()
+  const locale = stubLocale()
   ctx.provide('locale', locale)
   const overlay = fakeTheme()
   ctx.provide('theme', overlay.theme)
@@ -100,7 +59,7 @@ async function bench(
     : ctx.provide('configForms', { get: () => host.scope } as never)
   ctx.provide('connection', { isLoopback: true } as never)
   ctx.provide('remote', { $on: () => () => {} } as never)
-  const slots = fakeSlots()
+  const slots = stubSlots({ declared: ['settings.general.item'] })
   ctx.provide('slots', slots)
   return { ctx, overlay, host, locale, slots, dropTransport }
 }
@@ -111,7 +70,7 @@ async function settle(ctx: Context): Promise<void> {
   }
 }
 
-function faceOf(slots: ReturnType<typeof fakeSlots>) {
+function faceOf(slots: StubSlots) {
   const entry = slots.entries().find(item => item.component === ThemeStudioRow)!
   const handle = entry.store as ReturnType<typeof createThemeStudioRowStore>
   const instance = handle.create()
@@ -132,6 +91,10 @@ describe('Theme Studio client apply', () => {
     expect(b.locale.bind(SETTINGS_NS)('title')).toBe('Themes')
     const entry = b.slots.entries().find(item => item.component === ThemeStudioRow)!
     expect(entry.options).toMatchObject({ id: 'themes', order: 20 })
+    // A host that declares none of the Plugins-page slots registers nothing there.
+    expect(b.slots.entries('plugins.item')).toEqual([])
+    expect(b.slots.entries('plugins.detail.badge')).toEqual([])
+    expect(b.slots.entries('plugins.detail.section')).toEqual([])
   })
 
   it('restores a durable theme through configForms', async () => {

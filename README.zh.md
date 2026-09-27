@@ -70,7 +70,7 @@ theme-studio.activeThemeId   null | dsh-theme-studio.*
 
 ## 组装
 
-Host 插件在存在 `ctx.settings` 时注册 `theme-studio` 设置命名空间，否则为空操作。到 0.1.6-alpha.2 为止，Host 使用 `settings.register`。从 0.1.7-alpha.1 起，同一段配置是插件的 `Config`，并且会关闭自动生成的表单，因为主题行是自定义的。Client 插件需要 `theme`、`slots`、`locale`、`connection` 与 `remote`，然后读取宿主实际提供的设置通道：`settingsScope` 或 `configForms`。Headless profile 只加载 Host 半，不会启动浏览器 UI。本包有意不导出 `./invariant`，因为 ThemeRuntime 负责覆盖层一致性，设置服务负责持久化。
+Host 插件在存在 `ctx.settings` 时注册 `theme-studio` 设置命名空间，否则为空操作。到 0.1.6-alpha.2 为止，Host 使用 `settings.register`。从 0.1.7-alpha.1 起，同一段配置是插件的 `Config`，并且会关闭自动生成的表单，因为主题行是自定义的。Client 插件需要 `theme`、`slots`、`locale`、`connection` 与 `remote`，然后读取宿主实际提供的设置通道：`settingsScope` 或 `configForms`。Headless profile 只加载 Host 半，不会启动浏览器 UI。本包有意不导出 `./invariant`，因为 ThemeRuntime 负责覆盖层一致性，设置服务负责持久化。其插件页入口注册到该页声明的插槽：`plugins.item` 自 DSH 0.1.6-alpha.2 起存在，`plugins.detail.badge` 与 `plugins.detail.section` 自 0.1.7-alpha.1 起存在。更旧的宿主不声明这些插槽，因此那里不出现该卡片。
 
 ## npm 发布
 
