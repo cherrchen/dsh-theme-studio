@@ -67,6 +67,102 @@ function preset(
   })
 }
 
+const CLAUDE_LIGHT: Palette = {
+  bgBase: '#FAF9F5',
+  bgLayer1: '#FFFFFF',
+  bgLayer2: '#F0EEE6',
+  bgOverlay: '#F5F4ED',
+  borderL1: 'rgba(20, 20, 19, 0.08)',
+  borderL2: 'rgba(20, 20, 19, 0.16)',
+  brand: '#D97757',
+  labelPrimary: '#141413',
+  labelSecondary: '#73726C',
+  error: '#B53333',
+  success: '#2F7613',
+  warn: '#875A08',
+  sidebar: '#F0EEE6',
+}
+
+const CLAUDE_DARK: Palette = {
+  bgBase: '#1F1E1D',
+  bgLayer1: '#262624',
+  bgLayer2: '#30302E',
+  bgOverlay: '#30302E',
+  borderL1: 'rgba(250, 249, 245, 0.08)',
+  borderL2: 'rgba(250, 249, 245, 0.16)',
+  brand: '#D97757',
+  labelPrimary: '#FAF9F5',
+  labelSecondary: '#9C9A92',
+  error: '#DD5353',
+  success: '#459315',
+  warn: '#B17506',
+  sidebar: '#141413',
+}
+
+const CODEX_LIGHT: Palette = {
+  bgBase: '#FFFFFF',
+  bgLayer1: '#F5F6F7',
+  bgLayer2: '#E8EAED',
+  bgOverlay: '#FFFFFF',
+  borderL1: 'rgba(13, 13, 13, 0.08)',
+  borderL2: 'rgba(13, 13, 13, 0.16)',
+  brand: '#0285FF',
+  labelPrimary: '#0D0D0D',
+  labelSecondary: '#5C6570',
+  error: '#BA2623',
+  success: '#00A240',
+  warn: '#B54708',
+  sidebar: '#F5F6F7',
+}
+
+const CODEX_DARK: Palette = {
+  bgBase: '#181818',
+  bgLayer1: '#222222',
+  bgLayer2: '#2D2D2B',
+  bgOverlay: '#2D2D2B',
+  borderL1: 'rgba(255, 255, 255, 0.08)',
+  borderL2: 'rgba(255, 255, 255, 0.16)',
+  brand: '#339CFF',
+  labelPrimary: '#FFFFFF',
+  labelSecondary: '#9AA1A9',
+  error: '#FA423E',
+  success: '#40C977',
+  warn: '#FDB022',
+  sidebar: '#141414',
+}
+
+const CLAUDE_CREAM_LIGHT: Palette = {
+  bgBase: '#F5F3E9',
+  bgLayer1: '#FFFFFF',
+  bgLayer2: '#F0EEE6',
+  bgOverlay: '#F8F7F2',
+  borderL1: 'rgba(41, 39, 29, 0.08)',
+  borderL2: 'rgba(41, 39, 29, 0.16)',
+  brand: '#B7791F',
+  labelPrimary: '#29271D',
+  labelSecondary: '#6D675B',
+  error: '#7C1B13',
+  success: '#4B6F3D',
+  warn: '#8A5E16',
+  sidebar: '#F0EEE6',
+}
+
+const CLAUDE_CREAM_DARK: Palette = {
+  bgBase: '#2D2E2D',
+  bgLayer1: '#303030',
+  bgLayer2: '#343533',
+  bgOverlay: '#343533',
+  borderL1: 'rgba(233, 230, 220, 0.08)',
+  borderL2: 'rgba(233, 230, 220, 0.16)',
+  brand: '#E6BF7A',
+  labelPrimary: '#E9E6DC',
+  labelSecondary: '#BBB6A8',
+  error: '#EA928A',
+  success: '#9AB889',
+  warn: '#E6BF7A',
+  sidebar: '#242524',
+}
+
 const GRAPHITE_LIGHT: Palette = {
   bgBase: '#e8eaed',
   bgLayer1: '#f4f5f6',
@@ -229,6 +325,27 @@ const WARM_DARK: Palette = {
 
 /** Builtin overlays in Settings card order. Default is not a member. */
 export const BUILTIN_PRESETS: readonly BuiltinThemePreset[] = Object.freeze([
+  preset(
+    'dsh-theme-studio.claude',
+    'Claude',
+    'Anthropic Claude Desktop warm ivory / clay palette.',
+    CLAUDE_LIGHT,
+    CLAUDE_DARK,
+  ),
+  preset(
+    'dsh-theme-studio.codex',
+    'Codex',
+    'OpenAI Codex Desktop default chrome (official Appearance docs).',
+    CODEX_LIGHT,
+    CODEX_DARK,
+  ),
+  preset(
+    'dsh-theme-studio.claude-cream',
+    'Claude Cream',
+    'Community editorial warm ivory + amber. Distinct from official Clay #D97757.',
+    CLAUDE_CREAM_LIGHT,
+    CLAUDE_CREAM_DARK,
+  ),
   preset(
     'dsh-theme-studio.graphite',
     'Graphite',
