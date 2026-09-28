@@ -66,7 +66,7 @@ ui-theme.preference          system | light | dark
 theme-studio.activeThemeId   null | dsh-theme-studio.*
 ```
 
-`null` 表示默认。内置 id 包括 `dsh-theme-studio.graphite`、`.oled`、`.nordic`、`.paper` 与 `.warm`。
+`null` 表示默认。内置 id 包括 `dsh-theme-studio.claude`、`.codex`、`.claude-cream`、`.graphite`、`.oled`、`.nordic`、`.paper` 与 `.warm`。
 
 ## 组装
 

@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- 新增三套对标 Claude Desktop、Codex Desktop 与 Claude Cream 的内置 overlay。
+
 ## [0.1.2] - 2026-09-27
 
 ### Changed

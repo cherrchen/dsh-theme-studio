@@ -6,6 +6,10 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- Added three builtin overlays aligned with Claude Desktop, Codex Desktop, and Claude Cream.
+
 ## [0.1.2] - 2026-09-27
 
 ### Changed
