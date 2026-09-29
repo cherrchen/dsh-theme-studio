@@ -9,6 +9,7 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Added
 
 - Added three builtin overlays aligned with Claude Desktop, Codex Desktop, and Claude Cream.
+- Builtin themes now cover semantic colors, component-referenced statics, and syntax-highlight tokens that previously stayed on the official palette.
 
 ## [0.1.2] - 2026-09-27
 

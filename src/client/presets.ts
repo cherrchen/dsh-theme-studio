@@ -1,25 +1,13 @@
 /** Compiled Stage 1 builtin themes. Default is the absence of an overlay. */
 
-import type { BuiltinThemePreset, ThemePreview, ThemeTokenPalette } from './types.ts'
+import { deriveChrome, type ChromePalette } from './chrome-tokens.ts'
+import type { BuiltinThemePreset, ThemePreview } from './types.ts'
 
-interface Palette {
-  bgBase: string
-  bgLayer1: string
-  bgLayer2: string
-  bgOverlay: string
-  borderL1: string
-  borderL2: string
-  brand: string
-  labelPrimary: string
-  labelSecondary: string
-  error: string
-  success: string
-  warn: string
-  sidebar: string
-}
+type Palette = ChromePalette
 
-function tokens(palette: Palette): ThemeTokenPalette {
+function tokens(palette: Palette): Readonly<Record<string, string>> {
   return {
+    ...deriveChrome(palette),
     '--dsw-alias-bg-base': palette.bgBase,
     '--dsw-alias-bg-layer-1': palette.bgLayer1,
     '--dsw-alias-bg-layer-2': palette.bgLayer2,
