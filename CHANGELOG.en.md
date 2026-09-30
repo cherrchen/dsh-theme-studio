@@ -6,6 +6,8 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-09-30
+
 ### Added
 
 - Added three builtin overlays aligned with Claude Desktop, Codex Desktop, and Claude Cream.
@@ -38,7 +40,8 @@ First public release of the theme overlay plugin for DSH Web and Desktop.
 - Persist the selected theme on the Host and support the settings / configForms differences across supported DSH releases.
 - Publish standalone Host and Client bundles, TypeScript declarations, and `cordis.patch.yml`, with an explicit DSH compatibility list.
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/cherrchen/dsh-theme-studio/releases/tag/v0.1.1
 [0.1.0]: https://github.com/cherrchen/dsh-theme-studio/releases/tag/v0.1.0

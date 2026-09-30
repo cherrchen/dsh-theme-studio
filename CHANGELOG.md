@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-09-30
+
 ### Added
 
 - 新增三套对标 Claude Desktop、Codex Desktop 与 Claude Cream 的内置 overlay。
@@ -38,7 +40,8 @@
 - Host 侧持久化当前主题选择，并兼容受支持 DSH 版本间的 settings / configForms 差异。
 - 发布 standalone Host、Client bundle、TypeScript 声明和 `cordis.patch.yml`，并声明精确的 DSH 兼容版本。
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/cherrchen/dsh-theme-studio/releases/tag/v0.1.1
 [0.1.0]: https://github.com/cherrchen/dsh-theme-studio/releases/tag/v0.1.0
