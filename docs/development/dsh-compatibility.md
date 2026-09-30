@@ -51,4 +51,4 @@ node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
 
 本次未覆盖完整 DSH Web profile 的磁盘持久化端到端流程、真实浏览器视觉截图、Desktop/Windows/Linux 本机呈现或 npm tarball 安装。`pack --dry-run` 只验证发布文件清单。插件仍为 platform:web，CSS 呈现由 ctx.theme 管理；未加入 Electron、Desktop provider 或 Node 客户端依赖。官方发布包缺失 source map 的 Vite 警告不影响测试退出码。
 
-开发基线仍为 0.1.5-rc.2 / Cordis 4.0.2 / Schemastery 3.18.2；已恢复该安装树。没有把临时矩阵 pin 写回开发配置。
+开发基线已升级为 0.2.0-rc.2 / Cordis 4.0.4 / Schemastery 3.18.4，当前安装树与 lockfile 已同步。升级后重新验证全部十个支持版本，均通过。矩阵脚本按目标版本重写 overrides 与发布时限例外，并从无 lockfile 的临时安装树重新解析，避免开发基线影响旧版验证。

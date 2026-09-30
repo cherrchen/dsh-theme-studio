@@ -27,8 +27,14 @@ try {
     const vendorPatch = ['0.1.5-rc.2', '0.1.5-rc.3', '0.1.6-alpha.1', '0.1.6-alpha.2'].includes(version) ? 2 : version === '0.1.7-alpha.1' ? 3 : 4
     manifest.devDependencies['@deepseek-ai/cordis'] = `4.0.${vendorPatch}`
     writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest, null, 2) + '\n')
-    const workspace = readFileSync(join(dir, 'pnpm-workspace.yaml'), 'utf8').replace(/0\.1\.5-rc\.2/gu, version).replace(/4\.0\.2/gu, `4.0.${vendorPatch}`).replace(/3\.18\.2/gu, `3.18.${vendorPatch}`)
+    const workspace = readFileSync(join(dir, 'pnpm-workspace.yaml'), 'utf8')
+      .replace(/(@deepseek-ai\/dsh[\w-]*(?:'?: |@))\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?/gu, `$1${version}`)
+      .replace(/4\.0\.\d+/gu, `4.0.${vendorPatch}`)
+      .replace(/3\.18\.\d+/gu, `3.18.${vendorPatch}`)
     writeFileSync(join(dir, 'pnpm-workspace.yaml'), workspace)
+    // Resolve each release from scratch rather than verifying the development lockfile
+    // against exclusions for a different release.
+    rmSync(join(dir, 'pnpm-lock.yaml'), { force: true })
     const steps = [
       ['install', '--ignore-scripts', '--no-frozen-lockfile'],
       ['compat:check'], ['typecheck'], ['test'], ['build'], ['pack', '--dry-run'],

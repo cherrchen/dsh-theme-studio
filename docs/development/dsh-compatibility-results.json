@@ -5,7 +5,7 @@
     "node": "24.18.0",
     "pnpm": "11.7.0"
   },
-  "logDirectory": "/var/folders/31/m13kcsfx08lg3ld8kc5gh8cm0000gn/T/theme-studio-matrix-c8p38p",
+  "logDirectory": "/var/folders/31/m13kcsfx08lg3ld8kc5gh8cm0000gn/T/theme-studio-matrix-cLel1f",
   "results": [
     {
       "version": "0.1.5-rc.2",
@@ -35,10 +35,7 @@
           "exitCode": 0
         }
       ],
-      "passed": true,
-      "cordis": "4.0.2",
-      "schemastery": "3.18.2",
-      "tests": "Tests  56 passed (56)"
+      "passed": true
     },
     {
       "version": "0.1.5-rc.3",
@@ -68,10 +65,7 @@
           "exitCode": 0
         }
       ],
-      "passed": true,
-      "cordis": "4.0.2",
-      "schemastery": "3.18.2",
-      "tests": "Tests  56 passed (56)"
+      "passed": true
     },
     {
       "version": "0.1.6-alpha.1",
@@ -101,10 +95,7 @@
           "exitCode": 0
         }
       ],
-      "passed": true,
-      "cordis": "4.0.2",
-      "schemastery": "3.18.2",
-      "tests": "Tests  56 passed (56)"
+      "passed": true
     },
     {
       "version": "0.1.6-alpha.2",
@@ -134,10 +125,7 @@
           "exitCode": 0
         }
       ],
-      "passed": true,
-      "cordis": "4.0.2",
-      "schemastery": "3.18.2",
-      "tests": "Tests  56 passed (56)"
+      "passed": true
     },
     {
       "version": "0.1.7-alpha.1",
@@ -167,10 +155,7 @@
           "exitCode": 0
         }
       ],
-      "passed": true,
-      "cordis": "4.0.3",
-      "schemastery": "3.18.3",
-      "tests": "Tests  55 passed | 1 skipped (56)"
+      "passed": true
     },
     {
       "version": "0.1.7-alpha.2",
@@ -200,10 +185,7 @@
           "exitCode": 0
         }
       ],
-      "passed": true,
-      "cordis": "4.0.4",
-      "schemastery": "3.18.4",
-      "tests": "Tests  55 passed | 1 skipped (56)"
+      "passed": true
     },
     {
       "version": "0.1.7-rc.1",
@@ -233,10 +215,7 @@
           "exitCode": 0
         }
       ],
-      "passed": true,
-      "cordis": "4.0.4",
-      "schemastery": "3.18.4",
-      "tests": "Tests  55 passed | 1 skipped (56)"
+      "passed": true
     },
     {
       "version": "0.1.7-rc.2",
@@ -266,10 +245,7 @@
           "exitCode": 0
         }
       ],
-      "passed": true,
-      "cordis": "4.0.4",
-      "schemastery": "3.18.4",
-      "tests": "Tests  55 passed | 1 skipped (56)"
+      "passed": true
     },
     {
       "version": "0.2.0-rc.1",
@@ -299,10 +275,7 @@
           "exitCode": 0
         }
       ],
-      "passed": true,
-      "cordis": "4.0.4",
-      "schemastery": "3.18.4",
-      "tests": "Tests  55 passed | 1 skipped (56)"
+      "passed": true
     },
     {
       "version": "0.2.0-rc.2",
@@ -332,10 +305,7 @@
           "exitCode": 0
         }
       ],
-      "passed": true,
-      "cordis": "4.0.4",
-      "schemastery": "3.18.4",
-      "tests": "Tests  55 passed | 1 skipped (56)"
+      "passed": true
     }
   ]
 }
