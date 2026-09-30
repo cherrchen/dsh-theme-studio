@@ -11,12 +11,14 @@ type ModuleLoader = {
 
 const factories = new Map<string, Factory>()
 const materialized = new Map<string, Record<string, unknown>>()
+const dependencyOverrides = new Map<string, unknown>()
 
 function loaderHost(): typeof globalThis & { window?: unknown; __ModuleLoader__?: ModuleLoader } {
   return globalThis as typeof globalThis & { window?: unknown; __ModuleLoader__?: ModuleLoader }
 }
 
 function bundleRequire(specifier: string): unknown {
+  if (dependencyOverrides.has(specifier)) return dependencyOverrides.get(specifier)
   if (materialized.has(specifier)) return materialized.get(specifier)
   if (specifier.endsWith('.css') || specifier.endsWith('.module.css')) return {}
   return nodeRequire(specifier)
@@ -32,7 +34,8 @@ host.__ModuleLoader__ = {
 }
 
 /** Materialize one published client bundle through the DSH `__ModuleLoader__` protocol. */
-export function materializeClientBundle(packageName: string): Record<string, unknown> {
+export function materializeClientBundle(packageName: string, dependencies: Record<string, unknown> = {}): Record<string, unknown> {
+  for (const [name, value] of Object.entries(dependencies)) dependencyOverrides.set(name, value)
   const cached = materialized.get(packageName)
   if (cached !== undefined) return cached
   const entry = nodeRequire.resolve(`${packageName}/client`)

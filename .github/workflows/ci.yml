@@ -27,3 +27,24 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm pack --dry-run
+
+  compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+      - run: node scripts/run-dsh-matrix.mjs
+        env:
+          TMPDIR: ${{ runner.temp }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dsh-compatibility-evidence
+          path: |
+            ${{ runner.temp }}/theme-studio-matrix-*/*.log
+            ${{ runner.temp }}/theme-studio-matrix-*/results.json

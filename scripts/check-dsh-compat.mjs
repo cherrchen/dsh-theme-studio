@@ -133,6 +133,17 @@ if (releases.length > 1) {
   fail(`the installed tree is dsh ${releases[0]}, which is not on the allowlist`)
 } else if (releases.length === 1) {
   notes.push(`installed tree: ${releases[0]}`)
+  if (pin !== undefined && releases[0] !== pin) fail(`installed DSH ${releases[0]} does not match development pin ${pin}`)
+}
+
+for (const [name, version] of Object.entries(devs)) {
+  if (!name.startsWith('@deepseek-ai/dsh') && name !== '@deepseek-ai/cordis') continue
+  try {
+    const actual = require(`${name}/package.json`).version
+    if (actual !== version) fail(`${name} resolves to ${actual} but is pinned to ${version}`)
+  } catch {
+    fail(`${name} cannot be resolved from the installed tree`)
+  }
 }
 
 const locked = [...lockfile.matchAll(/@deepseek-ai\/dsh(?:-[\w-]+)?@(\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?)/gu)]
