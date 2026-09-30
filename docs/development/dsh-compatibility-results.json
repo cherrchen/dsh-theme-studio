@@ -1,0 +1,341 @@
+{
+  "verifiedOn": "2026-09-30",
+  "environment": {
+    "platform": "macOS arm64",
+    "node": "24.18.0",
+    "pnpm": "11.7.0"
+  },
+  "logDirectory": "/var/folders/31/m13kcsfx08lg3ld8kc5gh8cm0000gn/T/theme-studio-matrix-c8p38p",
+  "results": [
+    {
+      "version": "0.1.5-rc.2",
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm pack --dry-run",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "cordis": "4.0.2",
+      "schemastery": "3.18.2",
+      "tests": "Tests  56 passed (56)"
+    },
+    {
+      "version": "0.1.5-rc.3",
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm pack --dry-run",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "cordis": "4.0.2",
+      "schemastery": "3.18.2",
+      "tests": "Tests  56 passed (56)"
+    },
+    {
+      "version": "0.1.6-alpha.1",
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm pack --dry-run",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "cordis": "4.0.2",
+      "schemastery": "3.18.2",
+      "tests": "Tests  56 passed (56)"
+    },
+    {
+      "version": "0.1.6-alpha.2",
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm pack --dry-run",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "cordis": "4.0.2",
+      "schemastery": "3.18.2",
+      "tests": "Tests  56 passed (56)"
+    },
+    {
+      "version": "0.1.7-alpha.1",
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm pack --dry-run",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "cordis": "4.0.3",
+      "schemastery": "3.18.3",
+      "tests": "Tests  55 passed | 1 skipped (56)"
+    },
+    {
+      "version": "0.1.7-alpha.2",
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm pack --dry-run",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "cordis": "4.0.4",
+      "schemastery": "3.18.4",
+      "tests": "Tests  55 passed | 1 skipped (56)"
+    },
+    {
+      "version": "0.1.7-rc.1",
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm pack --dry-run",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "cordis": "4.0.4",
+      "schemastery": "3.18.4",
+      "tests": "Tests  55 passed | 1 skipped (56)"
+    },
+    {
+      "version": "0.1.7-rc.2",
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm pack --dry-run",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "cordis": "4.0.4",
+      "schemastery": "3.18.4",
+      "tests": "Tests  55 passed | 1 skipped (56)"
+    },
+    {
+      "version": "0.2.0-rc.1",
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm pack --dry-run",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "cordis": "4.0.4",
+      "schemastery": "3.18.4",
+      "tests": "Tests  55 passed | 1 skipped (56)"
+    },
+    {
+      "version": "0.2.0-rc.2",
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm pack --dry-run",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "cordis": "4.0.4",
+      "schemastery": "3.18.4",
+      "tests": "Tests  55 passed | 1 skipped (56)"
+    }
+  ]
+}
