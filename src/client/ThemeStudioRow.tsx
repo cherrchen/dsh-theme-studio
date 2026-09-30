@@ -26,7 +26,10 @@ export type ThemeStudioRowComponentProps =
   PropsRuntime<'settings.general.item'> & PropsStore<ReturnType<typeof createThemeStudioRowStore>>
   & PropsLocale<'settings.theme-studio'> & ThemeStudioRowInjected
 
-const NAME_KEYS: Record<string, ThemeStudioKey> = {
+export const NAME_KEYS: Record<string, ThemeStudioKey> = {
+  'dsh-theme-studio.claude': 'claude.name',
+  'dsh-theme-studio.codex': 'codex.name',
+  'dsh-theme-studio.claude-cream': 'claude-cream.name',
   'dsh-theme-studio.graphite': 'graphite.name',
   'dsh-theme-studio.oled': 'oled.name',
   'dsh-theme-studio.nordic': 'nordic.name',

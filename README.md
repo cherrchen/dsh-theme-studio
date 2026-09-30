@@ -66,7 +66,7 @@ ui-theme.preference          system | light | dark
 theme-studio.activeThemeId   null | dsh-theme-studio.*
 ```
 
-`null` is Default. Builtin ids include `dsh-theme-studio.graphite`, `.oled`, `.nordic`, `.paper`, and `.warm`.
+`null` is Default. Builtin ids include `dsh-theme-studio.claude`, `.codex`, `.claude-cream`, `.graphite`, `.oled`, `.nordic`, `.paper`, and `.warm`.
 
 ## Composition
 

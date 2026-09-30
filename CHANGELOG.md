@@ -6,6 +6,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- 新增三套对标 Claude Desktop、Codex Desktop 与 Claude Cream 的内置 overlay。
+- 内置主题现在覆盖原先停在官方色板上的语义色、组件直接引用的 static，以及代码高亮 token。
+
 ## [0.1.2] - 2026-09-27
 
 ### Changed
