@@ -20,7 +20,7 @@
 
 ## 逐版本结果
 
-验证日期：2026-09-30。环境：macOS arm64、Node 24.18.0、pnpm 11.7.0。每行均重新安装 npm 发布包，执行 `compat:check`、`typecheck`、完整 `test`、`build`、`pack --dry-run`。结果和每条命令的退出码保存在相邻的 `dsh-compatibility-results.json`。
+验证日期：2026-10-02（Stage 2/3 回归）。环境：macOS arm64、Node 24.18.0、pnpm 11.7.0。每行均重新安装 npm 发布包，执行 `compat:check`、`typecheck`、完整 `test`、`build`、`pack --dry-run`。结果和每条命令的退出码保存在相邻的 `dsh-compatibility-results.json`。
 
 | DSH 精确版本 | Cordis | Schemastery | 设置路径 | 结果 |
 | --- | --- | --- | --- | --- |
@@ -40,6 +40,10 @@
 发现旧版 0.1.7-alpha.1 的自动安装 peers 可经 semver 范围漂移到 0.1.7-rc.2。矩阵脚本根据 lockfile 将这些间接 DSH peers 也固定到被测版本，再重新安装；混装不会被当作测试通过。
 
 ## 复现与边界
+
+Stage 2/3 本次在全部十个版本上新增验证：WCAG sRGB 计算、透明色与混色、未解析配对的失败语义、全部内置配对可计算、只读 catalog，以及真实 Cordis 注入消费者在 provider 卸载/重供时的停止与重启。catalog 在设置通道尚不存在或被替换时仍保持可发现；原有预览/应用和官方 ThemeRuntime 集成测试保持通过。新服务使用现有公开 `ctx.provide()`，未增加 DSH 版本分支或扩大支持版本。
+
+当前开发基线额外清空生成目录后重新构建，验证了实际 browser bundle 的加载器导出、对比度计算与 catalog 服务，并验证报告命令默认模式退出 0、严格模式对现有低对比度配对退出 1。内置配色与校验范围见 [对比度诊断](theme-contrast.md)。本次仍未执行完整浏览器/宿主 UI 视觉或 WCAG 认证；矩阵验证的是源码契约、服务生命周期与发布构建。
 
 ```sh
 pnpm compat:matrix

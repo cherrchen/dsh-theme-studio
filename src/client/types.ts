@@ -1,15 +1,16 @@
-/** Internal Stage 1 theme data. Not a public cross-plugin exchange format. */
+/** Public readonly catalog data. This is not a theme-file exchange schema. */
+import type { ThemeContrastReport } from './contrast.ts'
 
 /** Four-color chip shown on a theme card. */
 export interface ThemePreview {
   /** Card mosaic background. */
-  background: string
+  readonly background: string
   /** Card mosaic raised surface. */
-  surface: string
+  readonly surface: string
   /** Card mosaic foreground sample. */
-  foreground: string
+  readonly foreground: string
   /** Card mosaic accent sample. */
-  accent: string
+  readonly accent: string
 }
 
 /** Stage 1 token names already declared by ThemeRuntime. */
@@ -33,36 +34,33 @@ export const STAGE1_TOKENS = [
 export type Stage1Token = typeof STAGE1_TOKENS[number]
 
 /** One builtin palette keyed by Stage 1 token names. */
-export type ThemeTokenPalette = Record<Stage1Token, string>
+export type ThemeTokenPalette = Readonly<Record<Stage1Token, string>>
 
-/**
- * Compiled builtin theme. Stage 2 may replace this with a ThemeManifest
- * adapter feeding the same `presetToOverrides` conversion.
- */
+/** Compiled builtin theme returned by the discovery catalog. */
 export interface BuiltinThemePreset {
   /** Namespaced theme id; never `light`, `dark`, `system`, or `default`. */
-  id: string
+  readonly id: string
   /** English display name used until locale dictionaries resolve. */
-  name: string
+  readonly name: string
   /** Optional English description. */
-  description?: string
+  readonly description?: string
   /** Light and dark palettes; every defined token must exist in both. */
-  tokens: {
+  readonly tokens: {
     /** Values applied while the official light base palette is active. */
-    light: Record<string, string>
+    readonly light: Readonly<Record<string, string>>
     /** Values applied while the official dark base palette is active. */
-    dark: Record<string, string>
+    readonly dark: Readonly<Record<string, string>>
   }
   /** Card mosaic colors for each official color scheme. */
-  preview: {
+  readonly preview: {
     /** Mosaic while Appearance is light. */
-    light: ThemePreview
+    readonly light: ThemePreview
     /** Mosaic while Appearance is dark. */
-    dark: ThemePreview
+    readonly dark: ThemePreview
   }
 }
 
-/** Lookup used by Theme Studio runtime; Stage 2 can swap the implementation. */
+/** Minimal lookup consumed by the overlay runtime. */
 export interface ThemeCatalog {
   /**
    * Resolve one theme by id.
@@ -75,4 +73,15 @@ export interface ThemeCatalog {
    * @returns the catalog snapshot.
    */
   list(): readonly BuiltinThemePreset[]
+}
+
+/** Public builtin discovery and contrast diagnostics, in Settings card order. */
+export interface ThemeStudioCatalog extends ThemeCatalog {
+  /** Report for one theme; undefined for unknown ids (including Default). */
+  validate(id: string): ThemeContrastReport | undefined
+}
+
+/** Client Cordis service provided while Theme Studio is loaded. */
+export interface ThemeStudioService {
+  readonly catalog: ThemeStudioCatalog
 }

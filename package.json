@@ -41,6 +41,7 @@
     "build:types": "tsc -p tsconfig.host.json && tsc -p tsconfig.client.json",
     "bundle": "tsdown",
     "test": "vitest run",
+    "contrast:report": "pnpm run build:types && node scripts/report-contrast.mjs",
     "prepare": "pnpm run build",
     "release": "node scripts/bump-version.mjs",
     "version:set": "pnpm version --no-git-tag-version --no-git-checks",

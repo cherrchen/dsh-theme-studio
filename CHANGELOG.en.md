@@ -6,6 +6,11 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- Stage 2 automated contrast validation: per-pair light/dark reports, alpha and sRGB mix resolution, a report command with strict exit mode, and README documentation of actual coverage and known builtin failures.
+- Stage 3 public Client `ctx.themeStudio.catalog` for readonly theme discovery and contrast reports, with Cordis service teardown and reload support.
+
 ## [0.1.3] - 2026-09-30
 
 ### Added

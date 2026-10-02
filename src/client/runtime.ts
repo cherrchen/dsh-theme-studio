@@ -38,7 +38,7 @@ export interface ThemeStudioSnapshot {
   revision: number
 }
 
-/** Construction inputs. Catalog is swapped in Stage 2 without rewriting runtime. */
+/** Construction inputs. The runtime shares the public service's catalog. */
 export interface ThemeStudioRuntimeOptions {
   /** Official ThemeRuntime or a test double. */
   theme: ThemeOverrideSurface

@@ -81,6 +81,48 @@ function faceOf(slots: StubSlots) {
 }
 
 describe('Theme Studio client apply', () => {
+  it('provides discovery before settings, keeps it during transport loss, and disposes dependent consumers', async () => {
+    const b = await bench()
+    await b.dropTransport()
+    const seen: unknown[] = []
+    const stopped = vi.fn()
+    const consumer = b.ctx.plugin({
+      inject: ['themeStudio'],
+      apply(child: Context) {
+        seen.push(child.themeStudio.catalog)
+        child.effect(() => stopped)
+      },
+    })
+    const plugin = b.ctx.plugin({ inject: [...inject], apply })
+    await plugin.await()
+    await settle(b.ctx)
+    expect(b.slots.entries()).toHaveLength(0)
+    expect(seen).toHaveLength(1)
+    const catalog = b.ctx.themeStudio.catalog
+    expect(catalog.get(NORDIC)?.name).toBe('Nordic')
+    expect(catalog.validate(NORDIC)?.checks.length).toBeGreaterThan(0)
+    expect(Object.isFrozen(b.ctx.themeStudio)).toBe(true)
+
+    const drop = b.ctx.provide('settingsScope', { bind: () => b.host.scope } as never)
+    await settle(b.ctx)
+    expect(b.slots.entries()).toHaveLength(1)
+    await drop()
+    await settle(b.ctx)
+    expect(b.ctx.themeStudio.catalog).toBe(catalog)
+    expect(stopped).not.toHaveBeenCalled()
+
+    await plugin.dispose()
+    await settle(b.ctx)
+    expect(stopped).toHaveBeenCalledTimes(1)
+    const reloaded = b.ctx.plugin({ inject: [...inject], apply })
+    await reloaded.await()
+    await settle(b.ctx)
+    expect(seen).toHaveLength(2)
+    expect(b.ctx.themeStudio.catalog).not.toBe(catalog)
+    await consumer.dispose()
+    await reloaded.dispose()
+  })
+
   it('declares the required services', () => {
     expect(inject).toEqual(['theme', 'slots', 'locale', 'connection', 'remote'])
   })

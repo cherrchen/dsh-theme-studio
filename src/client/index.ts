@@ -13,6 +13,7 @@ import {
 } from '../constants.ts'
 import type { ConfigFormsCarrier, SettingsScopeCarrier, ThemeSettingsHost } from '../compat/settings-client.ts'
 import { BuiltinPresetRegistry } from './catalog.ts'
+import type { ThemeStudioService } from './types.ts'
 import { en, NS, zh, type ThemeStudioKey } from './locales.ts'
 import { DEFAULT_PREVIEW } from './presets.ts'
 import { ThemeStudioRuntime } from './runtime.ts'
@@ -27,12 +28,20 @@ export { BuiltinPresetRegistry } from './catalog.ts'
 export { BUILTIN_PRESETS, DEFAULT_PREVIEW } from './presets.ts'
 export { createThemeStudioRowStore } from './store.ts'
 export type { ThemeStudioCard, ThemeStudioRowState } from './store.ts'
-export type { BuiltinThemePreset, ThemeCatalog, ThemePreview } from './types.ts'
+export type { BuiltinThemePreset, ThemeCatalog, ThemeStudioCatalog, ThemeStudioService, ThemePreview } from './types.ts'
+export { contrastRatio, validateThemeContrast, DEFAULT_CONTRAST_PAIRS } from './contrast.ts'
+export type { ThemeContrastPair, ThemeContrastCheck, ThemeContrastReport } from './contrast.ts'
 export { NS as SETTINGS_NS } from './locales.ts'
 export type { ThemeStudioKey } from './locales.ts'
 export { ACTIVE_SOURCE, PREVIEW_SOURCE, THEME_STUDIO_SETTINGS_NAMESPACE } from '../constants.ts'
 export type { ThemeStudioSettings } from '../constants.ts'
 
+declare module '@deepseek-ai/cordis' {
+  interface Context {
+    /** Readonly builtin discovery. Inject `themeStudio` before accessing. */
+    themeStudio: ThemeStudioService
+  }
+}
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -79,8 +88,7 @@ function descriptionKeyOf(id: string): string {
  * Restore the durable overlay and register the Themes row on one context.
  * @param ctx - client context that already carries theme, slots, and locale.
  */
-function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> | undefined): void {
-  const catalog = new BuiltinPresetRegistry()
+function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> | undefined, catalog: BuiltinPresetRegistry): void {
   const runtime = new ThemeStudioRuntime({ theme: ctx.theme, host, catalog })
   ctx.effect(() => () => { runtime.dispose() }, 'theme-studio: runtime')
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'theme-studio: settings row dictionaries')
@@ -119,6 +127,9 @@ function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> 
  * @param ctx - client cordis context.
  */
 export function apply(ctx: ClientContext): void {
+  const catalog = new BuiltinPresetRegistry()
+  // provide() is owned by this plugin's fiber, not a settings-transport child.
+  ctx.provide('themeStudio', Object.freeze({ catalog }))
 
   let started = false
   const startOnce = (
@@ -127,7 +138,7 @@ export function apply(ctx: ClientContext): void {
   ): boolean => {
     if (started) return false
     started = true
-    start(child, host)
+    start(child, host, catalog)
     return true
   }
   const releaseWhenStopped = (owns: boolean): (() => void) => {

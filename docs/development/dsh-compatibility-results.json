@@ -1,11 +1,11 @@
 {
-  "verifiedOn": "2026-09-30",
+  "verifiedOn": "2026-10-02",
   "environment": {
     "platform": "macOS arm64",
     "node": "24.18.0",
     "pnpm": "11.7.0"
   },
-  "logDirectory": "/var/folders/31/m13kcsfx08lg3ld8kc5gh8cm0000gn/T/theme-studio-matrix-cLel1f",
+  "logDirectory": "/var/folders/31/m13kcsfx08lg3ld8kc5gh8cm0000gn/T/theme-studio-matrix-FiMyQM",
   "results": [
     {
       "version": "0.1.5-rc.2",

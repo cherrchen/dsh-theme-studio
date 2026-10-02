@@ -6,6 +6,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Stage 2 自动对比度校验：浅色/深色逐配对报告、透明色与 sRGB 混色解析、报告命令及严格退出码模式；README 记录实际校验范围与内置配色的已知失败。
+- Stage 3 公开 Client `ctx.themeStudio.catalog`，提供只读主题发现与校验报告，并随 Cordis 插件生命周期释放与重供服务。
+
 ## [0.1.3] - 2026-09-30
 
 ### Added
