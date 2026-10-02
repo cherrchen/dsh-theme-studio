@@ -30,6 +30,7 @@ jobs:
             exit 1
           fi
       - run: pnpm install --frozen-lockfile
+      - run: pnpm docs:check
       - run: pnpm compat:check
       - run: pnpm typecheck
       - run: pnpm test

@@ -29,6 +29,7 @@
     "lib/types/**/*.d.ts",
     "cordis.patch.yml",
     "README.md",
+    "README.en.md",
     "README.zh.md",
     "CHANGELOG.md",
     "CHANGELOG.en.md",
@@ -48,7 +49,8 @@
     "version:major": "pnpm version:set major",
     "version:minor": "pnpm version:set minor",
     "version:patch": "pnpm version:set patch",
-    "compat:matrix": "node scripts/run-dsh-matrix.mjs"
+    "compat:matrix": "node scripts/run-dsh-matrix.mjs",
+    "docs:check": "node scripts/check-docs.mjs"
   },
   "engines": {
     "node": "^22.19.0 || >=24.0.0"

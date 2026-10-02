@@ -155,7 +155,7 @@ if (lockedReleases.length > 1) {
   fail(`pnpm-lock.yaml resolved dsh ${lockedReleases[0]} but devDependencies pin ${pin}`)
 }
 
-for (const [file, heading] of [['README.md', '## DSH compatibility'], ['README.zh.md', '## DSH 兼容性']]) {
+for (const [file, heading] of [['README.md', '## DSH 兼容性'], ['README.en.md', '## DSH compatibility']]) {
   const versions = readmeVersions(readFileSync(join(REPO_ROOT, file), 'utf8'), heading)
   const unique = [...new Set(versions)]
   if (unique.join('\n') !== supported.join('\n') || versions.length !== supported.length) {
