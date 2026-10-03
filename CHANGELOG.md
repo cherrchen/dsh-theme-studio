@@ -6,12 +6,27 @@
 
 ## [Unreleased]
 
+### Added
+
+- Stage 2 自动对比度校验：浅色/深色逐配对报告、透明色与 sRGB 混色解析、报告命令及严格退出码模式；README 记录实际校验范围与内置配色的已知失败。
+- Stage 3 公开 Client `ctx.themeStudio.catalog`，提供只读主题发现与校验报告，并随 Cordis 插件生命周期释放与重供服务。
+
+### Changed
+
+- 按当前代码与全部历史提交补齐需求、架构、ADR、实施计划、开发流程、完整 API/token 参考与故障排查；根文档统一为中文 README.md、英文 README.en.md，旧 README.zh.md 保留导航入口。
+- 新增 docs:check 文档结构检查并接入 CI/发布验证；同步 README 兼容检查与发布语言文件清单。
+
 ## [0.1.3] - 2026-09-30
 
 ### Added
 
 - 新增三套对标 Claude Desktop、Codex Desktop 与 Claude Cream 的内置 overlay。
-- 内置主题现在覆盖原先停在官方色板上的语义色、组件直接引用的 static，以及代码高亮 token。
+- 内置主题现在覆盖原先停在官方色板上的语义色、组件直接引用的 static，以及代码高亮 token；保留 tooltip 等使用的静态白色语义。
+- 支持 DSH 0.2.0-rc.1 与 0.2.0-rc.2，补齐新版八项语义 token，并在独立安装树重新验证全部支持版本。
+
+### Changed
+
+- 开发依赖、overrides 与 lockfile 统一到最新受支持 DSH 0.2.0-rc.2；官方主题集成测试改为加载实际安装的发布 bundle。
 
 ## [0.1.2] - 2026-09-27
 
@@ -35,9 +50,9 @@
 
 ### Added
 
-- 在“设置 → 通用 → 主题”浏览内置配色，并支持临时预览、应用和重启后恢复。
+- 在“设置 → 通用 → 主题”浏览 Graphite、OLED、Nordic、Paper、Warm 与默认卡，支持临时预览、取消、应用和重启后恢复。
 - 通过 `ctx.theme.overrideTokens()` 叠加主题 token；官方浅色、深色与跟随系统外观仍由宿主管理。
-- Host 侧持久化当前主题选择，并兼容受支持 DSH 版本间的 settings / configForms 差异。
+- Host 侧持久化当前主题选择，并兼容受支持 DSH 版本间的 register/settingsScope 与 Config/configure/configForms 差异；设置服务停止重供后可重新启动主题行。
 - 发布 standalone Host、Client bundle、TypeScript 声明和 `cordis.patch.yml`，并声明精确的 DSH 兼容版本。
 
 [Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.3...HEAD

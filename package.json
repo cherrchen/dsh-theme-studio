@@ -29,6 +29,7 @@
     "lib/types/**/*.d.ts",
     "cordis.patch.yml",
     "README.md",
+    "README.en.md",
     "README.zh.md",
     "CHANGELOG.md",
     "CHANGELOG.en.md",
@@ -41,13 +42,15 @@
     "build:types": "tsc -p tsconfig.host.json && tsc -p tsconfig.client.json",
     "bundle": "tsdown",
     "test": "vitest run",
+    "contrast:report": "pnpm run build:types && node scripts/report-contrast.mjs",
     "prepare": "pnpm run build",
     "release": "node scripts/bump-version.mjs",
     "version:set": "pnpm version --no-git-tag-version --no-git-checks",
     "version:major": "pnpm version:set major",
     "version:minor": "pnpm version:set minor",
     "version:patch": "pnpm version:set patch",
-    "compat:matrix": "node scripts/run-dsh-matrix.mjs"
+    "compat:matrix": "node scripts/run-dsh-matrix.mjs",
+    "docs:check": "node scripts/check-docs.mjs"
   },
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
