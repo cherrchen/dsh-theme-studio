@@ -54,18 +54,18 @@ describe('probe boundaries', () => {
   })
 
   it('only relaxes a uniform explicitly named candidate, never mixed or incomplete trees', () => {
-    const dir = fixture('9.9.9-alpha.1')
+    const dir = fixture('9.9.9-alpha-hotfix.1')
     expect(assessRepository(dir).ok).toBe(false)
-    expect(assessRepository(dir, { candidate: '9.9.9-alpha.1' }).ok).toBe(true)
+    expect(assessRepository(dir, { candidate: '9.9.9-alpha-hotfix.1' }).ok).toBe(true)
     const readme = readFileSync(join(dir, 'README.md'), 'utf8')
     writeFileSync(join(dir, 'README.md'), readme.replace('0.1.5-rc.2', '9.9.9-alpha.1'))
-    expect(assessRepository(dir, { candidate: '9.9.9-alpha.1' }).failures.some((f: { code: string }) => f.code === 'readme')).toBe(true)
+    expect(assessRepository(dir, { candidate: '9.9.9-alpha-hotfix.1' }).failures.some((f: { code: string }) => f.code === 'readme')).toBe(true)
     writeFileSync(join(dir, 'README.md'), readme)
     expect(assessRepository(dir, { candidate: '9.9.9-alpha.2' }).ok).toBe(false)
     writeFileSync(join(dir, 'node_modules/@deepseek-ai/dsh-client-ui-theme/package.json'), JSON.stringify({ version: '9.9.9-alpha.2' }))
-    expect(assessRepository(dir, { candidate: '9.9.9-alpha.1' }).diagnosis).toBe('mixed installation')
+    expect(assessRepository(dir, { candidate: '9.9.9-alpha-hotfix.1' }).diagnosis).toBe('mixed installation')
     rmSync(join(dir, 'node_modules/@deepseek-ai/dsh-settings'), { recursive: true })
-    expect(assessRepository(dir, { candidate: '9.9.9-alpha.1' }).diagnosis).toBe('incomplete installation')
+    expect(assessRepository(dir, { candidate: '9.9.9-alpha-hotfix.1' }).diagnosis).toBe('incomplete installation')
   })
 
   it('distinguishes absent optional packages from broken installed metadata', () => {

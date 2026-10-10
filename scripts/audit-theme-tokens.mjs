@@ -15,7 +15,7 @@ function literals(file) {
 }
 
 const required = readStringArray(readFileSync(join(root, 'src/client/types.ts'), 'utf8'), 'STAGE1_TOKENS')
-const overridden = [...new Set([...literals('src/client/presets.ts'), ...literals('src/client/chrome-tokens.ts'), ...required])]
+const overridden = [...new Set([...literals('src/client/presets.ts'), ...literals('src/client/chrome-tokens.ts')])]
 const bundle = readFileSync(require.resolve('@deepseek-ai/dsh-client-ui-theme/client'), 'utf8')
 const report = auditTokens(bundle, overridden, required)
 console.log(`[tokens] covered ${report.covered.length}, extra ${report.extra.length}, official retained ${report.retained.length}`)

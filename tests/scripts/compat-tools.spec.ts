@@ -52,6 +52,31 @@ describe('compatibility tooling', () => {
     ])
   })
 
+  it('preserves every accepted prerelease identifier in lockfile versions', () => {
+    for (const version of ['0.2.3-alpha-hotfix.1', '0.2.3-alpha.1-2', '0.2.3-0.alpha-hotfix']) {
+      for (const suffix of ['', '(@deepseek-ai/cordis@4.0.5-alpha.1)']) {
+        expect(bareVersion(version + suffix)).toBe(version)
+        expect(parsePackageKey(`@deepseek-ai/dsh-settings@${version}${suffix}`)).toEqual({
+          name: '@deepseek-ai/dsh-settings', version,
+        })
+        expect(parsePackageKey(`unscoped@${version}${suffix}`)).toEqual({ name: 'unscoped', version })
+      }
+      expect(rangeAdmits(`^${version}`, version)).toBe(true)
+      expect(unifyPins([{ name: '@deepseek-ai/cordis', range: `^${version}`, from: 'settings' }]))
+        .toEqual({ '@deepseek-ai/cordis': version })
+    }
+  })
+
+  it('does not extract a valid-looking prefix from invalid lockfile versions', () => {
+    for (const version of ['01.2.3', '0.2.3-alpha.01', '0.2.3-alpha_bad', '0.2.3-', '0.2.3-alpha..1', '0.2.3;echo']) {
+      for (const suffix of ['', '(@deepseek-ai/cordis@4.0.5-alpha.1)']) {
+        expect(bareVersion(version + suffix)).toBeUndefined()
+        expect(parsePackageKey(`@deepseek-ai/dsh-settings@${version}${suffix}`)).toBeUndefined()
+      }
+      expect(rangeAdmits(version, version)).toBe(false)
+    }
+  })
+
   it('reads a unique allowlist and accepts this checkout', () => {
     const root = fileURLToPath(new URL('../..', import.meta.url))
     const contract = readContract(root)

@@ -1,4 +1,6 @@
 import { readFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 
@@ -36,5 +38,25 @@ describe('verification and publication boundaries', () => {
     expect(text).not.toMatch(/npm publish|git push|git commit|permissions.*contents.*write/)
     expect(text).toContain('--candidate')
     expect(upgrade.jobs.upgrade.steps.some((s: { if?: string, run?: string }) => s.if === 'always()' && s.run?.includes('GITHUB_STEP_SUMMARY'))).toBe(true)
+  })
+
+  it('validates workflow candidates with the same exact-version grammar as local probes', () => {
+    const step = workflow('upgrade').jobs.candidate.steps.find((s: { id?: string }) => s.id === 'candidate')
+    const match = /node --input-type=module -e '([^']+)'/u.exec(step.run)
+    expect(match).not.toBeNull()
+    const validate = (version: string) => spawnSync(process.execPath, ['--input-type=module', '-e', match![1]], {
+      cwd: fileURLToPath(new URL('../..', import.meta.url)),
+      env: { ...process.env, CANDIDATE_VERSION: version },
+      encoding: 'utf8',
+    })
+    for (const version of ['0.2.3', '0.2.3-alpha-hotfix.1', '0.2.3-alpha.1-2', '0.2.3-0.alpha-hotfix']) {
+      const result = validate(version)
+      expect(result.status, result.stderr).toBe(0)
+    }
+    for (const version of ['01.2.3', '0.2.3-alpha.01', '0.2.3-alpha_bad', '0.2.3-', '0.2.3;echo', '0.2.3\nversion=9.9.9']) {
+      const result = validate(version)
+      expect(result.status).toBe(1)
+      expect(result.stderr).toContain('Invalid candidate version:')
+    }
   })
 })

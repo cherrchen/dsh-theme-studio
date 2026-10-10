@@ -1,9 +1,10 @@
 /** Structured pnpm lockfile inspection. Package keys are parsed, not scanned with a package-name regex. */
 import { readFileSync } from 'node:fs'
 import { parse } from 'yaml'
+import { EXACT_VERSION_PATTERN } from './exact-pin.mjs'
 
-const PACKAGE_KEY = /^((?:@[^^/]+\/)?[^@/]+)@(\d+\.\d+\.\d+(?:-[\w.]+)?)(?:\(|$)/u
-const RESOLVED_VERSION = /^(\d+\.\d+\.\d+(?:-[\w.]+)?)/u
+const PACKAGE_KEY = new RegExp(`^((?:@[^@/]+/)?[^@/]+)@(${EXACT_VERSION_PATTERN})(?:\\(|$)`, 'u')
+const RESOLVED_VERSION = new RegExp(`^(${EXACT_VERSION_PATTERN})(?:\\(|$)`, 'u')
 
 /**
  * @param value - a lockfile version field, possibly with a peer suffix.

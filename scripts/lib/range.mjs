@@ -3,7 +3,7 @@
  * declaration. This is not a general solver: an unnamed newer release that
  * also sits in the intersection is never selected.
  */
-import { exactPin } from './exact-pin.mjs'
+import { exactPin, isExactVersion } from './exact-pin.mjs'
 import { satisfies } from 'semver'
 
 /** Apply standard SemVer rules, including the narrower caret range below 1.0. */
@@ -17,7 +17,7 @@ export function comparatorAdmits(part, version) {
  * @returns true when any alternative admits the version.
  */
 export function rangeAdmits(range, version) {
-  if (typeof range !== 'string' || !/^\d+\.\d+\.\d+(?:-[\w.]+)?$/u.test(version)) return false
+  if (typeof range !== 'string' || !isExactVersion(version)) return false
   return range.split('||').some(part => comparatorAdmits(part.trim(), version))
 }
 
