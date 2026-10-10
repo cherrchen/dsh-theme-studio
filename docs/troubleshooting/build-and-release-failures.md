@@ -35,6 +35,12 @@ git tag --list 'v*'
 
 本地type/build/pack并检查actual tarball清单；release verify还检查必需patch/index/client/types/package文件。CI定义或本地git tag不是npm成功证明。Source-map缺失warning来自upstream package时与真实exit code区分，不通过忽略所有异常来修复。
 
+## Windows jsdom 测试找不到 setup
+
+2026-10-10 检查 [CI run 38063562976](https://github.com/cherrchen/dsh-theme-studio/actions/runs/38063562976)：十二个 Windows 版本均在 test 阶段失败；已读取最老支持版 `0.1.5-rc.2` 与开发基线 `0.2.1-alpha.2` 的日志，两者都在六个 jsdom 套件初始化时报告 `Cannot find module '/tests/setup/module-loader.client.ts'`。安装、compat、lint、typecheck 和 build 在这两个任务中已通过。上游缺失 source map 的 ENOENT 警告不是此处的失败原因。
+
+Windows 临时目录可同时出现长用户名路径与 `RUNNER~1` 短路径。测试配置将项目 root 解析为真实路径，并以同一 root 构造 setupFiles 和 renderer shim 的绝对路径，保持 node/jsdom 的文件定位一致。不得通过跳过 jsdom 套件、删掉 setup 或移除 Windows 矩阵掩盖失败。复验运行 `pnpm verify:all`，再查看修复 commit 的三平台完整 CI；本机 macOS 结果不能替代 Windows runner 的通过证据。
+
 ## History and Related Documents
 
 历史依据：e56004d创建tag发布；20f9632修Bash引用；599c468调整version脚本；2026-10-02迁移README配对并接docs:check。 [详细契约](../development/release-workflow.md)、[完整提交历史](../reference/repository-history.md)、[开发工作流](../development/plugin-development-workflow.md)。

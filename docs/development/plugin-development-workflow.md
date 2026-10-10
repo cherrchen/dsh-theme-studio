@@ -63,6 +63,8 @@ pnpm verify:all
 
 `lint` 使用 ESLint 检查 TS/TSX 和工程脚本；`verify:all` 串行执行兼容、lint、类型、构建、单测、token、tarball、官方运行时/profile smoke 和文档检查。真实浏览器需另外设置 `DSH_BROWSER_E2E=1` 并安装 Playwright Chromium；不设置时 `smoke:client` 的 `not-run` 不能视为通过。
 
+Vitest 的 root 从配置文件目录经 `realpathSync` 确定，setupFiles 和 renderer shim 使用同一根目录下的绝对路径，避免 Windows 临时安装树的长路径与 `RUNNER~1` 短路径被不同测试环境分别解析。相关症状与远端证据见[Windows 测试 setup 排查](../troubleshooting/build-and-release-failures.md#windows-jsdom-测试找不到-setup)。
+
 | 覆盖层 | 实际机制 | 边界 |
 | --- | --- | --- |
 | 纯规则 | adapter/presets/contrast/catalog specs | 不渲染全量 host DOM |
