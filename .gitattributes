@@ -1,0 +1,2 @@
+# Keep reviewed Git blob bytes and script parsing stable on Windows checkouts.
+* text=auto eol=lf

@@ -43,6 +43,10 @@ Windows 临时目录可同时出现长用户名路径与 `RUNNER~1` 短路径。
 
 仅将测试配置 root native 展开也不充分：工具本身如果从短路径 CWD 启动，仍会加载短路径下的模块。矩阵在启动 pnpm 前将临时安装目录 native 展开，测试配置也使用 `realpathSync.native` 将项目 root 展开为长路径，并以同一 root 构造 setupFiles 和 renderer shim 的绝对路径，保持子进程 CWD、工具模块与 node/jsdom 的文件定位一致。不得通过跳过 jsdom 套件、删掉 setup 或移除 Windows 矩阵掩盖失败。复验运行 `pnpm verify:all`，再查看修复 commit 的三平台完整 CI；本机 macOS 结果不能替代 Windows runner 的通过证据。
 
+## Windows 文档审阅 hash 全部失效
+
+在 [CI run 38064716020](https://github.com/cherrchen/dsh-theme-studio/actions/runs/38064716020) 中，Windows `0.1.6-alpha.2` 的 131 个单测已通过，随后 docs-check 报三个根 README 的 reviewed blob hash 全部 stale/missing。Windows checkout 的自动 CRLF 转换既改变 README 字节，也使 YAML hash 行的严格匹配失败。仓库通过 [.gitattributes](../../.gitattributes) 固定文本为 LF；审阅记录仍按原内容校验，不重记或放宽 hash。详细约定见[文档工作流](../development/documentation-workflow.md#双语与旧入口)。
+
 ## History and Related Documents
 
 历史依据：e56004d创建tag发布；20f9632修Bash引用；599c468调整version脚本；2026-10-02迁移README配对并接docs:check。 [详细契约](../development/release-workflow.md)、[完整提交历史](../reference/repository-history.md)、[开发工作流](../development/plugin-development-workflow.md)。
