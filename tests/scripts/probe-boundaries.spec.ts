@@ -56,12 +56,15 @@ describe('probe boundaries', () => {
 
   it('accepts a promoted hyphenated prerelease in both README support lists', () => {
     const dir = fixture()
-    const previous = readContract(dir).supported[0]
+    const manifest = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+    const pin = manifest.devDependencies['@deepseek-ai/dsh-settings']
+    // Change a support declaration without retargeting this fixture's installed tree.
+    const previous = readContract(dir).supported.find((version: string) => version !== pin)!
     for (const file of ['src/compat/dsh-version.ts', 'package.json', 'README.md', 'README.en.md']) {
       const path = join(dir, file)
       writeFileSync(path, readFileSync(path, 'utf8').replaceAll(previous, '0.2.3-alpha-hotfix.1'))
     }
-    expect(assessRepository(dir).ok).toBe(true)
+    expect(assessRepository(dir).failures).toEqual([])
   })
 
   it('uses exact SemVer and standard pre-1.0 caret bounds', () => {
