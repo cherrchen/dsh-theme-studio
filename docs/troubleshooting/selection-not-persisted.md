@@ -14,7 +14,7 @@ Apply 徽标立即改变，但重启回到默认/旧选择；UI 显示此连接�
 2. legacy settings.register 返回 scope 普通对象，旧代码把它当 apply effect 导致 injection 回滚。d709754 已修正。
 3. 新 Host Config field 未 live/entry id 不对，或自动 form/persistence 组合有错误。
 4. Host.set 没接受乐观 id，runtime settlement 后回收敛到 accepted snapshot；这是 authority 行为。
-5. set Promise rejected，当前没有 dedicated 错误 UI；需要看 Host rejection，而非仅凭徽标。
+5. set 返回 `false` 或 Promise rejected 时，卡片会回到上次接受的主题，并显示“未能保存主题”。这表示 Host 没有接受这次写入。
 6. 持久 id 不在当前 catalog，runtime 清 layers 并尝试写 null 修复。
 
 ## Diagnosis

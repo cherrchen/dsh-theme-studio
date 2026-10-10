@@ -12,6 +12,7 @@ import type { createThemeStudioRowStore } from '../../src/client/store.ts'
 import type { ThemeStudioRowInjected } from '../../src/client/ThemeStudioRow.tsx'
 
 const NORDIC = 'dsh-theme-studio.nordic'
+const GRAPHITE = 'dsh-theme-studio.graphite'
 
 function fakeTheme() {
   const layers = new Map<string, { tokens: ThemeTokenOverrides; seq: number }>()
@@ -220,6 +221,23 @@ describe('Theme Studio client apply', () => {
     expect(b.slots.entries()).toHaveLength(1)
     expect(b.overlay.has(ACTIVE_SOURCE)).toBe(true)
     await plugin.dispose()
+  })
+
+  it('reconverges the row when the host rejects an apply', async () => {
+    const b = await bench({ activeThemeId: NORDIC })
+    await b.ctx.plugin({ inject: [...inject], apply }).await()
+    const { instance, face } = faceOf(b.slots)
+    b.host.set.mockImplementation(() => Promise.resolve(false))
+    face.activateTheme(GRAPHITE)
+    expect(instance.getSnapshot().activeThemeId).toBe(GRAPHITE)
+    await Promise.resolve()
+    expect(instance.getSnapshot()).toMatchObject({
+      activeThemeId: NORDIC,
+      saveError: true,
+      previewing: false,
+    })
+    expect(b.overlay.layers.get(ACTIVE_SOURCE)?.tokens['--dsw-alias-brand-primary']?.light).toBe('#5e81ac')
+    expect(b.overlay.has(PREVIEW_SOURCE)).toBe(false)
   })
 
   it('teardown without a declaration is quiet', async () => {

@@ -8,6 +8,8 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
+- Support DSH 0.2.1-alpha.1 and 0.2.1-alpha.2. Official text, code, and terminal font families and sizes stay independent: preview, apply, cancel, Default, and light/dark/system changes do not rewrite them.
+- When the Host rejects a theme save, the settings row reports the failure and restores the last accepted choice. Rapid applies are written in order, so an older success cannot land after a newer choice and replace it. A disposed plugin does not reapply a late result.
 - Stage 2 automated contrast validation: per-pair light/dark reports, alpha and sRGB mix resolution, a report command with strict exit mode, and README documentation of actual coverage and known builtin failures.
 - Stage 3 public Client `ctx.themeStudio.catalog` for readonly theme discovery and contrast reports, with Cordis service teardown and reload support.
 

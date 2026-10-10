@@ -34,7 +34,7 @@ npm and release tarballs contain published builds. To use unreleased Stage 2/3, 
 
 ## DSH compatibility
 
-Supported exact releases come from `src/compat/dsh-version.ts`: 0.1.5-rc.2, 0.1.5-rc.3, 0.1.6-alpha.1, 0.1.6-alpha.2, 0.1.7-alpha.1, 0.1.7-alpha.2, 0.1.7-rc.1, 0.1.7-rc.2, 0.2.0-rc.1, and 0.2.0-rc.2. `pnpm compat:check` verifies this section, the Chinese README, peers, the development pin, overrides, lockfile, and actual installed tree. Hosts enforcing peer admission load the plugin only when their release is declared supported. Production entry points do not probe package versions through Node.
+Supported exact releases come from `src/compat/dsh-version.ts`: 0.1.5-rc.2, 0.1.5-rc.3, 0.1.6-alpha.1, 0.1.6-alpha.2, 0.1.7-alpha.1, 0.1.7-alpha.2, 0.1.7-rc.1, 0.1.7-rc.2, 0.2.0-rc.1, 0.2.0-rc.2, 0.2.1-alpha.1, and 0.2.1-alpha.2. `pnpm compat:check` verifies this section, the Chinese README, peers, the development pin, overrides, lockfile, and actual installed tree. Hosts enforcing peer admission load the plugin only when their release is declared supported. Production entry points do not probe package versions through Node.
 
 See the [DSH compatibility matrix](./docs/development/dsh-compatibility.md) for seam coverage, evidence, upgrade risks, and limits. `pnpm compat:matrix` checks every supported release in isolated temporary installations without changing the development tree.
 
@@ -72,6 +72,7 @@ dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.3
 - **Cancel** drops preview and restores the durable theme.
 - **Apply** saves a builtin id; Apply in the preview bar promotes the current preview.
 - **Appearance** still owns Light/Dark/System. Each overlay supplies both modes and follows the official resolution.
+- **Fonts**: text, code, and terminal families and sizes stay in the official theme settings. Preview, apply, cancel, and Default do not change them.
 
 Once the Host is ready, the last accepted theme is restored. Unknown durable ids return to Default and trigger a repair attempt. Unload removes both runtime layers and the settings row; transport re-provision starts them again. Without a transport, discovery is available but the UI does not start. An unavailable section shows that the connection will not save the selection. The four-color Mosaic currently displays the light sample, independently of the actual overlay mode.
 
@@ -175,7 +176,7 @@ None. The package does not add, replace, or retain model-request tokens.
 - Builtins only: public .dsh-theme.json schema, import/export, registration/editing, and Theme Creator Agent are unimplemented.
 - Contrast is scoped token-pair diagnostics. Some builtin pairs fail; the package does not certify entire themes or a rendered host against WCAG.
 - Catalog is Client-only, excludes Default, and has no dynamic registration or Host RPC.
-- Rejected settings writes have no dedicated error UI; an optimistic badge does not prove persistence.
+- When the Host rejects a save, the Themes row reports the failure and restores the last accepted choice. The badge names the saved theme only after that reconciliation.
 - Mosaic uses the light sample. Full browser visual checks, this revision's real-profile disk journey, and native cross-platform presentation remain uncovered.
 
 The [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md) owns follow-up state; verified issues and diagnostics live in [troubleshooting](./docs/troubleshooting/README.en.md).

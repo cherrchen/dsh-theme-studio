@@ -33,7 +33,9 @@ DSH 的 settings 从 namespace register/settingsScope 迁移到 profile Config/c
 
 ## Consequences
 
-适配层保留稳定同步调用语义，不用 async wrapper 改写 register/configure。UI 与 runtime 生命周期归 settings child，公开 catalog 归父 fiber（ADR-0007），不能一起清理。set settlement 不表示写入必定成功；accepted snapshot 回收敛和 rejected Promise 的用户反馈仍是两类问题。
+适配层保留稳定同步调用语义，不用 async wrapper 改写 register/configure。UI 与 runtime 生命周期归 settings child，公开 catalog 归父 fiber（ADR-0007），不能一起清理。set settlement 不表示写入必定成功；accepted snapshot 仍是唯一 durable authority。
+
+2026-10-10 后续：Themes 行会在 Host 拒绝后显示保存失败并恢复 accepted snapshot。这不改变本 ADR 的双 transport 和 effect 所有权选择。
 
 ## Validation
 

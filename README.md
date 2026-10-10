@@ -34,7 +34,7 @@ npm/tarball 对应已发布构建；体验未发布 Stage 2/3 应构建包含该
 
 ## DSH 兼容性
 
-支持的精确版本以 `src/compat/dsh-version.ts` 为准：0.1.5-rc.2、0.1.5-rc.3、0.1.6-alpha.1、0.1.6-alpha.2、0.1.7-alpha.1、0.1.7-alpha.2、0.1.7-rc.1、0.1.7-rc.2、0.2.0-rc.1、0.2.0-rc.2。`pnpm compat:check` 检查本节、英文 README、peer 声明、开发 pin、overrides、lockfile 与实际安装树。启用 peer admission 的宿主仅在其运行版本被声明支持时加载插件。本包生产入口不通过 Node 探测包版本。
+支持的精确版本以 `src/compat/dsh-version.ts` 为准：0.1.5-rc.2、0.1.5-rc.3、0.1.6-alpha.1、0.1.6-alpha.2、0.1.7-alpha.1、0.1.7-alpha.2、0.1.7-rc.1、0.1.7-rc.2、0.2.0-rc.1、0.2.0-rc.2、0.2.1-alpha.1、0.2.1-alpha.2。`pnpm compat:check` 检查本节、英文 README、peer 声明、开发 pin、overrides、lockfile 与实际安装树。启用 peer admission 的宿主仅在其运行版本被声明支持时加载插件。本包生产入口不通过 Node 探测包版本。
 
 完整证据、适配接缝、升级风险与未覆盖边界见 [DSH 兼容矩阵](./docs/development/dsh-compatibility.md)。运行 `pnpm compat:matrix` 会在独立临时安装树验证全部清单版本，不修改当前依赖树。
 
@@ -72,6 +72,7 @@ dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.3
 - **取消**：移除预览，恢复之前持久主题。
 - **应用**：保存选中的内置 id；预览栏的应用将当前预览提升为持久主题。
 - **外观**：继续由官方控制浅色/深色/系统；每套 overlay 提供两种模式，自动跟随解析。
+- **字体**：正文字体、代码字体、终端字体和对应字号仍由官方主题设置保存。Theme Studio 的预览、应用、取消和恢复默认都不改这些值。
 
 Host ready 后恢复最后接受的主题，未知持久 id 恢复默认并尝试修复。插件卸载移除 runtime 两层与设置行；设置通道重供后重新启动。没有 transport 时 catalog 可用但 UI 不启动；transport 返回 unavailable 时 row 说明此连接不保存选择。当前四色 Mosaic 固定使用浅色样本，不代表实际 overlay 模式。
 
@@ -175,7 +176,7 @@ pnpm compat:matrix
 - 仅内置主题；公共 .dsh-theme.json schema、导入导出、注册/编辑和 Theme Creator Agent 仍未实现。
 - 对比度是有限 token 配对诊断，部分内置配色低于阈值；不认证完整主题或实际 host UI 符合 WCAG。
 - catalog 只在 Client 提供，不包含 Default、不支持动态目录或 Host RPC。
-- 设置写入 rejected Promise 暂无专门错误 UI；乐观徽标不能证明落盘成功。
+- Host 拒绝保存时，主题行会提示失败并恢复上次已接受的选择；徽标只在回收敛之后表示已保存的主题。
 - Mosaic 固定浅色样本；完整浏览器视觉、实际 profile 的本次磁盘旅程与跨平台呈现验证尚未补齐。
 
 这些限制的处理状态在[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)维护；已验证故障与诊断入口见[故障排查](./docs/troubleshooting/README.md)。

@@ -43,6 +43,7 @@ export function createThemeStudioRowStore(
       previewThemeId: null,
       previewing: false,
       settingsStatus: 'loading',
+      saveError: false,
       revision: -1,
       cards,
     }),
@@ -53,6 +54,7 @@ export function createThemeStudioRowStore(
         draft.previewThemeId = snapshot.previewThemeId
         draft.previewing = snapshot.previewing
         draft.settingsStatus = snapshot.settingsStatus
+        draft.saveError = snapshot.saveError === true
         draft.revision = snapshot.revision
       },
     },

@@ -33,6 +33,7 @@ export const zh = {
   'applyNamed': '应用 {name}',
   'status.loading': '正在读取已保存的主题…',
   'status.unavailable': '此连接不会保存主题选择。',
+  'status.saveFailed': '未能保存主题，已恢复上次保存的选择。可以再次应用。',
 } satisfies Record<string, string>
 
 /** The settings.theme-studio namespace key union. */
@@ -69,6 +70,7 @@ export const en = {
   'applyNamed': 'Apply {name}',
   'status.loading': 'Loading saved theme…',
   'status.unavailable': 'Theme selection is not saved on this connection.',
+  'status.saveFailed': 'The theme could not be saved, so the last saved choice is restored. Apply it again to retry.',
 } satisfies Record<ThemeStudioKey, string>
 
 /**

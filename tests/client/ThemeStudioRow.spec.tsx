@@ -43,6 +43,7 @@ function createRowState(cards: readonly ThemeStudioCard[]) {
     previewThemeId: null,
     previewing: false,
     settingsStatus: 'ready',
+    saveError: false,
     revision: 0,
     cards,
   }
@@ -105,6 +106,7 @@ describe('ThemeStudioRow', () => {
         previewThemeId: null,
         previewing: false,
         settingsStatus: 'ready',
+        saveError: false,
         revision: 1,
       })
     })
@@ -123,6 +125,7 @@ describe('ThemeStudioRow', () => {
         previewThemeId: 'dsh-theme-studio.nordic',
         previewing: true,
         settingsStatus: 'ready',
+        saveError: false,
         revision: 2,
       })
     })
@@ -132,6 +135,23 @@ describe('ThemeStudioRow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(b.cancelPreview).toHaveBeenCalledOnce()
     expect(screen.getByRole('button', { name: 'Preview Nordic' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('announces a rejected save and keeps the restored theme current', () => {
+    const b = mount()
+    act(() => {
+      b.store.actions.sync({
+        activeThemeId: 'dsh-theme-studio.graphite',
+        previewThemeId: null,
+        previewing: false,
+        settingsStatus: 'ready',
+        saveError: true,
+        revision: 3,
+      })
+    })
+    expect(screen.getByRole('alert').textContent).toContain('could not be saved')
+    expect(screen.getByText('Current')).toBeDefined()
+    expect(screen.getAllByText('Current')).toHaveLength(1)
   })
 
   it('restores Default through Apply on the Default card', () => {

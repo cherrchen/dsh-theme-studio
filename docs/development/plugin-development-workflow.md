@@ -92,7 +92,7 @@ node scripts/report-contrast.mjs --json > contrast-report.json
 
 ```sh
 pnpm compat:matrix
-node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
+node scripts/run-dsh-matrix.mjs 0.2.0-rc.2 0.2.1-alpha.1 0.2.1-alpha.2
 ```
 
 脚本只接受清单版本。每版复制源码到临时目录，重建无 lockfile 的独立依赖树、匹配 vendor、统一漂移的间接 peers，依次 install/compat/type/test/build/pack。成功清理大安装树，命令 log 和 results.json 留存；失败保留树用于诊断。脚本不切换本地 pin。[兼容文档](./dsh-compatibility.md)保存已执行日期与平台，不把 CI 定义当实际执行。
