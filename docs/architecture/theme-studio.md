@@ -40,6 +40,7 @@ flowchart TD
 | `client/presets.ts`、`chrome-tokens.ts` | 八套明暗配色与派生语义 token | 修改官方 stylesheets |
 | `client/catalog.ts` | 防御性复制、冻结、按序发现、报告 | 注册/编辑第三方主题 |
 | `client/adapter.ts` | per-scheme map → per-token light/dark 值对 | 对比度认证、公共文件 schema |
+| `client/font-boundary.ts` | 安装 overlay 前去掉官方字体变量 | 字体设置 UI、字号和字体列表写入 |
 | `client/runtime.ts` | active/preview、Host adoption、状态与监听器 | CSS 呈现 |
 | `client/store.ts` | 单向同步 runtime snapshot 与静态 cards | 第二持久设置源 |
 | `ThemeStudioRow.tsx`、CSS、`locales.ts` | 设置行、操作、装饰色块、可访问性与文案 | 直接操纵 body 主题状态 |
@@ -70,7 +71,7 @@ ThemeSnapshot → ThemePresenter → DOM
 
 ### 从 UI 到持久设置
 
-Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`。槽位注入组件时绑定 actions 并立即同步当前快照。按钮调用 runtime facade；Apply 乐观更新 active 层并异步调用 Host.set。accepted Host snapshot 不同于本地选择时重新 adoption。persistGeneration 防止旧写入 settlement 在后续动作或 dispose 后重新驱动本地状态。
+Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`。槽位注入组件时绑定 actions 并立即同步当前快照。按钮调用 runtime facade；Apply 乐观更新 active 层并异步调用 Host.set。进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
 
 ### catalog 与校验
 
@@ -94,7 +95,9 @@ Client `apply` 首先创建唯一 catalog，调用 `ctx.provide('themeStudio', O
 
 未知持久 id 会移除两层、恢复默认、发起设置修复；未知显式 activate/preview id 抛错。adapter 拒绝不完整键对与非字符串。disposed runtime 的写方法抛错，dispose 幂等。对比度不支持的语法返回 unknown、保留 reason，不能因解析失败跳过该 check。重复 catalog id 在构造时抛错。
 
-设置 rejected Promise 的用户呈现目前未单独实现；renderer/style 载入错误仍由宿主报错。构建 helper 注入的静态 CSS 标签幂等保留，不应把 runtime 的 overlay 清理描述成所有 CSS 标签也被卸载。排查见 [troubleshooting](../troubleshooting/README.md)。
+Host.set 返回 `false` 或 Promise rejected 时，runtime 按 accepted snapshot 回收敛，Themes 行显示 `status.saveFailed`。renderer/style 载入错误仍由宿主报错。构建 helper 注入的静态 CSS 标签幂等保留，不应把 runtime 的 overlay 清理描述成所有 CSS 标签也被卸载。排查见 [troubleshooting](../troubleshooting/README.md)。
+
+颜色 overlay 在进入 `overrideTokens` 前去掉官方字体变量。正文字体、代码字体、终端字体和三类字号仍由官方 `ui-theme` 设置与 ThemeRuntime snapshot 拥有；0.2.1-alpha.2 的终端直接消费 snapshot 字体字段，正文和代码尺寸则由 ThemePresenter 写成 CSS 变量后再套颜色 token。
 
 ## Compatibility
 

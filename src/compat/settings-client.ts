@@ -12,8 +12,10 @@ export interface ThemeSettingsSnapshot<T> {
 }
 
 /**
- * Durable Theme Studio section. `set` may resolve `void` or `boolean`;
- * callers only wait for settlement.
+ * Durable Theme Studio section. Older transports resolve `void` after a
+ * rejected write and then expose the recovered snapshot. Newer transports
+ * resolve `false` when the Host rejects the write. `true` or `void` still
+ * has to be checked against the accepted snapshot.
  */
 export interface ThemeSettingsHost<T> {
   /** @returns the current sync snapshot. */

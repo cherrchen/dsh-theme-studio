@@ -3,6 +3,8 @@ import { stubSettingsScope } from '../harness.ts'
 import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
 import type { ThemeStudioSettings } from '../../src/constants.ts'
 import { BuiltinPresetRegistry } from '../../src/client/catalog.ts'
+import { BUILTIN_PRESETS } from '../../src/client/presets.ts'
+import { isOfficialFontToken } from '../../src/client/font-boundary.ts'
 import {
   ACTIVE_SOURCE, PREVIEW_SOURCE, ThemeStudioRuntime,
 } from '../../src/client/runtime.ts'
@@ -197,8 +199,155 @@ describe('ThemeStudioRuntime', () => {
     expect(runtime.getSnapshot().activeThemeId).toBe(NORDIC)
     await Promise.resolve()
     expect(runtime.getSnapshot().activeThemeId).toBe(GRAPHITE)
+    expect(runtime.getSnapshot().saveError).toBe(true)
     expect(overlay.layers.get(ACTIVE_SOURCE)?.tokens['--dsw-alias-brand-primary']?.light)
       .toBe('#5b6570')
+  })
+
+  it('drops official font tokens before installing an overlay', () => {
+    const base = BUILTIN_PRESETS.find(preset => preset.id === GRAPHITE)!
+    const leaked = {
+      ...base,
+      id: 'dsh-theme-studio.font-leak',
+      tokens: {
+        light: {
+          ...base.tokens.light,
+          '--dsh-font-family-text': 'Leak',
+          '--dsh-content-font-size': '99px',
+          '--dsh-code-font-size': '99px',
+          '--dsh-terminal-font-size': '99px',
+          '--ds-font-family-code': 'Leak',
+          '--dsw-font-family': 'Leak',
+        },
+        dark: {
+          ...base.tokens.dark,
+          '--dsh-font-family-text': 'Leak',
+          '--dsh-content-font-size': '99px',
+          '--dsh-code-font-size': '99px',
+          '--dsh-terminal-font-size': '99px',
+          '--ds-font-family-code': 'Leak',
+          '--dsw-font-family': 'Leak',
+        },
+      },
+    }
+    const overlay = fakeTheme()
+    const runtime = new ThemeStudioRuntime({
+      theme: overlay.theme,
+      host: durableHost({ activeThemeId: null }).scope,
+      catalog: new BuiltinPresetRegistry([leaked]),
+    })
+    runtime.activateTheme(leaked.id)
+    const tokens = overlay.layers.get(ACTIVE_SOURCE)?.tokens ?? {}
+    expect(tokens['--dsw-alias-bg-base']?.light).toBe(base.tokens.light['--dsw-alias-bg-base'])
+    expect(Object.keys(tokens).some(isOfficialFontToken)).toBe(false)
+  })
+
+  it('restores the accepted theme when the host rejects the write', async () => {
+    const host = durableHost({ activeThemeId: GRAPHITE })
+    const overlay = fakeTheme()
+    const runtime = new ThemeStudioRuntime({
+      theme: overlay.theme,
+      host: host.scope,
+      catalog: new BuiltinPresetRegistry(),
+    })
+    host.set.mockImplementation(() => Promise.resolve(false))
+    runtime.activateTheme(NORDIC)
+    expect(runtime.getSnapshot().activeThemeId).toBe(NORDIC)
+    await Promise.resolve()
+    expect(runtime.getSnapshot().activeThemeId).toBe(GRAPHITE)
+    expect(runtime.getSnapshot().saveError).toBe(true)
+    expect(overlay.layers.get(ACTIVE_SOURCE)?.tokens['--dsw-alias-brand-primary']?.light).toBe('#5b6570')
+  })
+
+  it('restores the accepted theme when the settings provider disappears', async () => {
+    const host = durableHost({ activeThemeId: GRAPHITE })
+    const overlay = fakeTheme()
+    const runtime = new ThemeStudioRuntime({
+      theme: overlay.theme,
+      host: host.scope,
+      catalog: new BuiltinPresetRegistry(),
+    })
+    host.set.mockImplementation(() => Promise.reject(new Error('provider gone')))
+    runtime.activateTheme(NORDIC)
+    await Promise.resolve()
+    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: GRAPHITE, saveError: true })
+    expect(overlay.has(ACTIVE_SOURCE)).toBe(true)
+  })
+
+  it('keeps the newer choice when an older write settles later', async () => {
+    const host = durableHost({ activeThemeId: GRAPHITE })
+    const overlay = fakeTheme()
+    const runtime = new ThemeStudioRuntime({
+      theme: overlay.theme,
+      host: host.scope,
+      catalog: new BuiltinPresetRegistry(),
+    })
+    let durable: string | null = GRAPHITE
+    const pending: Array<(accepted: boolean) => void> = []
+    host.set.mockImplementation((_field: string, next: unknown) => new Promise(resolve => {
+      pending.push((accepted) => {
+        if (accepted) durable = next as string | null
+        host.publish({
+          status: 'ready',
+          value: { activeThemeId: durable },
+          revision: (host.scope.getSnapshot().revision ?? 0) + 1,
+          writable: true,
+        })
+        resolve(accepted)
+      })
+    }))
+    runtime.activateTheme(NORDIC)
+    runtime.activateTheme(OLED)
+    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: OLED, saveError: false })
+    const [older, newer] = pending
+    expect(older).toBeTypeOf('function')
+    expect(newer).toBeTypeOf('function')
+    older!(false)
+    await Promise.resolve()
+    expect(runtime.getSnapshot().activeThemeId).toBe(OLED)
+    expect(overlay.layers.get(ACTIVE_SOURCE)?.tokens['--dsw-alias-bg-base']?.dark).toBe('#000000')
+    newer!(true)
+    await Promise.resolve()
+    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: OLED, saveError: false })
+    expect(host.scope.getSnapshot().value?.activeThemeId).toBe(OLED)
+  })
+
+  it('does not install a layer after dispose when an in-flight write settles', async () => {
+    const host = durableHost({ activeThemeId: null })
+    const overlay = fakeTheme()
+    const runtime = new ThemeStudioRuntime({
+      theme: overlay.theme,
+      host: host.scope,
+      catalog: new BuiltinPresetRegistry(),
+    })
+    let release: ((accepted: boolean) => void) | undefined
+    host.set.mockImplementation(() => new Promise(resolve => {
+      release = resolve
+    }))
+    runtime.activateTheme(GRAPHITE)
+    expect(overlay.has(ACTIVE_SOURCE)).toBe(true)
+    runtime.dispose()
+    expect(overlay.has(ACTIVE_SOURCE)).toBe(false)
+    release?.(true)
+    await Promise.resolve()
+    expect(overlay.has(ACTIVE_SOURCE)).toBe(false)
+    expect(overlay.has(PREVIEW_SOURCE)).toBe(false)
+    expect(() => { runtime.activateTheme(NORDIC) }).toThrow(/disposed/)
+  })
+
+  it('repairs an unknown id once when the repair write is rejected', async () => {
+    const host = durableHost({ activeThemeId: 'removed-theme' })
+    host.set.mockImplementation(() => Promise.resolve(false))
+    const runtime = new ThemeStudioRuntime({
+      theme: fakeTheme().theme,
+      host: host.scope,
+      catalog: new BuiltinPresetRegistry(),
+    })
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(host.set).toHaveBeenCalledTimes(1)
+    expect(host.set).toHaveBeenCalledWith('activeThemeId', null)
+    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: null, saveError: true })
   })
 
   it('drops both overlays on dispose', () => {

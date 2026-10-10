@@ -14,6 +14,7 @@
 | `previewThemeId` | string 或 null | 预览 id；null 同时可能是 Default 或未预览 |
 | `previewing` | boolean | 区分正在预览 Default 与未预览 |
 | `settingsStatus` | loading / ready / unavailable | transport 返回的同步状态；host undefined 为 unavailable |
+| `saveError` | boolean | 最近一次保存被拒绝后，界面已按 accepted snapshot 恢复 |
 | `revision` | number | 每次 publish 增加的变化计数，初始为 0 |
 
 getSnapshot 返回冻结对象；引用在下次 publish 前稳定。subscribe 的 listener 无参数，每次更换快照后调用；返回取消监听函数。store 初始 revision=-1，sync 忽略小于等于当前 revision 的输入，不能反向覆盖 runtime。
@@ -42,9 +43,13 @@ Default 预览通过暂时移除 active 层呈现官方主题，不创建一套�
 
 Host 快照不是 ready 时只更新 settingsStatus。ready 后 normalize activeThemeId：null/undefined/非有效字符串视作默认；若 raw 是不在目录的字符串，清两层、清状态、publish，并尝试 set(activeThemeId, null)。repairingUnknown 阻止同一未结束修复被重复发起。
 
-当新 durable id 不同于本地 id 时，取消预览并安装 accepted id；相同 id 且不在预览时补齐 active 层。Apply 先乐观更新，然后 await Host.set；如果 settlement 属于当前 persistGeneration 且 runtime 未 dispose，再读 accepted snapshot，必要时重新收敛。这里保护本地回调次序，不替 Host 服务保证写入事务或跨请求落盘顺序。
+当新 durable id 不同于本地 id 时，取消预览并安装 accepted id；相同 id 且不在预览时补齐 active 层。Apply 先乐观更新并清除上一轮 `saveError`，然后调用 Host.set。进行中的写入大于零时，Host 回声不会把界面收回更早的值。全部自身写入结算后，才读取 accepted snapshot：与乐观 id 一致则记下该 id 并清除错误；不一致、`set` 返回 `false`、或 Promise rejected，则把颜色层和卡片恢复到 accepted snapshot，并把 `saveError` 设为 true。Themes 行用 `status.saveFailed` 提示，用户可再次应用。
 
-当前 rejected Promise 没有专门 catch/错误 UI。未知 id 修复使用 finally 清 guard，失败也不代表已经保存为默认。排查时同时检查 Host 错误与 snapshot，不能只看立即更新的卡片徽标。
+更早写入的结算不能改写更新写入的结果。`dispose` 之后，已发出的 settlement 不再安装 overlay，也不会再发起新的 `set`。没有 Host 的直接 runtime 仍只保留本地层，不把这当成保存失败。未知 id 修复只对同一个 raw 值自动尝试一次；失败时显示保存错误，再次选择 Default 或具体主题可以重试。
+
+## 字体边界
+
+`presetToOverrides` 仍只做 light/dark 形状转换。安装 active/preview 层之前，`withoutOfficialFontTokens` 去掉官方字体变量：`--dsh-font-family-*`、`--dsh-content-font-size`、`--dsh-code-font-size`、`--dsh-terminal-font-size`、`--ds-font-family-code`、`--dsw-font-family` 和 `--dsw-font-family-brand`。DSH 0.2.1-alpha.2 的 ThemePresenter 先写字体变量再写 token，终端则直接读 snapshot 的 `fontSizes` / `fontFamilies`。Theme Studio 不写这些字段，也不注册字体设置行。更早的 ThemeRuntime 只有单一 `fontSize`；测试按 snapshot 形状探测，不按版本字符串分支。
 
 ## `presetToOverrides`
 

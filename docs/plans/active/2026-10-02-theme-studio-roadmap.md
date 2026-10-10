@@ -24,6 +24,7 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 | Stage 2 自动对比度诊断 | Completed，commit 509b88e | Unreleased；未新打 tag | [Stage 2/3](../completed/2026-10-02-stage-2-3-validation-and-catalog.md) |
 | Stage 3 readonly Client catalog | Completed，commit 509b88e | Unreleased；未新打 tag | [Stage 2/3](../completed/2026-10-02-stage-2-3-validation-and-catalog.md) |
 | 完整文档体系 | Completed，本批次单独提交 | Unreleased 文档补充 | [文档补齐](../completed/2026-10-02-documentation-reconstruction.md)、[文档地图](../../README.md) |
+| DSH 0.2.1-alpha.1/alpha.2 与字体正交、保存失败提示 | Completed，本分支实现 | Unreleased；未打 tag、未发 npm | [兼容矩阵](../../development/dsh-compatibility.md) |
 
 “发布状态”由本地 tag 与版本准备提交确认；不证明本轮已检查远端 npm 内容或 GitHub Actions 成功。package.version 仍为 0.1.3，Stage 2/3 未自动升版。每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
 
@@ -31,7 +32,7 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 
 runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化，官方 Appearance 保留所有权。catalog 在 Client 父 fiber 提供，settings 子树可停止/重建。对比度默认报告可复现、全内置可计算，但有低于阈值的配对；报告与 UI 认证必须分开。
 
-当前全部受支持 DSH 版本由[兼容契约](../../../src/compat/dsh-version.ts)决定；最新 evidence 是 2026-10-02 Stage 2/3 十版复验。没有重写当前产品行为以迎合后续方向。
+当前全部受支持 DSH 版本由[兼容契约](../../../src/compat/dsh-version.ts)决定。2026-10-10 起清单包含 0.2.1-alpha.1 与 0.2.1-alpha.2；证据见[兼容矩阵](../../development/dsh-compatibility.md)。没有把 Theme Creator 或公共主题文件放进这次兼容升级。
 
 ## Scope and Non-goals
 
@@ -46,7 +47,7 @@ runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化，
 | 动态 catalog | 注册来源、撤销、稳定 snapshot 与 revision、active id 被移除的行为 | consumers 生命周期、事件与持久 id 一致性；必要时新增 ADR |
 | Theme Creator Agent | 模型工具契约、prompt、产物 schema、校验反馈与用户确认 | 模型产生主题经过格式与对比度检查；不可直接从当前 Model Experience 推断已有 |
 | 配色可读性改进 | 对标 palette 身份、具体语义配对、视觉影响与变更范围 | 用实际报告和真实 UI 决定修正，不默认把所有品牌色都当普通文本 |
-| 设置写入错误呈现 | rejected Promise、Host 权威、重试/回滚、错误文案 | 有意义失败用例与 UI 状态，不让乐观徽标伪装成功 |
+| 设置写入错误呈现 | 已在 0.2.1 兼容批次实现：accepted snapshot 回收敛，并显示可重试的保存失败 | 不再作为未实施项 |
 | 明暗 Mosaic 与真实 UI 验证 | 色块跟随模式、浏览器场景、实际 backdrop、跨平台宿主 | 截图、真实 profile 磁盘旅程、unload/reload 与可访问性测试 |
 
 以上未承诺编号、发布版本或日期。具体工作获得授权后应建立 active 实施计划，完成与验证后移入 completed。

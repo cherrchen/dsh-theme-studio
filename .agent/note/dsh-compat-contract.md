@@ -14,6 +14,7 @@ English: [dsh-compat-contract.en.md](./dsh-compat-contract.en.md)
 4. **caret peers 会混装。** 历史 0.1.7-alpha.1 的直接 pin 不能锁全部间接 DSH；matrix 会检查 lockfile 并追加 overrides。某一安装版本绿灯前必须实际解析一致。
 5. **最新 pin 已是当前约定。** ab0d19c 把开发树改到最新支持基线，旧 release docs 的最老 pin 恢复步骤过时。保留用户 manifest/lockfile，不用 git checkout 覆盖未提交工作。
 6. **真实 provider 用例有合法 skip。** 新 Config API 安装缺 legacy register，旧 provider regression 显式 skip；由 configure 契约/客户端测试覆盖，不代表持久化完全未测。仍不能把内存 test 当真实 profile 磁盘旅程。
+7. **0.2.1 的 vendor 是预发布版本。** Cordis 4.0.5-alpha.1 与 Schemastery 3.18.5-alpha.1 不满足不含预发布标记的范围。peer 和 dependency 要显式写出该精确预发布版本，并用 overrides 锁住配套的 cordis plugin 与 cosmokit。`dsh-invariants` 在 0.2.1-alpha.1/alpha.2 没有对应发布包，不能再把它 pin 到该版本。旧版矩阵会去掉这些新 runtime override，让旧安装按自己的范围解析。
 
 ## 修改时的操作
 

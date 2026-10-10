@@ -8,10 +8,70 @@ import { spawnSync } from 'node:child_process'
 const root = fileURLToPath(new URL('../', import.meta.url))
 const source = readFileSync(join(root, 'src/compat/dsh-version.ts'), 'utf8')
 const releases = [...source.match(/export const SUPPORTED_DSH_RELEASES = \[([^\]]*)\]/u)[1].matchAll(/'([^']+)'/gu)].map(match => match[1])
+/** Cordis and Schemastery versions published with each exact DSH release. */
+const VENDORS = {
+  '0.1.5-rc.2': ['4.0.2', '3.18.2'],
+  '0.1.5-rc.3': ['4.0.2', '3.18.2'],
+  '0.1.6-alpha.1': ['4.0.2', '3.18.2'],
+  '0.1.6-alpha.2': ['4.0.2', '3.18.2'],
+  '0.1.7-alpha.1': ['4.0.3', '3.18.3'],
+  '0.1.7-alpha.2': ['4.0.4', '3.18.4'],
+  '0.1.7-rc.1': ['4.0.4', '3.18.4'],
+  '0.1.7-rc.2': ['4.0.4', '3.18.4'],
+  '0.2.0-rc.1': ['4.0.4', '3.18.4'],
+  '0.2.0-rc.2': ['4.0.4', '3.18.4'],
+  '0.2.1-alpha.1': ['4.0.5-alpha.1', '3.18.5-alpha.1'],
+  '0.2.1-alpha.2': ['4.0.5-alpha.1', '3.18.5-alpha.1'],
+}
 const requested = process.argv.slice(2)
 const selected = requested.length ? requested : releases
 for (const version of selected) {
   if (!releases.includes(version)) throw new Error(`Release is outside the support contract: ${version}`)
+  if (VENDORS[version] === undefined) throw new Error(`No Cordis/Schemastery pin recorded for ${version}`)
+}
+
+const RUNTIME_PACKAGES = [
+  '@deepseek-ai/cordis-plugin-group',
+  '@deepseek-ai/cordis-plugin-include',
+  '@deepseek-ai/cordis-plugin-loader',
+  '@deepseek-ai/cosmokit',
+]
+
+/** Cordis 4.0.5-alpha.1 rejects the previous stable plugin/cosmokit releases. */
+const ALPHA_RUNTIME = {
+  '@deepseek-ai/cordis-plugin-group': '1.0.5-alpha.1',
+  '@deepseek-ai/cordis-plugin-include': '1.0.10-alpha.1',
+  '@deepseek-ai/cordis-plugin-loader': '1.0.6-alpha.1',
+  '@deepseek-ai/cosmokit': '1.8.6-alpha.1',
+}
+
+function rewriteWorkspace(text, version, cordis, schema) {
+  let next = text
+    .replace(/(@deepseek-ai\/dsh[\w-]*(?:'?: |@))\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?/gu, `$1${version}`)
+    .replace(/('@deepseek-ai\/cordis':\s*)\S+/gu, `$1${cordis}`)
+    .replace(/('@deepseek-ai\/schemastery':\s*)\S+/gu, `$1${schema}`)
+    .replace(/@deepseek-ai\/cordis@[^'\s]+/gu, `@deepseek-ai/cordis@${cordis}`)
+    .replace(/@deepseek-ai\/schemastery@[^'\s]+/gu, `@deepseek-ai/schemastery@${schema}`)
+  if (cordis !== '4.0.5-alpha.1') {
+    for (const name of RUNTIME_PACKAGES) {
+      const escaped = name.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+      next = next.replace(new RegExp(String.raw`\n  '${escaped}':\s*\S+`, 'gu'), '')
+      next = next.replace(new RegExp(String.raw`\n  - '${escaped}@\S+'`, 'gu'), '')
+    }
+    return next
+  }
+  for (const [name, pin] of Object.entries(ALPHA_RUNTIME)) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+    if (next.includes(`'${name}':`)) {
+      next = next.replace(new RegExp(`('${escaped}':\\s*)\\S+`, 'gu'), `$1${pin}`)
+    } else {
+      next = next.replace('overrides:\n', `overrides:\n  '${name}': ${pin}\n`)
+    }
+    if (!next.includes(`'${name}@${pin}'`)) {
+      next = next.replace('minimumReleaseAgeExclude:\n', `minimumReleaseAgeExclude:\n  - '${name}@${pin}'\n`)
+    }
+  }
+  return next
 }
 const results = []
 const scratch = mkdtempSync(join(tmpdir(), 'theme-studio-matrix-'))
@@ -24,13 +84,10 @@ try {
     for (const name of Object.keys(manifest.devDependencies)) {
       if (name.startsWith('@deepseek-ai/dsh')) manifest.devDependencies[name] = version
     }
-    const vendorPatch = ['0.1.5-rc.2', '0.1.5-rc.3', '0.1.6-alpha.1', '0.1.6-alpha.2'].includes(version) ? 2 : version === '0.1.7-alpha.1' ? 3 : 4
-    manifest.devDependencies['@deepseek-ai/cordis'] = `4.0.${vendorPatch}`
+    const [cordis, schema] = VENDORS[version]
+    manifest.devDependencies['@deepseek-ai/cordis'] = cordis
     writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest, null, 2) + '\n')
-    const workspace = readFileSync(join(dir, 'pnpm-workspace.yaml'), 'utf8')
-      .replace(/(@deepseek-ai\/dsh[\w-]*(?:'?: |@))\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?/gu, `$1${version}`)
-      .replace(/4\.0\.\d+/gu, `4.0.${vendorPatch}`)
-      .replace(/3\.18\.\d+/gu, `3.18.${vendorPatch}`)
+    const workspace = rewriteWorkspace(readFileSync(join(dir, 'pnpm-workspace.yaml'), 'utf8'), version, cordis, schema)
     writeFileSync(join(dir, 'pnpm-workspace.yaml'), workspace)
     // Resolve each release from scratch rather than verifying the development lockfile
     // against exclusions for a different release.

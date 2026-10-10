@@ -50,6 +50,7 @@ export function ThemeStudioRow({
   const previewThemeId = useStore(s => s.previewThemeId)
   const previewing = useStore(s => s.previewing)
   const settingsStatus = useStore(s => s.settingsStatus)
+  const saveError = useStore(s => s.saveError)
   const previewName = previewLabel(t, previewing, previewThemeId)
 
   return (
@@ -58,6 +59,7 @@ export function ThemeStudioRow({
       <p className={css.description}>{t('description')}</p>
       {settingsStatus === 'loading' ? <p className={css.status}>{t('status.loading')}</p> : null}
       {settingsStatus === 'unavailable' ? <p className={css.status}>{t('status.unavailable')}</p> : null}
+      {saveError ? <p className={css.alert} role="alert">{t('status.saveFailed')}</p> : null}
       <div className={css.grid} role="list">
         {cards.map((card) => {
           const name = t(card.nameKey as ThemeStudioKey)

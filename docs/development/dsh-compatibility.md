@@ -20,7 +20,7 @@
 
 ## 逐版本结果
 
-验证日期：2026-10-02（Stage 2/3 回归）。环境：macOS arm64、Node 24.18.0、pnpm 11.7.0。每行均重新安装 npm 发布包，执行 `compat:check`、`typecheck`、完整 `test`、`build`、`pack --dry-run`。结果和每条命令的退出码保存在相邻的 `dsh-compatibility-results.json`。
+验证日期：2026-10-10。环境：macOS arm64、Node 24.18.0、pnpm 11.7.0。十二个精确版本各自重新安装 npm 发布包，执行 `compat:check`、`typecheck`、完整 `test`、`build`、`pack --dry-run`，全部退出码为 0。命令记录在 [dsh-compatibility-results-2026-10-10.json](./dsh-compatibility-results-2026-10-10.json)。2026-10-02 的十版记录仍留在 [dsh-compatibility-results.json](./dsh-compatibility-results.json)，它不覆盖这次字体与保存失败改动。
 
 | DSH 精确版本 | Cordis | Schemastery | 设置路径 | 结果 |
 | --- | --- | --- | --- | --- |
@@ -34,6 +34,8 @@
 | 0.1.7-rc.2 | 4.0.4 | 3.18.4 | configure / configForms | 通过 |
 | 0.2.0-rc.1 | 4.0.4 | 3.18.4 | configure / configForms | 通过 |
 | 0.2.0-rc.2 | 4.0.4 | 3.18.4 | configure / configForms | 通过 |
+| 0.2.1-alpha.1 | 4.0.5-alpha.1 | 3.18.5-alpha.1 | configure / configForms | 通过 |
+| 0.2.1-alpha.2 | 4.0.5-alpha.1 | 3.18.5-alpha.1 | configure / configForms | 通过 |
 
 旧版真实 settings provider 测试只在 provider 具有 register 时执行；profile Config 版本跳过该旧接口测试，由 configure 契约与客户端测试覆盖。主题运行时使用实际官方发布代码；其未调用的 UI primitives 被替代，设置传输使用内存 fixture。
 
@@ -43,7 +45,7 @@
 
 Stage 2/3 本次在全部十个版本上新增验证：WCAG sRGB 计算、透明色与混色、未解析配对的失败语义、全部内置配对可计算、只读 catalog，以及真实 Cordis 注入消费者在 provider 卸载/重供时的停止与重启。catalog 在设置通道尚不存在或被替换时仍保持可发现；原有预览/应用和官方 ThemeRuntime 集成测试保持通过。新服务使用现有公开 `ctx.provide()`，未增加 DSH 版本分支或扩大支持版本。
 
-当前开发基线额外清空生成目录后重新构建，验证了实际 browser bundle 的加载器导出、对比度计算与 catalog 服务，并验证报告命令默认模式退出 0、严格模式对现有低对比度配对退出 1。内置配色与校验范围见 [对比度诊断](theme-contrast.md)。本次仍未执行完整浏览器/宿主 UI 视觉或 WCAG 认证；矩阵验证的是源码契约、服务生命周期与发布构建。
+当前开发基线额外清空生成目录后重新构建，验证了实际 browser bundle 的加载器导出、对比度计算与 catalog 服务，并验证报告命令默认模式退出 0、严格模式对现有低对比度配对退出 1。内置配色与校验范围见 [对比度诊断](theme-contrast.md)。2026-10-10 的十二版矩阵验证源码契约、服务生命周期与发布构建。它仍不是完整浏览器/宿主 UI 视觉或 WCAG 认证。
 
 ```sh
 pnpm compat:matrix
@@ -55,4 +57,26 @@ node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
 
 本次未覆盖完整 DSH Web profile 的磁盘持久化端到端流程、真实浏览器视觉截图、Desktop/Windows/Linux 本机呈现或 npm tarball 安装。`pack --dry-run` 只验证发布文件清单。插件仍为 platform:web，CSS 呈现由 ctx.theme 管理；未加入 Electron、Desktop provider 或 Node 客户端依赖。官方发布包缺失 source map 的 Vite 警告不影响测试退出码。
 
-开发基线已升级为 0.2.0-rc.2 / Cordis 4.0.4 / Schemastery 3.18.4，当前安装树与 lockfile 已同步。升级后重新验证全部十个支持版本，均通过。矩阵脚本按目标版本重写 overrides 与发布时限例外，并从无 lockfile 的临时安装树重新解析，避免开发基线影响旧版验证。
+2026-10-02 的开发基线当时是 0.2.0-rc.2 / Cordis 4.0.4 / Schemastery 3.18.4。2026-10-10 的十二版矩阵覆盖那次清单，并加入两个 0.2.1 候选。
+
+## 0.2.1 审查与结果
+
+审查来源为本地标签 `dsh-v0.2.0-rc.2`、`dsh-v0.2.1-alpha.1`、`dsh-v0.2.1-alpha.2`，以及 npm 上这些精确版本的已发布包。alpha.1 与 rc.2 的 `packages/client/ui-theme/src` 没有实现差异。字体角色和 snapshot 形状变化发生在 alpha.2。
+
+| 接缝 | 上游变化及风险 | 插件处理 |
+| --- | --- | --- |
+| 主题覆盖 | `overrideTokens` 的 source、light/dark、seq 和旧 disposer 语义未变。样式表没有新增颜色 token 名 | 不新增版本分支。安装前去掉官方字体变量，避免 ThemePresenter 后写 token 时盖住字体 |
+| 字体所有权 | alpha.2 用 `fontSizes` / `fontFamilies` 替换单一 `fontSize`。终端直接读 snapshot；正文和代码尺寸走 CSS 变量 | Theme Studio 不写这些字段，不增加字体设置 UI |
+| 设置写入 | 新 transport 的 `set` 返回 `false` 表示拒绝并已 recover；旧 transport 返回 void，拒绝后同样 recover | accepted snapshot 回收敛。`false` 与 rejected Promise 显示 `status.saveFailed`。未结算写入挡住 Host 回声 |
+| 共享运行时 | 0.2.1-alpha.1 与 alpha.2 使用 Cordis 4.0.5-alpha.1、Schemastery 3.18.5-alpha.1，以及对应的 cordis plugin 与 cosmokit 1.8.6-alpha.1 | 这些精确预发布版本写入 peer/dependency 与 overrides。旧版矩阵去掉这组新 override |
+| invariants | npm 没有 `@deepseek-ai/dsh-invariants@0.2.1-alpha.1` 或 `alpha.2` | 开发依赖不再 pin 该包。旧版若传递依赖它，由该版自己的范围和矩阵漂移修正处理 |
+| 设置与槽位实现 | settings、ui-settings、ui-slots 源码相对 rc.2 无实现差异 | 继续复用现有适配 |
+
+当前开发基线是 0.2.1-alpha.2 / Cordis 4.0.5-alpha.1 / Schemastery 3.18.5-alpha.1。2026-10-10 的十二版矩阵全部通过，包括 0.2.1-alpha.1 与 0.2.1-alpha.2。开发基线上的 `pnpm contrast:report --strict` 仍对现有低对比度配对退出 1。
+
+这次没有启动真实 DSH Web Client。本机 Rivetdeck 安装清单是 0.2.0-rc.2，PATH 中没有 `dsh` 命令。字体与颜色的 jsdom 检查使用已安装官方 ThemeRuntime bundle，并按 ThemePresenter 的顺序把 snapshot 写到 `document.body`。它不是浏览器里的第一帧截图，也不是 profile 磁盘往返。
+
+```sh
+pnpm compat:matrix
+node scripts/run-dsh-matrix.mjs 0.2.0-rc.2 0.2.1-alpha.1 0.2.1-alpha.2
+```

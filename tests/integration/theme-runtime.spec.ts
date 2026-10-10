@@ -14,6 +14,25 @@ const GRAPHITE = BUILTIN_PRESETS.find(preset => preset.id === 'dsh-theme-studio.
 
 interface ThemeSettings {
   preference: 'light' | 'dark' | 'system'
+  fontSize: number
+  codeFontSize: number
+  terminalFontSize: number
+  textFontFamily: string
+  codeFontFamily: string
+  terminalFontFamily: string
+}
+
+/** Fields the official theme scope accepts. Older runtimes ignore the role fields. */
+function appearance(preference: ThemeSettings['preference']): ThemeSettings {
+  return {
+    preference,
+    fontSize: 14,
+    codeFontSize: 11,
+    terminalFontSize: 13,
+    textFontFamily: '',
+    codeFontFamily: '',
+    terminalFontFamily: '',
+  }
 }
 
 function durableStudio(value: ThemeStudioSettings) {
@@ -36,7 +55,7 @@ describe('ThemeRuntime + Theme Studio integration', () => {
 
   it('folds Nordic light tokens into the official light base', () => {
     const themeHost = stubSettingsScope<ThemeSettings>()
-    themeHost.publish({ status: 'ready', value: { preference: 'light' }, revision: 1, writable: true })
+    themeHost.publish({ status: 'ready', value: appearance('light'), revision: 1, writable: true })
     const ctx = new Context()
     const theme = new ThemeRuntime(ctx, themeHost.scope)
     const studio = new ThemeStudioRuntime({
@@ -54,7 +73,7 @@ describe('ThemeRuntime + Theme Studio integration', () => {
 
   it('selects Nordic dark tokens when Appearance is dark', () => {
     const themeHost = stubSettingsScope<ThemeSettings>()
-    themeHost.publish({ status: 'ready', value: { preference: 'light' }, revision: 1, writable: true })
+    themeHost.publish({ status: 'ready', value: appearance('light'), revision: 1, writable: true })
     const ctx = new Context()
     const theme = new ThemeRuntime(ctx, themeHost.scope)
     new ThemeStudioRuntime({
@@ -73,7 +92,7 @@ describe('ThemeRuntime + Theme Studio integration', () => {
     const media = { matches: false, addEventListener() {}, removeEventListener() {} }
     vi.stubGlobal('matchMedia', () => media)
     const themeHost = stubSettingsScope<ThemeSettings>()
-    themeHost.publish({ status: 'ready', value: { preference: 'dark' }, revision: 1, writable: true })
+    themeHost.publish({ status: 'ready', value: appearance('dark'), revision: 1, writable: true })
     const ctx = new Context()
     const theme = new ThemeRuntime(ctx, themeHost.scope)
     const studioHost = durableStudio({ activeThemeId: NORDIC.id })
@@ -91,7 +110,7 @@ describe('ThemeRuntime + Theme Studio integration', () => {
 
   it('lets preview tokens win over the active overlay in the composed snapshot', () => {
     const themeHost = stubSettingsScope<ThemeSettings>()
-    themeHost.publish({ status: 'ready', value: { preference: 'light' }, revision: 1, writable: true })
+    themeHost.publish({ status: 'ready', value: appearance('light'), revision: 1, writable: true })
     const ctx = new Context()
     const theme = new ThemeRuntime(ctx, themeHost.scope)
     const studio = new ThemeStudioRuntime({
@@ -121,6 +140,22 @@ describe('ThemeRuntime + Theme Studio integration', () => {
     studio.dispose()
     expect(theme.getTheme().active.tokens['--dsw-alias-bg-base']).toBeUndefined()
     expect(theme.getTheme().active.tokens).toEqual({})
+  })
+})
+
+describe('overlay source replacement', () => {
+  it('lets a newer layer survive the disposer from the previous registration', () => {
+    const themeHost = stubSettingsScope<ThemeSettings>()
+    themeHost.publish({ status: 'ready', value: appearance('light'), revision: 1, writable: true })
+    const ctx = new Context()
+    const theme = new ThemeRuntime(ctx, themeHost.scope)
+    const first = theme.overrideTokens('example:layer', presetToOverrides(GRAPHITE))
+    const second = theme.overrideTokens('example:layer', presetToOverrides(NORDIC))
+    first()
+    expect(theme.getTheme().active.tokens['--dsw-alias-brand-primary'])
+      .toBe(presetToOverrides(NORDIC)['--dsw-alias-brand-primary']!.light)
+    second()
+    expect(theme.getTheme().active.tokens['--dsw-alias-brand-primary']).toBeUndefined()
   })
 })
 

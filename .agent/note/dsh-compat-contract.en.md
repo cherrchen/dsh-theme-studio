@@ -14,6 +14,7 @@ Recorded on 2026-10-02 from f34ab5b, fba048e, bbb0ada, d709754, a42316f, and cur
 4. **Caret peers can mix releases.** The historical 0.1.7-alpha.1 direct pin does not lock every transitive DSH peer. The matrix inspects the lockfile and adds overrides. A green candidate requires consistent actual resolution.
 5. **The newest supported pin is current policy.** ab0d19c promoted the development baseline; the old release instruction to restore the oldest pin is obsolete. Preserve users' manifest/lockfile changes rather than reverting them with git checkout.
 6. **Legacy-provider tests may legitimately skip.** A Config-based installation lacks legacy register, so that regression test skips while configure and client tests cover the newer path. This does not imply persistence is wholly untested, but an in-memory test is still not a real-profile disk journey.
+7. **0.2.1 vendors are prereleases.** Cordis 4.0.5-alpha.1 and Schemastery 3.18.5-alpha.1 do not satisfy ranges that omit a prerelease tag. Name those exact prereleases in the peer and dependency, and override the matching Cordis plugins and cosmokit. `dsh-invariants` has no 0.2.1-alpha.1 or alpha.2 publication, so it cannot be pinned to that release. The older matrix drops these new runtime overrides and lets each older install resolve its own ranges.
 
 ## Before Editing
 

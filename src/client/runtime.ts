@@ -7,6 +7,7 @@ import {
   type ThemeStudioSettings,
 } from '../constants.ts'
 import { presetToOverrides } from './adapter.ts'
+import { withoutOfficialFontTokens } from './font-boundary.ts'
 import type { BuiltinThemePreset, ThemeCatalog } from './types.ts'
 
 export {
@@ -34,6 +35,8 @@ export interface ThemeStudioSnapshot {
   previewing: boolean
   /** Settings-scope readiness. */
   settingsStatus: 'loading' | 'ready' | 'unavailable'
+  /** The latest save was rejected and the visible theme was restored from the accepted snapshot. */
+  saveError: boolean
   /** Monotonic change counter. */
   revision: number
 }
@@ -66,13 +69,21 @@ export class ThemeStudioRuntime {
   private readonly unsubscribeHost: (() => void) | undefined
   private activeDisposer: (() => void) | undefined
   private previewDisposer: (() => void) | undefined
+  /** Own settings writes not yet settled. Adoption waits so an older echo cannot revert a newer choice. */
+  private pendingWrites = 0
+  /** Rejection flag of the newest write. An older settlement must not replace it. */
+  private latestRejected = false
   private persistGeneration = 0
-  private repairingUnknown = false
+  /** Last id adopted from a ready Host snapshot. Optimistic choices do not update it. */
+  private acceptedThemeId: string | null = null
+  /** Unknown raw value whose repair write already failed. A later different value may retry. */
+  private repairBlockedRaw: unknown = undefined
   private disposed = false
   private activeThemeId: string | null = null
   private previewThemeId: string | null = null
   private previewing = false
   private settingsStatus: ThemeStudioSnapshot['settingsStatus']
+  private saveError = false
   private revision = 0
   private snapshot: ThemeStudioSnapshot
 
@@ -161,6 +172,7 @@ export class ThemeStudioRuntime {
     this.activeThemeId = id
     this.previewThemeId = null
     this.previewing = false
+    this.saveError = false
     this.publish()
     void this.persist(id)
   }
@@ -177,6 +189,7 @@ export class ThemeStudioRuntime {
     this.previewing = false
     this.installActive(preset)
     this.activeThemeId = id
+    this.saveError = false
     this.publish()
     void this.persist(id)
   }
@@ -189,6 +202,7 @@ export class ThemeStudioRuntime {
     this.activeThemeId = null
     this.previewThemeId = null
     this.previewing = false
+    this.saveError = false
     this.publish()
     void this.persist(null)
   }
@@ -197,7 +211,7 @@ export class ThemeStudioRuntime {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
-    this.persistGeneration += 1
+    this.pendingWrites = 0
     this.unsubscribeHost?.()
     this.disposePreviewLayer()
     this.clearActiveLayer()
@@ -213,7 +227,17 @@ export class ThemeStudioRuntime {
       }
       return
     }
-    const section = this.host.getSnapshot()
+    if (this.pendingWrites > 0) return
+    let section: ReturnType<ThemeSettingsHost<ThemeStudioSettings>['getSnapshot']>
+    try {
+      section = this.host.getSnapshot()
+    } catch {
+      this.settingsStatus = 'unavailable'
+      this.saveError = true
+      this.revertToAccepted()
+      this.publish()
+      return
+    }
     if (section.status !== 'ready') {
       if (this.settingsStatus !== section.status) {
         this.settingsStatus = section.status
@@ -222,32 +246,40 @@ export class ThemeStudioRuntime {
       return
     }
     this.settingsStatus = 'ready'
+    this.saveError = false
     this.applyDurable(section.value?.activeThemeId)
   }
 
   private applyDurable(raw: unknown): void {
     const id = normalizeId(raw)
-    if (typeof raw === 'string' && this.catalog.get(raw) === undefined) {
+    if (typeof raw === 'string' && raw.length > 0 && this.catalog.get(raw) === undefined) {
       this.disposePreviewLayer()
       this.clearActiveLayer()
       this.activeThemeId = null
+      this.acceptedThemeId = null
       this.previewThemeId = null
       this.previewing = false
       this.publish()
-      this.repairUnknown()
+      this.repairUnknown(raw)
       return
     }
+    this.repairBlockedRaw = undefined
     if (id === this.activeThemeId) {
+      this.acceptedThemeId = id
       if (!this.previewing) {
         if (id === null) this.clearActiveLayer()
         else this.ensureActiveLayer()
       }
-      if (this.snapshot.settingsStatus !== this.settingsStatus) this.publish()
+      if (
+        this.snapshot.settingsStatus !== this.settingsStatus
+        || this.snapshot.saveError !== this.saveError
+      ) this.publish()
       return
     }
     this.disposePreviewLayer()
     this.previewThemeId = null
     this.previewing = false
+    this.acceptedThemeId = id
     if (id === null) {
       this.clearActiveLayer()
       this.activeThemeId = null
@@ -261,24 +293,98 @@ export class ThemeStudioRuntime {
     this.publish()
   }
 
-  private repairUnknown(): void {
-    if (this.host === undefined || this.repairingUnknown) return
-    this.repairingUnknown = true
-    void this.host.set(ACTIVE_THEME_ID_FIELD, null).finally(() => {
-      this.repairingUnknown = false
-    })
+  private repairUnknown(raw: unknown): void {
+    if (this.disposed || this.host === undefined || this.repairBlockedRaw === raw) return
+    this.repairBlockedRaw = raw
+    void this.persist(null)
   }
 
   private async persist(id: string | null): Promise<void> {
+    if (this.disposed || this.host === undefined) return
+    const host = this.host
     const generation = ++this.persistGeneration
-    if (this.host === undefined) return
-    await this.host.set(ACTIVE_THEME_ID_FIELD, id)
-    if (this.disposed || generation !== this.persistGeneration) return
-    const section = this.host.getSnapshot()
-    if (section.status !== 'ready') return
-    if (normalizeId(section.value?.activeThemeId) !== this.activeThemeId) {
-      this.applyDurable(section.value?.activeThemeId)
+    this.pendingWrites += 1
+    let rejected = false
+    try {
+      if (this.disposed) return
+      const result = await host.set(ACTIVE_THEME_ID_FIELD, id)
+      rejected = result === false
+    } catch {
+      rejected = true
+    } finally {
+      if (!this.disposed) {
+        if (generation === this.persistGeneration) this.latestRejected = rejected
+        this.pendingWrites -= 1
+        if (this.pendingWrites === 0) this.finishPersist()
+      }
     }
+  }
+
+  /**
+   * Reconcile the optimistic choice with the Host snapshot after every own
+   * write has settled. The accepted snapshot is the only durable authority.
+   */
+  private finishPersist(): void {
+    if (this.disposed || this.host === undefined || this.pendingWrites > 0) return
+    const rejected = this.latestRejected
+    let section: ReturnType<ThemeSettingsHost<ThemeStudioSettings>['getSnapshot']>
+    try {
+      section = this.host.getSnapshot()
+    } catch {
+      this.settingsStatus = 'unavailable'
+      this.failAndRevert()
+      return
+    }
+    if (section.status !== 'ready') {
+      this.settingsStatus = section.status
+      if (rejected) this.failAndRevert()
+      else if (this.snapshot.settingsStatus !== this.settingsStatus) this.publish()
+      return
+    }
+    this.settingsStatus = 'ready'
+    if (this.durableMatches(section.value?.activeThemeId, this.activeThemeId)) {
+      this.acceptedThemeId = this.activeThemeId
+      if (normalizeId(section.value?.activeThemeId) === null) this.repairBlockedRaw = undefined
+      if (this.saveError) {
+        this.saveError = false
+        this.publish()
+      }
+      return
+    }
+    this.saveError = true
+    this.applyDurable(section.value?.activeThemeId)
+  }
+
+  private durableMatches(raw: unknown, local: string | null): boolean {
+    if (typeof raw === 'string' && raw.length > 0 && this.catalog.get(raw) === undefined) return false
+    return normalizeId(raw) === local
+  }
+
+  private failAndRevert(): void {
+    if (this.activeThemeId !== this.acceptedThemeId) {
+      this.saveError = true
+      this.revertToAccepted()
+    }
+    this.publish()
+  }
+
+  private revertToAccepted(): void {
+    this.disposePreviewLayer()
+    this.previewThemeId = null
+    this.previewing = false
+    if (this.acceptedThemeId === null) {
+      this.clearActiveLayer()
+      this.activeThemeId = null
+      return
+    }
+    const preset = this.catalog.get(this.acceptedThemeId)
+    if (preset === undefined) {
+      this.clearActiveLayer()
+      this.activeThemeId = null
+      return
+    }
+    this.installActive(preset)
+    this.activeThemeId = this.acceptedThemeId
   }
 
   private requirePreset(id: string): BuiltinThemePreset {
@@ -288,11 +394,15 @@ export class ThemeStudioRuntime {
   }
 
   private installActive(preset: BuiltinThemePreset): void {
-    this.activeDisposer = this.theme.overrideTokens(ACTIVE_SOURCE, presetToOverrides(preset))
+    this.activeDisposer = this.theme.overrideTokens(ACTIVE_SOURCE, this.tokenOverrides(preset))
   }
 
   private installPreview(preset: BuiltinThemePreset): void {
-    this.previewDisposer = this.theme.overrideTokens(PREVIEW_SOURCE, presetToOverrides(preset))
+    this.previewDisposer = this.theme.overrideTokens(PREVIEW_SOURCE, this.tokenOverrides(preset))
+  }
+
+  private tokenOverrides(preset: BuiltinThemePreset): ThemeTokenOverrides {
+    return withoutOfficialFontTokens(presetToOverrides(preset))
   }
 
   private ensureActiveLayer(): void {
@@ -321,6 +431,7 @@ export class ThemeStudioRuntime {
       previewThemeId: this.previewThemeId,
       previewing: this.previewing,
       settingsStatus: this.settingsStatus,
+      saveError: this.saveError,
       revision: this.revision,
     })
   }
