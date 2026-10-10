@@ -57,7 +57,11 @@ try {
   if (names.length !== 1) fail(`expected one tarball, found ${names.join(', ') || 'none'}`)
   const tarballPath = join(out, names[0] ?? 'missing.tgz')
   if (names.length === 1) {
-    if (await run('tar', ['-xzf', tarballPath, '-C', extractDir], root) !== 0) fail('could not extract the tarball')
+    // GNU tar (including Git for Windows) treats the colon in C:\\... as
+    // a remote archive. Use local relative names, which also work with BSD tar.
+    if (await run('tar', ['-xzf', names[0], '-C', 'extract'], out) !== 0) {
+      throw new Error('could not extract the tarball')
+    }
     const listing = new Set()
     walk(extractDir, '', listing)
     for (const file of required) if (!listing.has(file)) fail(`tarball is missing ${file}`)

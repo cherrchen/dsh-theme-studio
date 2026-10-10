@@ -50,6 +50,8 @@ pnpm release patch --tag
 
 ## 验证实际 tarball
 
+`verify:package` 在 tarball 所在临时目录运行 `tar`，使用相对 archive 文件名和相对解压目录。Git for Windows 的 GNU tar 会把 Windows 盘符中的冒号识别为远端 archive 分隔符；不要把带盘符的绝对路径直接交给 `tar -f`。相对路径同时适用于 GNU tar 与 macOS BSD tar。
+
 ```sh
 pnpm pack --pack-destination /tmp/theme-studio-release
 ```
