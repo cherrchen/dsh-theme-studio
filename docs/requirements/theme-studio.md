@@ -69,4 +69,4 @@ Host accepted snapshot 是持久 authority；preview 不进入 durable settings�
 
 Stage 1 的状态迁移、恢复与 settings 适配已由单测和官方 ThemeRuntime 发布 bundle 集成验证；Stage 2/3 由 commit `509b88e` 和 2026-10-02 全部十版矩阵验证。完整浏览器视觉、真实 Web profile 的本次磁盘持久化旅程、跨平台本机呈现与完整 WCAG 审核未完成。历史提交记录中的真实 profile 验证属于当时的证据，不自动覆盖当前未发布改动。
 
-Host 拒绝保存时，界面恢复 accepted snapshot 并显示可重试的失败提示。这仍不是跨请求事务：后一次接受的 snapshot 覆盖先显示的乐观选择。官方字体和字号不属于 Theme Studio 的持久字段。
+Host 拒绝保存时，界面恢复 accepted snapshot 并显示可重试的失败提示。重叠的应用按顺序提交，最新选择会在更早的 `set` 结算后再写入，避免旧的成功结果后落盘。结算完成后，accepted snapshot 仍覆盖乐观选择。官方字体和字号不属于 Theme Studio 的持久字段。

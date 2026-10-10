@@ -43,9 +43,9 @@ Default 预览通过暂时移除 active 层呈现官方主题，不创建一套�
 
 Host 快照不是 ready 时只更新 settingsStatus。ready 后 normalize activeThemeId：null/undefined/非有效字符串视作默认；若 raw 是不在目录的字符串，清两层、清状态、publish，并尝试 set(activeThemeId, null)。repairingUnknown 阻止同一未结束修复被重复发起。
 
-当新 durable id 不同于本地 id 时，取消预览并安装 accepted id；相同 id 且不在预览时补齐 active 层。Apply 先乐观更新并清除上一轮 `saveError`，然后调用 Host.set。进行中的写入大于零时，Host 回声不会把界面收回更早的值。全部自身写入结算后，才读取 accepted snapshot：与乐观 id 一致则记下该 id 并清除错误；不一致、`set` 返回 `false`、或 Promise rejected，则把颜色层和卡片恢复到 accepted snapshot，并把 `saveError` 设为 true。Themes 行用 `status.saveFailed` 提示，用户可再次应用。
+当新 durable id 不同于本地 id 时，取消预览并安装 accepted id；相同 id 且不在预览时补齐 active 层。Apply 先乐观更新并清除上一轮 `saveError`，然后调用 Host.set。同一时刻只有一个 `set` 在途：更晚的选择会替换尚未发出的 id，并等这次在途写入结束后再发给 Host。因此两次 Apply 重叠时，较新的成功结果不会被较早的 `set` 后落盘盖掉。进行中的写入大于零时，Host 回声不会把界面收回更早的值。队列全部结算后，才读取 accepted snapshot：与乐观 id 一致则记下该 id 并清除错误；不一致、最新一次 `set` 返回 `false`、或 Promise rejected，则把颜色层和卡片恢复到 accepted snapshot，并把 `saveError` 设为 true。Themes 行用 `status.saveFailed` 提示，用户可再次应用。
 
-更早写入的结算不能改写更新写入的结果。`dispose` 之后，已发出的 settlement 不再安装 overlay，也不会再发起新的 `set`。没有 Host 的直接 runtime 仍只保留本地层，不把这当成保存失败。未知 id 修复只对同一个 raw 值自动尝试一次；失败时显示保存错误，再次选择 Default 或具体主题可以重试。
+`dispose` 之后，已发出的 settlement 不再安装 overlay，也不会再发出排队中的 `set`。没有 Host 的直接 runtime 仍只保留本地层，不把这当成保存失败。未知 id 修复只对同一个 raw 值自动尝试一次；失败时显示保存错误，再次选择 Default 或具体主题可以重试。
 
 ## 字体边界
 
@@ -57,4 +57,4 @@ Host 快照不是 ready 时只更新 settingsStatus。ready 后 normalize active
 
 ## 验证
 
-`runtime.spec.ts` 覆盖默认、应用、替换、预览、取消、提升、重启、未知 durable id、accepted 设置回收敛及卸载。`theme-runtime.spec.ts` 使用已安装官方 Client 发布 bundle 验证明暗/系统模式和层级；未调用的 UI primitives 可被 stub，不能把此测试称为真实浏览器全量旅程。背景决策见 [ADR-0001](../decisions/ADR-0001-portable-token-overlays.md)与 [ADR-0002](../decisions/ADR-0002-settings-adapters-and-effect-ownership.md)。
+`runtime.spec.ts` 覆盖默认、应用、替换、预览、取消、提升、重启、未知 durable id、重叠应用的串行写入、accepted 设置回收敛及卸载。`theme-runtime.spec.ts` 使用已安装官方 Client 发布 bundle 验证明暗/系统模式和层级；未调用的 UI primitives 可被 stub，不能把此测试称为真实浏览器全量旅程。背景决策见 [ADR-0001](../decisions/ADR-0001-portable-token-overlays.md)与 [ADR-0002](../decisions/ADR-0002-settings-adapters-and-effect-ownership.md)。

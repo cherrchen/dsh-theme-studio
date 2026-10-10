@@ -11,7 +11,7 @@ English: [runtime-and-loader.en.md](./runtime-and-loader.en.md)
 - **carrier 是 bare package name。** faa9b92 删除自定义 Plugins-page 贡献后，官方 manager 与 browser scan 从安装 metadata 建图。只挂 /client 或虚构 invariant 会丢失 graph。旧 lib/plugin-page declaration 可能是 stale build，不是应恢复源码的依据。
 - **两层 disposer 有代次。** 同 source 替换由官方 overrideTokens restack；旧 disposer 不应删除新层。Default 预览暂时去掉 active，但持久 id仍保留，取消必须从catalog恢复原层。
 - **settings child 与 catalog parent 不同寿命。** 509b88e 将 provider 放父 apply，runtime 使用同一冻结目录。transport停止可以卸载row/runtime，不能撤销discovery；父provider停止由Cordis管理consumer重启。
-- **store不是第二authority。** Host accepted snapshot最终决定持久主题；revision投影只推进，不倒退。自身写入未结算时不采纳 Host 回声，避免旧请求盖住新选择。`saveError` 只标记这次失败，结算后仍以 accepted snapshot 为准。
+- **store不是第二authority。** Host accepted snapshot最终决定持久主题；revision投影只推进，不倒退。自身写入串行：新选择替换尚未发出的 id，并等在途 `set` 结束后再写。未结算时不采纳 Host 回声，因此较早的成功写入不能后落盘把较新选择收回。`saveError` 只标记这次失败，结算后仍以 accepted snapshot 为准。
 - **公开目录没有动态写口。** list/get稳定引用与深冻结是契约。不能顺便加入register/import/activate，也不能把builtin metadata当public文件schema。
 - **静态白色有角色。** neutral-00/bluish-00保留白色，deriveChrome负责bubble深底。不能为了dark主题将所有static neutral覆盖为主题ink。
 - **诊断失败要如实保留。** strict对现有low contrast非零；unknown不算pass；full precision不能先round。报告不代表完整hostWCAG，不自动修改must-addpalette锁值。

@@ -67,7 +67,7 @@ node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
 | --- | --- | --- |
 | 主题覆盖 | `overrideTokens` 的 source、light/dark、seq 和旧 disposer 语义未变。样式表没有新增颜色 token 名 | 不新增版本分支。安装前去掉官方字体变量，避免 ThemePresenter 后写 token 时盖住字体 |
 | 字体所有权 | alpha.2 用 `fontSizes` / `fontFamilies` 替换单一 `fontSize`。终端直接读 snapshot；正文和代码尺寸走 CSS 变量 | Theme Studio 不写这些字段，不增加字体设置 UI |
-| 设置写入 | 新 transport 的 `set` 返回 `false` 表示拒绝并已 recover；旧 transport 返回 void，拒绝后同样 recover | accepted snapshot 回收敛。`false` 与 rejected Promise 显示 `status.saveFailed`。未结算写入挡住 Host 回声 |
+| 设置写入 | 新 transport 的 `set` 返回 `false` 表示拒绝并已 recover；旧 transport 返回 void，拒绝后同样 recover | accepted snapshot 回收敛。`false` 与 rejected Promise 显示 `status.saveFailed`。连续 `set` 串行，未结算写入挡住 Host 回声 |
 | 共享运行时 | 0.2.1-alpha.1 与 alpha.2 使用 Cordis 4.0.5-alpha.1、Schemastery 3.18.5-alpha.1，以及对应的 cordis plugin 与 cosmokit 1.8.6-alpha.1 | 这些精确预发布版本写入 peer/dependency 与 overrides。旧版矩阵去掉这组新 override |
 | invariants | npm 没有 `@deepseek-ai/dsh-invariants@0.2.1-alpha.1` 或 `alpha.2` | 开发依赖不再 pin 该包。旧版若传递依赖它，由该版自己的范围和矩阵漂移修正处理 |
 | 设置与槽位实现 | settings、ui-settings、ui-slots 源码相对 rc.2 无实现差异 | 继续复用现有适配 |

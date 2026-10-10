@@ -12,6 +12,7 @@ import {
 const GRAPHITE = 'dsh-theme-studio.graphite'
 const NORDIC = 'dsh-theme-studio.nordic'
 const OLED = 'dsh-theme-studio.oled'
+const WARM = 'dsh-theme-studio.warm'
 
 function fakeTheme() {
   const layers = new Map<string, { tokens: ThemeTokenOverrides; seq: number }>()
@@ -274,7 +275,85 @@ describe('ThemeStudioRuntime', () => {
     expect(overlay.has(ACTIVE_SOURCE)).toBe(true)
   })
 
-  it('keeps the newer choice when an older write settles later', async () => {
+  it('keeps the newer choice when an older write settles first', async () => {
+    const host = durableHost({ activeThemeId: GRAPHITE })
+    const overlay = fakeTheme()
+    const runtime = new ThemeStudioRuntime({
+      theme: overlay.theme,
+      host: host.scope,
+      catalog: new BuiltinPresetRegistry(),
+    })
+    let durable: string | null = GRAPHITE
+    const pending: Array<{ id: string | null, finish: (accepted: boolean) => void }> = []
+    host.set.mockImplementation((_field: string, next: unknown) => new Promise(resolve => {
+      pending.push({
+        id: next as string | null,
+        finish(accepted) {
+          if (accepted) durable = next as string | null
+          host.publish({
+            status: 'ready',
+            value: { activeThemeId: durable },
+            revision: (host.scope.getSnapshot().revision ?? 0) + 1,
+            writable: true,
+          })
+          resolve(accepted)
+        },
+      })
+    }))
+    runtime.activateTheme(NORDIC)
+    runtime.activateTheme(OLED)
+    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: OLED, saveError: false })
+    expect(pending.map(write => write.id)).toEqual([NORDIC])
+    pending[0]!.finish(true)
+    await Promise.resolve()
+    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: OLED, saveError: false })
+    expect(overlay.layers.get(ACTIVE_SOURCE)?.tokens['--dsw-alias-bg-base']?.dark).toBe('#000000')
+    expect(pending.map(write => write.id)).toEqual([NORDIC, OLED])
+    pending[1]!.finish(true)
+    await Promise.resolve()
+    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: OLED, saveError: false })
+    expect(host.scope.getSnapshot().value?.activeThemeId).toBe(OLED)
+  })
+
+  it('sends only the latest choice queued behind an in-flight write', async () => {
+    const host = durableHost({ activeThemeId: GRAPHITE })
+    const runtime = new ThemeStudioRuntime({
+      theme: fakeTheme().theme,
+      host: host.scope,
+      catalog: new BuiltinPresetRegistry(),
+    })
+    let durable: string | null = GRAPHITE
+    const pending: Array<{ id: string | null, finish: (accepted: boolean) => void }> = []
+    host.set.mockImplementation((_field: string, next: unknown) => new Promise(resolve => {
+      pending.push({
+        id: next as string | null,
+        finish(accepted) {
+          if (accepted) durable = next as string | null
+          host.publish({
+            status: 'ready',
+            value: { activeThemeId: durable },
+            revision: (host.scope.getSnapshot().revision ?? 0) + 1,
+            writable: true,
+          })
+          resolve(accepted)
+        },
+      })
+    }))
+    runtime.activateTheme(NORDIC)
+    runtime.activateTheme(OLED)
+    runtime.activateTheme(WARM)
+    expect(pending.map(write => write.id)).toEqual([NORDIC])
+    pending[0]!.finish(false)
+    await Promise.resolve()
+    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: WARM, saveError: false })
+    expect(pending.map(write => write.id)).toEqual([NORDIC, WARM])
+    pending[1]!.finish(true)
+    await Promise.resolve()
+    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: WARM, saveError: false })
+    expect(host.scope.getSnapshot().value?.activeThemeId).toBe(WARM)
+  })
+
+  it('restores the accepted snapshot when the newest overlapping write is rejected', async () => {
     const host = durableHost({ activeThemeId: GRAPHITE })
     const overlay = fakeTheme()
     const runtime = new ThemeStudioRuntime({
@@ -298,18 +377,13 @@ describe('ThemeStudioRuntime', () => {
     }))
     runtime.activateTheme(NORDIC)
     runtime.activateTheme(OLED)
-    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: OLED, saveError: false })
-    const [older, newer] = pending
-    expect(older).toBeTypeOf('function')
-    expect(newer).toBeTypeOf('function')
-    older!(false)
+    pending[0]!(true)
     await Promise.resolve()
-    expect(runtime.getSnapshot().activeThemeId).toBe(OLED)
-    expect(overlay.layers.get(ACTIVE_SOURCE)?.tokens['--dsw-alias-bg-base']?.dark).toBe('#000000')
-    newer!(true)
+    pending[1]!(false)
     await Promise.resolve()
-    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: OLED, saveError: false })
-    expect(host.scope.getSnapshot().value?.activeThemeId).toBe(OLED)
+    expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: NORDIC, saveError: true })
+    expect(overlay.layers.get(ACTIVE_SOURCE)?.tokens['--dsw-alias-brand-primary']?.light).toBe('#5e81ac')
+    expect(host.scope.getSnapshot().value?.activeThemeId).toBe(NORDIC)
   })
 
   it('does not install a layer after dispose when an in-flight write settles', async () => {
@@ -325,11 +399,14 @@ describe('ThemeStudioRuntime', () => {
       release = resolve
     }))
     runtime.activateTheme(GRAPHITE)
+    runtime.activateTheme(NORDIC)
     expect(overlay.has(ACTIVE_SOURCE)).toBe(true)
+    expect(host.set).toHaveBeenCalledTimes(1)
     runtime.dispose()
     expect(overlay.has(ACTIVE_SOURCE)).toBe(false)
     release?.(true)
     await Promise.resolve()
+    expect(host.set).toHaveBeenCalledTimes(1)
     expect(overlay.has(ACTIVE_SOURCE)).toBe(false)
     expect(overlay.has(PREVIEW_SOURCE)).toBe(false)
     expect(() => { runtime.activateTheme(NORDIC) }).toThrow(/disposed/)

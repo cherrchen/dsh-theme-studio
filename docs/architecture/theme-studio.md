@@ -71,7 +71,7 @@ ThemeSnapshot → ThemePresenter → DOM
 
 ### 从 UI 到持久设置
 
-Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`。槽位注入组件时绑定 actions 并立即同步当前快照。按钮调用 runtime facade；Apply 乐观更新 active 层并异步调用 Host.set。进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
+Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`。槽位注入组件时绑定 actions 并立即同步当前快照。按钮调用 runtime facade；Apply 乐观更新 active 层并异步调用 Host.set。Host 写入串行，尚未发出的更早 id 让位给最新选择。进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
 
 ### catalog 与校验
 

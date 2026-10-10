@@ -73,7 +73,11 @@ export class ThemeStudioRuntime {
   private pendingWrites = 0
   /** Rejection flag of the newest write. An older settlement must not replace it. */
   private latestRejected = false
-  private persistGeneration = 0
+  /** One Host `set` is in flight. A newer choice waits and is sent after it settles. */
+  private drainingWrites = false
+  /** Latest id not yet sent. Older unsent ids are replaced. */
+  private hasQueuedWrite = false
+  private queuedId: string | null = null
   /** Last id adopted from a ready Host snapshot. Optimistic choices do not update it. */
   private acceptedThemeId: string | null = null
   /** Unknown raw value whose repair write already failed. A later different value may retry. */
@@ -212,6 +216,7 @@ export class ThemeStudioRuntime {
     if (this.disposed) return
     this.disposed = true
     this.pendingWrites = 0
+    this.hasQueuedWrite = false
     this.unsubscribeHost?.()
     this.disposePreviewLayer()
     this.clearActiveLayer()
@@ -299,23 +304,49 @@ export class ThemeStudioRuntime {
     void this.persist(null)
   }
 
-  private async persist(id: string | null): Promise<void> {
+  private persist(id: string | null): void {
     if (this.disposed || this.host === undefined) return
-    const host = this.host
-    const generation = ++this.persistGeneration
     this.pendingWrites += 1
-    let rejected = false
+    this.queuedId = id
+    this.hasQueuedWrite = true
+    if (this.drainingWrites) return
+    this.drainingWrites = true
+    void this.drainWrites()
+  }
+
+  /**
+   * Send queued ids one at a time. Overlapping Apply calls must not race:
+   * a newer success can settle first, then an older `set` updates the Host
+   * snapshot last and `finishPersist` would treat that stale snapshot as authority.
+   */
+  private async drainWrites(): Promise<void> {
+    const host = this.host
+    if (host === undefined) {
+      this.drainingWrites = false
+      return
+    }
     try {
-      if (this.disposed) return
-      const result = await host.set(ACTIVE_THEME_ID_FIELD, id)
-      rejected = result === false
-    } catch {
-      rejected = true
+      while (this.hasQueuedWrite && !this.disposed) {
+        const id = this.queuedId
+        const covered = this.pendingWrites
+        this.hasQueuedWrite = false
+        let rejected = false
+        try {
+          const result = await host.set(ACTIVE_THEME_ID_FIELD, id)
+          rejected = result === false
+        } catch {
+          rejected = true
+        }
+        if (this.disposed) return
+        if (!this.hasQueuedWrite) this.latestRejected = rejected
+        this.pendingWrites -= covered
+        if (this.pendingWrites === 0 && !this.hasQueuedWrite) this.finishPersist()
+      }
     } finally {
-      if (!this.disposed) {
-        if (generation === this.persistGeneration) this.latestRejected = rejected
-        this.pendingWrites -= 1
-        if (this.pendingWrites === 0) this.finishPersist()
+      this.drainingWrites = false
+      if (!this.disposed && this.hasQueuedWrite) {
+        this.drainingWrites = true
+        void this.drainWrites()
       }
     }
   }
