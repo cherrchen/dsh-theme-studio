@@ -39,7 +39,9 @@ git tag --list 'v*'
 
 2026-10-10 检查 [CI run 38063562976](https://github.com/cherrchen/dsh-theme-studio/actions/runs/38063562976)：十二个 Windows 版本均在 test 阶段失败；已读取最老支持版 `0.1.5-rc.2` 与开发基线 `0.2.1-alpha.2` 的日志，两者都在六个 jsdom 套件初始化时报告 `Cannot find module '/tests/setup/module-loader.client.ts'`。安装、compat、lint、typecheck 和 build 在这两个任务中已通过。上游缺失 source map 的 ENOENT 警告不是此处的失败原因。
 
-Windows 临时目录可同时出现长用户名路径与 `RUNNER~1` 短路径。测试配置将项目 root 解析为真实路径，并以同一 root 构造 setupFiles 和 renderer shim 的绝对路径，保持 node/jsdom 的文件定位一致。不得通过跳过 jsdom 套件、删掉 setup 或移除 Windows 矩阵掩盖失败。复验运行 `pnpm verify:all`，再查看修复 commit 的三平台完整 CI；本机 macOS 结果不能替代 Windows runner 的通过证据。
+Windows 临时目录可同时出现长用户名路径与 `RUNNER~1` 短路径。Vite 8.2 起会 realpath 项目 root；Windows 的 safeRealpath 首次使用普通 `realpathSync`，随后可能改用 `realpathSync.native`，两者对 8.3 短名称的结果不同。node/jsdom 环境由此可能得到不同根目录。相关上游背景见 [Vite #23197](https://github.com/vitejs/vite/issues/23197) 与 [#23198](https://github.com/vitejs/vite/pull/23198)，后者处理 preserveSymlinks，不直接修复这里的短名称差异。首次仅使用普通 realpath 的修复在 [CI run 38064162111](https://github.com/cherrchen/dsh-theme-studio/actions/runs/38064162111) 中仍报同一错误。
+
+测试配置使用 `realpathSync.native` 预先将项目 root 展开为长路径，并以同一 root 构造 setupFiles 和 renderer shim 的绝对路径，保持 node/jsdom 的文件定位一致。不得通过跳过 jsdom 套件、删掉 setup 或移除 Windows 矩阵掩盖失败。复验运行 `pnpm verify:all`，再查看修复 commit 的三平台完整 CI；本机 macOS 结果不能替代 Windows runner 的通过证据。
 
 ## History and Related Documents
 

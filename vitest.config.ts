@@ -4,8 +4,9 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 // Windows temporary installs can be reached through both RUNNER~1 and the
-// long user path. Give Vite's node and jsdom environments the same root.
-const root = realpathSync(fileURLToPath(new URL('.', import.meta.url)))
+// long user path. The native resolver expands 8.3 names; realpathSync does
+// not. Give Vite's node and jsdom environments the same native root.
+const root = realpathSync.native(fileURLToPath(new URL('.', import.meta.url)))
 
 export default defineConfig({
   root,
