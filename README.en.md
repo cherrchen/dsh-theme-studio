@@ -36,7 +36,7 @@ npm and release tarballs contain published builds. To use unreleased Stage 2/3, 
 
 Supported exact releases come from `src/compat/dsh-version.ts`: 0.1.5-rc.2, 0.1.5-rc.3, 0.1.6-alpha.1, 0.1.6-alpha.2, 0.1.7-alpha.1, 0.1.7-alpha.2, 0.1.7-rc.1, 0.1.7-rc.2, 0.2.0-rc.1, 0.2.0-rc.2, 0.2.1-alpha.1, and 0.2.1-alpha.2. `pnpm compat:check` verifies this section, the Chinese README, peers, the development pin, overrides, lockfile, and actual installed tree. Hosts enforcing peer admission load the plugin only when their release is declared supported. Production entry points do not probe package versions through Node.
 
-See the [DSH compatibility matrix](./docs/development/dsh-compatibility.md) for seam coverage, evidence, upgrade risks, and limits. `pnpm compat:matrix` checks every supported release in isolated temporary installations without changing the development tree.
+See the [DSH compatibility matrix](./docs/development/dsh-compatibility.md) for seam coverage, evidence, upgrade risks, and limits. `pnpm compat:matrix` checks every supported release in isolated temporary installations without changing the development tree. `node scripts/run-dsh-matrix.mjs --candidate <version>` probes a release that is not supported yet; a green probe does not add it to the allowlist.
 
 ## Installation
 

@@ -1,0 +1,873 @@
+{
+  "generatedAt": "2026-10-10T15:21:22.539Z",
+  "mode": "supported",
+  "results": [
+    {
+      "version": "0.1.5-rc.2",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.2",
+        "schemastery": "3.18.2"
+      }
+    },
+    {
+      "version": "0.1.5-rc.3",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.2",
+        "schemastery": "3.18.2"
+      }
+    },
+    {
+      "version": "0.1.6-alpha.1",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.2",
+        "schemastery": "3.18.2"
+      }
+    },
+    {
+      "version": "0.1.6-alpha.2",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.2",
+        "schemastery": "3.18.2"
+      }
+    },
+    {
+      "version": "0.1.7-alpha.1",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.3",
+        "schemastery": "3.18.3"
+      }
+    },
+    {
+      "version": "0.1.7-alpha.2",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.4",
+        "schemastery": "3.18.4"
+      }
+    },
+    {
+      "version": "0.1.7-rc.1",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.4",
+        "schemastery": "3.18.4"
+      }
+    },
+    {
+      "version": "0.1.7-rc.2",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.4",
+        "schemastery": "3.18.4"
+      }
+    },
+    {
+      "version": "0.2.0-rc.1",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.4",
+        "schemastery": "3.18.4"
+      }
+    },
+    {
+      "version": "0.2.0-rc.2",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.4",
+        "schemastery": "3.18.4"
+      }
+    },
+    {
+      "version": "0.2.1-alpha.1",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.5-alpha.1",
+        "schemastery": "3.18.5-alpha.1"
+      }
+    },
+    {
+      "version": "0.2.1-alpha.2",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-client.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.5-alpha.1",
+        "schemastery": "3.18.5-alpha.1"
+      }
+    }
+  ],
+  "environment": {
+    "os": "macOS",
+    "arch": "arm64",
+    "node": "24.18.0",
+    "pnpm": "11.7.0 in repository; 11.28.5 in early temporary probe installs",
+    "browser": "Real headless Playwright Chromium"
+  },
+  "browserLogEvidence": [
+    {
+      "version": "0.1.5-rc.2",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:49451\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    },
+    {
+      "version": "0.1.5-rc.3",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:49857\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    },
+    {
+      "version": "0.1.6-alpha.1",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:50489\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    },
+    {
+      "version": "0.1.6-alpha.2",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:50871\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    },
+    {
+      "version": "0.1.7-alpha.1",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:51320\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    },
+    {
+      "version": "0.1.7-alpha.2",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:51689\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    },
+    {
+      "version": "0.1.7-rc.1",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:52103\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    },
+    {
+      "version": "0.1.7-rc.2",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:52511\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    },
+    {
+      "version": "0.2.0-rc.1",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:52945\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    },
+    {
+      "version": "0.2.0-rc.2",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:53382\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    },
+    {
+      "version": "0.2.1-alpha.1",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:53809\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    },
+    {
+      "version": "0.2.1-alpha.2",
+      "exitCode": 0,
+      "log": "[smoke:client] opened http://127.0.0.1:53930\n[smoke:client] client shell is ready\n[smoke:client] opened Settings\n[smoke:client] selected General\n[smoke:client] Themes and Appearance are both visible\n[smoke:client] preview changed the page background variable\n[smoke:client] cancel restored the background variable\n[smoke:client] reload kept the applied theme\n[smoke:client] a fresh Host process restored the applied theme from the isolated profile\n[smoke:client] passed\n"
+    }
+  ],
+  "evidenceRetentionCheck": {
+    "version": "0.2.1-alpha.2",
+    "results": {
+      "generatedAt": "2026-10-10T15:24:30.937Z",
+      "mode": "supported",
+      "results": [
+        {
+          "version": "0.2.1-alpha.2",
+          "candidate": false,
+          "steps": [
+            {
+              "command": "pnpm install --ignore-scripts --frozen-lockfile --config.minimumReleaseAge=0",
+              "exitCode": 0
+            },
+            {
+              "command": "pnpm compat:check",
+              "exitCode": 0
+            },
+            {
+              "command": "pnpm lint",
+              "exitCode": 0
+            },
+            {
+              "command": "pnpm typecheck",
+              "exitCode": 0
+            },
+            {
+              "command": "pnpm build",
+              "exitCode": 0
+            },
+            {
+              "command": "pnpm test",
+              "exitCode": 0
+            },
+            {
+              "command": "pnpm docs:check",
+              "exitCode": 0
+            },
+            {
+              "command": "node scripts/audit-theme-tokens.mjs",
+              "exitCode": 0
+            },
+            {
+              "command": "node scripts/verify-package.mjs",
+              "exitCode": 0
+            },
+            {
+              "command": "node scripts/smoke-theme.mjs",
+              "exitCode": 0
+            },
+            {
+              "command": "node scripts/smoke-compose.mjs",
+              "exitCode": 0
+            },
+            {
+              "command": "node scripts/smoke-client.mjs",
+              "exitCode": 0
+            }
+          ],
+          "passed": true,
+          "metadata": {
+            "cordis": "4.0.5-alpha.1",
+            "schemastery": "3.18.5-alpha.1"
+          }
+        }
+      ]
+    },
+    "browserReport": {
+      "status": "passed",
+      "version": "0.2.1-alpha.2",
+      "notes": [
+        "opened http://127.0.0.1:54385",
+        "client shell is ready",
+        "opened Settings",
+        "selected General",
+        "Themes and Appearance are both visible",
+        "preview changed the page background variable",
+        "cancel restored the background variable",
+        "reload kept the applied theme",
+        "a fresh Host process restored the applied theme from the isolated profile"
+      ],
+      "consoleErrors": []
+    },
+    "retainedArtifacts": [
+      "browser JSON",
+      "screenshot PNG",
+      "DOM HTML",
+      "redacted server log"
+    ]
+  }
+}

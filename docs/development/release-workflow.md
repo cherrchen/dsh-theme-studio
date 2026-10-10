@@ -18,10 +18,12 @@
 pnpm install --frozen-lockfile
 pnpm docs:check
 pnpm compat:check
+pnpm lint
 pnpm typecheck
-pnpm test
 rm -rf lib
 pnpm build
+pnpm test
+pnpm verify:package
 pnpm pack --dry-run
 ```
 
@@ -76,11 +78,11 @@ git push origin main --follow-tags
 
 这里以正式main发版为例，不能把feat/stage-2-3的本地完成当已自动合并/推送。本次文档任务不触发新tag或npm发布。
 
-verify job使用Node22.19与pnpm11.7，先匹配tag/version，再install、docs/compat/type/test/build，pack actual tarball并检查内容。publish job仅在verify成功后继续，重新构建pack，以public access和provenance发布npm；notes脚本从两份changelog提取该version，再由GitHub token创建Release并附tarball。
+verify job 使用 Node 22.19 与 pnpm 11.7，通过可复用的 CI workflow 跑冻结安装，以及每个受支持 DSH 版本在 Ubuntu、macOS、Windows 上的隔离矩阵。PR 默认浏览器旅程在 Ubuntu 上跑注册时代代表与当前开发 pin；Release 强制 `browser_coverage: all` 跑全部支持版本。本地复验不等同于 GitHub 托管 runner 的结果，远端覆盖以该 commit 的 Actions 记录为准。publish job 下载 CI 已经验证的 tarball，不再自己重新构建。无预发布标记发布到 `latest`，`rc` 发布到 `next`，`alpha` 发布到 `alpha`，`beta` 发布到 `beta`。其他预发布标记会使发布失败。发布仅使用 npm Trusted Publishing / OIDC，要求 npm 包设置已把本仓库与 `release.yml` 绑定为 trusted publisher。未配置时发布失败，不回退到长期 token。
 
 ## npm权限与provenance
 
-包scope为@dsh-electron，publishConfig.access=public。workflow若得到NPM_TOKEN会写临时npmrc，随后npm publish；同时配置id-token权限用于支持OIDC/provenance。是否已给本repository/workflow配置Trusted Publishing、secret是否存在及账户权限，必须检查实际远端设置，不能把历史文档的“已配置”当当前保证。
+包 scope 为 `@dsh-electron`，`publishConfig.access=public`。workflow 配置 `id-token: write`，使用支持 OIDC 的 npm 11.5.1+ 执行 `npm publish --provenance`，无 `NPM_TOKEN` 或临时认证 npmrc。配置要求见 [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/)。npm 上是否已经绑定 `cherrchen/dsh-theme-studio` 与 `release.yml`，需要维护者在包的 Publishing 设置核实；本次没有权限证据确认这一外部配置，也没有执行 npm publish。
 
 只有matching v* tag push触发自动发布；普通文档commit没有发布权限副作用。若远端某阶段失败，先确认npm是否已接受该version、GitHub Release是否已存在，再恢复后续步骤，避免误以为整条链可无条件重复。诊断见[build/release排查](../troubleshooting/build-and-release-failures.md)。
 

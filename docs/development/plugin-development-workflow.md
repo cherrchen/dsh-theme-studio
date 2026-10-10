@@ -32,7 +32,7 @@ install 可能运行 prepare/build；pnpm 的生命周期许可、release-age �
 
 build:types 运行 host/client tsc，生成 `lib/types/` 下声明与中间 JS。build 再从中间 JS 用 standalone tsdown 输出 Host ESM `lib/index.js` 与 browser loader `lib/client.js`。Client CJS wrapper 由宿主 ModuleLoader 管理，不能用 Node import 当普通 ESM。
 
-CSS Module helper 使用 lightningcss，编译 class mapping 并注入幂等 style 标签。runtime overlay 清理与 stylesheet cache 是不同生命周期。production packages 保持 external，store 相关实现可由 bundle 包含；实际列表看 build 输出。`pnpm bundle` 经 tsdown.config 可以通过 DSH_BUILD_FACE 选择 host/client；独立 build 生成两半。
+CSS Module helper 使用 lightningcss，编译 class mapping 并注入幂等 style 标签。runtime overlay 清理与 stylesheet cache 是不同生命周期。production packages 保持 external，`@deepseek-ai/dsh-client-store` 必须由宿主 ModuleLoader 提供；实际列表看 build 输出。`pnpm bundle` 经 tsdown.config 可以通过 DSH_BUILD_FACE 选择 host/client；独立 build 生成两半。
 
 build 的 clean=false，不删除旧声明。发布验证前仅清理**可再生成的 lib 目录**，不要删除源码或用户产物：
 
@@ -49,13 +49,19 @@ pnpm pack --dry-run
 ```sh
 pnpm docs:check
 pnpm compat:check
+pnpm lint
 pnpm typecheck
-pnpm test
 pnpm build
-pnpm pack --dry-run
+pnpm test
+pnpm audit:tokens
+pnpm verify:package
+pnpm smoke
+pnpm docs:check
+# 完整本地 gate：
+pnpm verify:all
 ```
 
-没有 lint script、kernel probe 或模型 smoke script；不能照搬 multi-root workspace 的 `verify:all`/`kernel:probe` 命令。文档重构增加 docs checker，相关逻辑入口已纳入 CI 和 release verify。
+`lint` 使用 ESLint 检查 TS/TSX 和工程脚本；`verify:all` 串行执行兼容、lint、类型、构建、单测、token、tarball、官方运行时/profile smoke 和文档检查。真实浏览器需另外设置 `DSH_BROWSER_E2E=1` 并安装 Playwright Chromium；不设置时 `smoke:client` 的 `not-run` 不能视为通过。
 
 | 覆盖层 | 实际机制 | 边界 |
 | --- | --- | --- |
@@ -93,9 +99,12 @@ node scripts/report-contrast.mjs --json > contrast-report.json
 ```sh
 pnpm compat:matrix
 node scripts/run-dsh-matrix.mjs 0.2.0-rc.2 0.2.1-alpha.1 0.2.1-alpha.2
+node scripts/run-dsh-matrix.mjs --candidate <exact-version>
+node scripts/upgrade-dsh.mjs --print-latest-prerelease
+node scripts/upgrade-dsh.mjs --print-installed
 ```
 
-脚本只接受清单版本。每版复制源码到临时目录，重建无 lockfile 的独立依赖树、匹配 vendor、统一漂移的间接 peers，依次 install/compat/type/test/build/pack。成功清理大安装树，命令 log 和 results.json 留存；失败保留树用于诊断。脚本不切换本地 pin。[兼容文档](./dsh-compatibility.md)保存已执行日期与平台，不把 CI 定义当实际执行。
+脚本只接受清单版本，另加一个 `--candidate` 精确版本。每版复制源码到临时目录，按该版本已发布包的依赖声明重钉 DSH、Cordis、Schemastery 和配套运行时，非开发 pin 删除 lockfile 后重新安装；当前开发 pin 保留 manifest/workspace 与 lockfile，使用 frozen 安装。安装后用结构化 lockfile 检查混装；间接 DSH 漂移只追加一次 override 并重装，仍然混装则失败。然后执行 compat、lint、typecheck、build、test、docs check、token audit、真实 tarball 安装和 profile smoke。成功清理大安装树，命令 log 和 results.json 留存；失败保留树用于诊断。脚本不切换本地 pin。`upgrade-dsh.mjs` 会改当前 checkout 的 manifest，因此在 `package.json`、`pnpm-workspace.yaml` 或 `pnpm-lock.yaml` 已有未提交修改时拒绝执行。`--admit-candidate` 拒绝修改普通本地 Git checkout，只允许没有 `.git` 的独立副本或一次性 GitHub Actions checkout。本地候选统一使用 `run-dsh-matrix.mjs --candidate`。候选成功不会写入支持清单。`DSH_BROWSER_E2E=1 PLAYWRIGHT_MODULE=<Playwright绝对入口> pnpm compat:matrix` 会在每个隔离版本上额外执行 Chromium 交互、刷新与 Host 重启后的磁盘恢复，报告和截图保留在 evidence 目录。[兼容文档](./dsh-compatibility.md)保存已执行日期与平台，不把 CI 定义当实际执行。
 
 ## 本地 profile 检查
 

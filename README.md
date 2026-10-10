@@ -36,7 +36,7 @@ npm/tarball 对应已发布构建；体验未发布 Stage 2/3 应构建包含该
 
 支持的精确版本以 `src/compat/dsh-version.ts` 为准：0.1.5-rc.2、0.1.5-rc.3、0.1.6-alpha.1、0.1.6-alpha.2、0.1.7-alpha.1、0.1.7-alpha.2、0.1.7-rc.1、0.1.7-rc.2、0.2.0-rc.1、0.2.0-rc.2、0.2.1-alpha.1、0.2.1-alpha.2。`pnpm compat:check` 检查本节、英文 README、peer 声明、开发 pin、overrides、lockfile 与实际安装树。启用 peer admission 的宿主仅在其运行版本被声明支持时加载插件。本包生产入口不通过 Node 探测包版本。
 
-完整证据、适配接缝、升级风险与未覆盖边界见 [DSH 兼容矩阵](./docs/development/dsh-compatibility.md)。运行 `pnpm compat:matrix` 会在独立临时安装树验证全部清单版本，不修改当前依赖树。
+完整证据、适配接缝、升级风险与未覆盖边界见 [DSH 兼容矩阵](./docs/development/dsh-compatibility.md)。运行 `pnpm compat:matrix` 会在独立临时安装树验证全部清单版本，不修改当前依赖树。候选版本用 `node scripts/run-dsh-matrix.mjs --candidate <version>` 探测；探测成功不会写入支持清单。
 
 ## 安装
 

@@ -49,7 +49,8 @@ legacy namespace scope as a Cordis effect or read uninjected proxy services.
 declarations and installed tree; production entry points do not probe packages
 through Node. Preserve old settings seams and verify every supported release
 when changing them. The development baseline is the newest supported release,
-not the obsolete oldest-pin instruction from historical workflow text.
+not the obsolete oldest-pin instruction from historical workflow text. A
+candidate probe retargets an isolated copy and does not edit the allowlist.
 
 Contrast reports are scoped diagnostics: unknown colors never pass, ratios are
 compared without rounding, and known low contrast is not automatically repaired

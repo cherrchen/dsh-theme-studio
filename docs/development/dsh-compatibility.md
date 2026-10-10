@@ -18,9 +18,9 @@
 | 语义颜色 | 新增文档选中、deep-diving/shimmer、开关 thumb、turn-trigger、菜单分组标题 token，存在局部保留官方配色的风险 | 从内置 palette 派生八个新 token，通过 overrideTokens 输出；旧版接受任意 token 名，无需修改 CSS 呈现层 |
 | remotes 聚合 | 新增 analytics 与 user-questions contributions | 本插件只使用已有设置通道，未新增相关服务依赖；对目标安装树做类型和构建验证 |
 
-## 逐版本结果
+## 逐版本结果（既有 0.2.1 升级批次）
 
-验证日期：2026-10-10。环境：macOS arm64、Node 24.18.0、pnpm 11.7.0。十二个精确版本各自重新安装 npm 发布包，执行 `compat:check`、`typecheck`、完整 `test`、`build`、`pack --dry-run`，全部退出码为 0。命令记录在 [dsh-compatibility-results-2026-10-10.json](./dsh-compatibility-results-2026-10-10.json)。2026-10-02 的十版记录仍留在 [dsh-compatibility-results.json](./dsh-compatibility-results.json)，它不覆盖这次字体与保存失败改动。
+原始实现提交：`344e57f`。验证日期：2026-10-10。环境：macOS arm64、Node 24.18.0、pnpm 11.7.0。十二个精确版本各自重新安装 npm 发布包，执行 `compat:check`、`typecheck`、完整 `test`、`build`、`pack --dry-run`，全部退出码为 0。命令记录在 [dsh-compatibility-results-2026-10-10.json](./dsh-compatibility-results-2026-10-10.json)。2026-10-02 的十版记录仍留在 [dsh-compatibility-results.json](./dsh-compatibility-results.json)，它不覆盖这次字体与保存失败改动。
 
 | DSH 精确版本 | Cordis | Schemastery | 设置路径 | 结果 |
 | --- | --- | --- | --- | --- |
@@ -53,9 +53,9 @@ pnpm compat:matrix
 node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
 ```
 
-脚本在临时目录创建独立安装树，保留日志与 results.json，成功时清理安装树，失败时保留供排查。不会改动当前 checkout 的 manifest、lockfile 或 node_modules。CI 在 Linux / Node 22.19.0 上执行全部支持版本，上传命令日志与结果；该 CI 配置已加入，本次未在 GitHub 远端执行。
+脚本在临时目录创建独立安装树，保留日志与 results.json，成功时清理安装树，失败时保留供排查。不会改动当前 checkout 的 manifest、lockfile 或 node_modules。该历史批次的 CI 定义在 Linux / Node 22.19.0 上执行全部支持版本，上传命令日志与结果；后续三平台与浏览器矩阵见下文。
 
-本次未覆盖完整 DSH Web profile 的磁盘持久化端到端流程、真实浏览器视觉截图、Desktop/Windows/Linux 本机呈现或 npm tarball 安装。`pack --dry-run` 只验证发布文件清单。插件仍为 platform:web，CSS 呈现由 ctx.theme 管理；未加入 Electron、Desktop provider 或 Node 客户端依赖。官方发布包缺失 source map 的 Vite 警告不影响测试退出码。
+该历史批次未覆盖完整 DSH Web profile 的磁盘持久化端到端流程、真实浏览器视觉截图、Desktop/Windows/Linux 本机呈现或 npm tarball 安装。`pack --dry-run` 只验证发布文件清单。插件仍为 platform:web，CSS 呈现由 ctx.theme 管理；未加入 Electron、Desktop provider 或 Node 客户端依赖。官方发布包缺失 source map 的 Vite 警告不影响测试退出码。
 
 2026-10-02 的开发基线当时是 0.2.0-rc.2 / Cordis 4.0.4 / Schemastery 3.18.4。2026-10-10 的十二版矩阵覆盖那次清单，并加入两个 0.2.1 候选。
 
@@ -68,15 +68,44 @@ node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
 | 主题覆盖 | `overrideTokens` 的 source、light/dark、seq 和旧 disposer 语义未变。样式表没有新增颜色 token 名 | 不新增版本分支。安装前去掉官方字体变量，避免 ThemePresenter 后写 token 时盖住字体 |
 | 字体所有权 | alpha.2 用 `fontSizes` / `fontFamilies` 替换单一 `fontSize`。终端直接读 snapshot；正文和代码尺寸走 CSS 变量 | Theme Studio 不写这些字段，不增加字体设置 UI |
 | 设置写入 | 新 transport 的 `set` 返回 `false` 表示拒绝并已 recover；旧 transport 返回 void，拒绝后同样 recover | accepted snapshot 回收敛。`false` 与 rejected Promise 显示 `status.saveFailed`。连续 `set` 串行，未结算写入挡住 Host 回声 |
-| 共享运行时 | 0.2.1-alpha.1 与 alpha.2 使用 Cordis 4.0.5-alpha.1、Schemastery 3.18.5-alpha.1，以及对应的 cordis plugin 与 cosmokit 1.8.6-alpha.1 | 这些精确预发布版本写入 peer/dependency 与 overrides。旧版矩阵去掉这组新 override |
+| 共享运行时 | 0.2.1-alpha.1 与 alpha.2 使用 Cordis 4.0.5-alpha.1、Schemastery 3.18.5-alpha.1，以及对应的 cordis plugin 与 cosmokit 1.8.6-alpha.1 | 这些精确预发布版本写入 peer/dependency 与 overrides。2026-10-10 早些时候的矩阵脚本对旧版去掉这组 override；随后的元数据驱动矩阵改为按每个发布包自己的声明钉配套版本 |
 | invariants | npm 没有 `@deepseek-ai/dsh-invariants@0.2.1-alpha.1` 或 `alpha.2` | 开发依赖不再 pin 该包。旧版若传递依赖它，由该版自己的范围和矩阵漂移修正处理 |
 | 设置与槽位实现 | settings、ui-settings、ui-slots 源码相对 rc.2 无实现差异 | 继续复用现有适配 |
 
-当前开发基线是 0.2.1-alpha.2 / Cordis 4.0.5-alpha.1 / Schemastery 3.18.5-alpha.1。2026-10-10 的十二版矩阵全部通过，包括 0.2.1-alpha.1 与 0.2.1-alpha.2。开发基线上的 `pnpm contrast:report --strict` 仍对现有低对比度配对退出 1。
+当前开发基线是 0.2.1-alpha.2 / Cordis 4.0.5-alpha.1 / Schemastery 3.18.5-alpha.1。上述既有升级批次的十二版矩阵全部通过，包括 0.2.1-alpha.1 与 0.2.1-alpha.2。开发基线上的 `pnpm contrast:report --strict` 仍对现有低对比度配对退出 1。
 
-这次没有启动真实 DSH Web Client。本机 Rivetdeck 安装清单是 0.2.0-rc.2，PATH 中没有 `dsh` 命令。字体与颜色的 jsdom 检查使用已安装官方 ThemeRuntime bundle，并按 ThemePresenter 的顺序把 snapshot 写到 `document.body`。它不是浏览器里的第一帧截图，也不是 profile 磁盘往返。
+## 元数据驱动的矩阵
+
+2026-10-10 起，Cordis、Schemastery 和配套运行时不再使用脚本里的手写版本表。`scripts/lib/metadata.mjs` 读取被测精确版本的已发布 `dependencies` / `peerDependencies`，只接受能唯一确定的 exact、caret 或 tilde。CI 用 `scripts/list-dsh-releases.mjs` 从同一份清单生成版本轴。`scripts/upgrade-dsh.mjs` 可以改当前 checkout 的 pin，但默认不改 peer 和支持清单；`--admit-candidate` 只给一次性探测使用。每周 upgrade workflow 和 `run-dsh-matrix.mjs --candidate` 都不会提交或发布。
+
+官方 ThemeRuntime 行为矩阵在 `tests/integration/official-behavior-matrix.spec.ts`，覆盖激活、切换、预览/取消/应用、恢复默认、明暗/系统、偏好变化、卸载、重载、设置不可用、乐观状态回退、乱序写入和未知 id。jsdom 里把 snapshot 写到 `document.body` 只证明变量投影，不是浏览器旅程。`pnpm smoke:client` 在未设置 `DSH_BROWSER_E2E=1` 时报告 `not-run`，不能把它当成浏览器通过。
+
+对比度差分门禁比较 `tests/client/contrast-baseline.json` 里已记录的失败配对。新增或消失的失败会让测试失败。`pnpm contrast:report --strict` 仍然对这些已知失败退出 1。
+
+Client bundle 把 `@deepseek-ai/dsh-client-store` 保持为 `require`，避免打进第二份 store。CSS Module 编译进 bundle 并用幂等 style 标签注入；清理 overlay 不移除该标签。
+
+2026-10-10 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，对开发基线 0.2.1-alpha.2 执行了 `node scripts/smoke-compose.mjs`。它在临时 `DSH_HOME` 中用该版本的 `dsh` CLI 安装 `.pack/plugin.tgz`，dump 出一条 bare `theme-studio` 行，官方 `ui-theme` 仍在，安装后的 `lib/client.js` 含 ModuleLoader 注册。退出码 0。同日 `pnpm smoke:client` 在未设置 `DSH_BROWSER_E2E` 时打印 `not-run`，没有浏览器旅程。新的十二版矩阵是否全部通过，以本次命令的 `results.json` 为准，不能用早先那份十二版记录代替。
 
 ```sh
 pnpm compat:matrix
 node scripts/run-dsh-matrix.mjs 0.2.0-rc.2 0.2.1-alpha.1 0.2.1-alpha.2
+node scripts/run-dsh-matrix.mjs --candidate <exact-version>
 ```
+
+## 工程迁移复验（2026-10-10）
+
+本轮在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上重新运行全部十二个既有支持版本，没有修改支持清单或开发基线。结果见 [工程迁移矩阵](./dsh-compatibility-migration-results-2026-10-10.json)；该文件保存逐命令退出状态，与上面的历史 `pack --dry-run` 记录区分。
+
+早期临时 tarball/CLI 安装日志中出现全局 pnpm 11.28.5；新建临时 manifest 已固定源码的 11.7.0（pack 会移除该字段，故从源码读取），开发基线真实 tarball 重新安装确认使用 11.7.0。
+
+每版 gate 包含独立安装、`compat:check`、lint、typecheck、build、完整单测、docs check、token audit、真实 tarball 安装与 Host 加载、官方 ThemeRuntime 行为矩阵和真实 CLI profile composition。全部十二版通过。最终 `DSH_BROWSER_E2E=1 PLAYWRIGHT_MODULE=<Playwright入口> node scripts/run-dsh-matrix.mjs` 还在十二版上逐一运行实际 Chromium：从认证 URL 加载真实 ModuleLoader 与 Client store，确认 Themes 和官方 Appearance 共存；预览改变 `--dsw-alias-bg-base`、取消恢复、应用保持预览值、刷新恢复，以及停止并新启动 Host 后从隔离 profile 恢复同一主题。十二版浏览器命令全部退出 0；完整浏览器日志原文在结果文件的 `browserLogEvidence`，不依赖真实模型 API Key。本地随机 evidence 路径现统一传给子进程；开发基线补跑确认成功清理安装副本后 JSON、截图、DOM 和服务日志仍保留（结果文件的 `evidenceRetentionCheck`）。首次启动提示通过真实按钮处理；报告判定不把拼接 bundle URL 中偶然出现插件名当成插件错误。
+
+新 Config 世代的 legacy register 用例仍显式 skip，由对应 configure/客户端路径覆盖。当前开发基线完整单测为 130 passed、1 skipped。
+
+CLI 自身也需要统一依赖树：旧缓存中 `dsh-app-boot` / `dsh-plugin-manager` 漂到其他版本会分别造成 `watchUserPatches` 或 `evaluatePluginCompatibility` 缺失。现在 CLI 元数据探测纳入 `@deepseek-ai/dsh`，遍历最多八层依赖，并检查缓存 lockfile 的全部 DSH 包、Cordis 和 Schemastery。元数据前沿最多六个 npm 请求并发执行；失败保留包名和声明来源，不改变选择规则。
+
+正式 CI 动态读取同一清单，在 Ubuntu、macOS、Windows 执行完整安装/构建/契约/运行时矩阵。PR 的 Ubuntu 浏览器矩阵默认选旧 register 世代和当前 pin，手动 `browser_coverage=all` 可覆盖全部；Release 强制全量浏览器矩阵，并依赖整个可复用 CI。失败的逐步日志、结果和浏览器截图/DOM/服务日志作为带 OS 与版本的 artifact 上传。
+
+每周探测与手动候选使用 `contents: read`。如果最新 prerelease 已被支持，则重跑正式模式；未支持版本只能在独立副本或一次性 Actions checkout 放宽 admission。混装、缺包、非法版本或损坏的已安装元数据仍失败，探测不提交、推送、提升清单或发布。
+
+本机结果不证明 GitHub-hosted Ubuntu/Windows 或跨平台浏览器呈现已通过；这部分需 Draft PR 的 CI 另行提供证据。npm OIDC 的 trusted publisher 绑定仍须维护者在 npm 包设置核实；本轮没有执行 tag、npm publish 或 GitHub Release。

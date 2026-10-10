@@ -21,7 +21,7 @@ export function defineStore<S extends object, A extends Record<string, (draft: S
 ) {
   return {
     create() {
-      let state = spec.init()
+      const state = spec.init()
       const listeners = new Set<Listener>()
       const notify = (): void => {
         for (const listener of [...listeners]) listener()
