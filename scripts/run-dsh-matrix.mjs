@@ -6,7 +6,7 @@
  * isolated copy, widens that copy's peer admission, and still fails on mixed
  * or incomplete trees. It does not edit SUPPORTED_DSH_RELEASES.
  */
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -85,7 +85,9 @@ console.log(`[matrix] mode: ${candidate !== undefined ? 'candidate' : 'supported
 const results = []
 let failed = false
 for (const version of selected) {
-  const dir = mkdtempSync(join(tmpdir(), `theme-studio-${version}-`))
+  // Canonicalize before launching pnpm/Vitest too: their own imports and CWD
+  // must use the same long Windows path as the test configuration.
+  const dir = realpathSync.native(mkdtempSync(join(tmpdir(), `theme-studio-${version}-`)))
   const result = { version, candidate: candidate !== undefined, steps: [], passed: false, directory: dir }
   try {
     cpSync(root, dir, {

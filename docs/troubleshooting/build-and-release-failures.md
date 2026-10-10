@@ -41,7 +41,7 @@ git tag --list 'v*'
 
 Windows 临时目录可同时出现长用户名路径与 `RUNNER~1` 短路径。Vite 8.2 起会 realpath 项目 root；Windows 的 safeRealpath 首次使用普通 `realpathSync`，随后可能改用 `realpathSync.native`，两者对 8.3 短名称的结果不同。node/jsdom 环境由此可能得到不同根目录。相关上游背景见 [Vite #23197](https://github.com/vitejs/vite/issues/23197) 与 [#23198](https://github.com/vitejs/vite/pull/23198)，后者处理 preserveSymlinks，不直接修复这里的短名称差异。首次仅使用普通 realpath 的修复在 [CI run 38064162111](https://github.com/cherrchen/dsh-theme-studio/actions/runs/38064162111) 中仍报同一错误。
 
-测试配置使用 `realpathSync.native` 预先将项目 root 展开为长路径，并以同一 root 构造 setupFiles 和 renderer shim 的绝对路径，保持 node/jsdom 的文件定位一致。不得通过跳过 jsdom 套件、删掉 setup 或移除 Windows 矩阵掩盖失败。复验运行 `pnpm verify:all`，再查看修复 commit 的三平台完整 CI；本机 macOS 结果不能替代 Windows runner 的通过证据。
+仅将测试配置 root native 展开也不充分：工具本身如果从短路径 CWD 启动，仍会加载短路径下的模块。矩阵在启动 pnpm 前将临时安装目录 native 展开，测试配置也使用 `realpathSync.native` 将项目 root 展开为长路径，并以同一 root 构造 setupFiles 和 renderer shim 的绝对路径，保持子进程 CWD、工具模块与 node/jsdom 的文件定位一致。不得通过跳过 jsdom 套件、删掉 setup 或移除 Windows 矩阵掩盖失败。复验运行 `pnpm verify:all`，再查看修复 commit 的三平台完整 CI；本机 macOS 结果不能替代 Windows runner 的通过证据。
 
 ## History and Related Documents
 
