@@ -78,7 +78,7 @@ node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
 
 2026-10-10 起，Cordis、Schemastery 和配套运行时不再使用脚本里的手写版本表。`scripts/lib/metadata.mjs` 读取被测精确版本的已发布 `dependencies` / `peerDependencies`，只接受能唯一确定的 exact、caret 或 tilde。CI 用 `scripts/list-dsh-releases.mjs` 从同一份清单生成版本轴。`scripts/upgrade-dsh.mjs` 可以改当前 checkout 的 pin，但默认不改 peer 和支持清单；`--admit-candidate` 只给一次性探测使用。每周 upgrade workflow 和 `run-dsh-matrix.mjs --candidate` 都不会提交或发布。
 
-精确版本语法统一由 `scripts/lib/exact-pin.mjs` 定义；候选 workflow、依赖范围校验和 lockfile 解析复用该定义。预发布标识符允许连字符（如 `0.2.3-alpha-hotfix.1`），但纯数字标识符不能有前导零。lockfile 只在版本结尾或 peer 后缀的 `(` 前结束匹配，不能把非法版本或含连字符的版本截成一个合法前缀。这里的示例只说明语法，不声称该候选已发布或已通过兼容矩阵。
+精确版本语法统一由 `scripts/lib/exact-pin.mjs` 定义；候选 workflow、依赖范围校验、lockfile 解析和中英文 README 兼容段落解析复用该定义。预发布标识符允许连字符（如 `0.2.3-alpha-hotfix.1`），但纯数字标识符不能有前导零。lockfile 只在版本结尾或 peer 后缀的 `(` 前结束匹配；README 解析要求完整版本边界，不能从非法版本中提取合法前缀或后缀。这里的示例只说明语法，不声称该候选已发布或已通过兼容矩阵。
 
 官方 ThemeRuntime 行为矩阵在 `tests/integration/official-behavior-matrix.spec.ts`，覆盖激活、切换、预览/取消/应用、恢复默认、明暗/系统、偏好变化、卸载、重载、设置不可用、乐观状态回退、乱序写入和未知 id。jsdom 里把 snapshot 写到 `document.body` 只证明变量投影，不是浏览器旅程。`pnpm smoke:client` 在未设置 `DSH_BROWSER_E2E=1` 时报告 `not-run`，不能把它当成浏览器通过。
 

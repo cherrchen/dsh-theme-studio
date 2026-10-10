@@ -4,7 +4,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { assessRepository } from '../../scripts/lib/assess-compat.mjs'
+import { assessRepository, readmeVersions } from '../../scripts/lib/assess-compat.mjs'
 import { readInstalledVersion } from '../../scripts/lib/installed.mjs'
 import { repointInstallation } from '../../scripts/lib/repoint.mjs'
 import { readContract, readStringArray } from '../../scripts/lib/contract.mjs'
@@ -45,6 +45,25 @@ function fixture(candidate?: string) {
 }
 
 describe('probe boundaries', () => {
+  it.each(['## DSH 兼容性', '## DSH compatibility'])('reads complete exact releases in %s', heading => {
+    const versions = ['0.2.0', '0.2.3-alpha-hotfix.1', '0.2.3-0.1', '0.2.3-01a.--']
+    const markdown = `0.1.0\n${heading}\n${versions.map(version => `\`${version}\``).join(' / ')}\n## Next\n0.3.0`
+    expect(readmeVersions(markdown, heading)).toEqual(versions)
+    expect(readmeVersions(`${heading}\nSupported: ${versions.join(', ')}.\n`, heading)).toEqual(versions)
+    const invalid = ['01.2.3', '0.2.3-alpha.01', '0.2.3-alpha_bad', '0.2.3-', '0.2.3+build']
+    expect(readmeVersions(`${heading}\n${invalid.join(' / ')}`, heading)).toEqual([])
+  })
+
+  it('accepts a promoted hyphenated prerelease in both README support lists', () => {
+    const dir = fixture()
+    const previous = readContract(dir).supported[0]
+    for (const file of ['src/compat/dsh-version.ts', 'package.json', 'README.md', 'README.en.md']) {
+      const path = join(dir, file)
+      writeFileSync(path, readFileSync(path, 'utf8').replaceAll(previous, '0.2.3-alpha-hotfix.1'))
+    }
+    expect(assessRepository(dir).ok).toBe(true)
+  })
+
   it('uses exact SemVer and standard pre-1.0 caret bounds', () => {
     for (const invalid of ['01.2.3', '0.2.3-alpha.01', '0.2.3-alpha_bad', '0.2.3-', '0.2.3;echo']) expect(isExactVersion(invalid)).toBe(false)
     expect(isExactVersion('0.2.3-alpha-foo.1')).toBe(true)

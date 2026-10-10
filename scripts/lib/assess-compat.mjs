@@ -10,7 +10,7 @@ import { readContract } from './contract.mjs'
 import { readLockfile, versionsOf } from './lockfile.mjs'
 import { isDshPackage } from './repoint.mjs'
 import { rangeAdmits } from './range.mjs'
-import { isExactVersion } from './exact-pin.mjs'
+import { EXACT_VERSION_PATTERN, isExactVersion } from './exact-pin.mjs'
 import { readInstalledVersion } from './installed.mjs'
 
 const RECOVERY = [
@@ -31,7 +31,8 @@ export function readmeVersions(markdown, heading) {
   const rest = markdown.slice(start + heading.length)
   const next = rest.search(/\n## /u)
   const section = next < 0 ? rest : rest.slice(0, next)
-  return [...section.matchAll(/\d+\.\d+\.\d+(?:-[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*)?/gu)].map(token => token[0])
+  const versions = new RegExp(`(?<![0-9A-Za-z_.+-])${EXACT_VERSION_PATTERN}(?![0-9A-Za-z_+-]|\\.[0-9A-Za-z-])`, 'gu')
+  return [...section.matchAll(versions)].map(token => token[0])
 }
 
 /**
