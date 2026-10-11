@@ -109,4 +109,4 @@ Host 通过公开 settings 方法探测结构；Client 分别 inject transport�
 
 ## Risks and Validation
 
-语义 token 名与实际 host 使用场景可能随上游变化；公开 token 对比度报告不能推导真实 DOM 的完整符合性。`color-mix(in srgb)` 和 resolver 的支持子集必须同时更新。store 与 service 必须继续共享 catalog。全部相关 seam 已纳入测试与十版矩阵；平台/视觉/真实磁盘旅程的未覆盖范围不可消失。验收文件、日期和历史提交见[需求](../requirements/theme-studio.md)与 completed 计划。
+语义 token 名与实际 host 使用场景可能随上游变化；公开 token 对比度报告不能推导真实 DOM 的完整符合性。`color-mix(in srgb)` 和 resolver 的支持子集必须同时更新。store 与 service 必须继续共享 catalog。相关 seam 已纳入测试；跨版本、平台与真实磁盘旅程的实际证据和未覆盖范围由[兼容矩阵](../development/dsh-compatibility.md)维护。验收文件、日期和历史提交见[需求](../requirements/theme-studio.md)与 completed 计划。

@@ -30,7 +30,7 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 | F2 | Default 使用 `null`，不是可注册的内置 id | runtime、catalog 和 UI 测试 |
 | F3 | 浏览按内置目录顺序提供八个主题，文案中英切换 | presets、NAME_KEYS 与 locale 测试 |
 | F4 | Preview 不调用 Host 写入，后续预览替换同一 preview source | runtime 预览测试 |
-| F5 | Cancel 删除 preview；Default 预览取消时恢复原 active 层 | runtime.ts 状态迁移；单测/官方集成覆盖具体主题取消，Default 预览取消尚需专门回归场景 |
+| F5 | Cancel 删除 preview；Default 预览取消时恢复原 active 层 | runtime 单测与官方 ThemeRuntime 行为矩阵，包含 Default 预览取消且不写设置的回归场景 |
 | F6 | Apply 与 Apply Preview 写入 `activeThemeId`；持久快照最终为准 | runtime 应用、回收敛测试 |
 | F7 | 重启从 ready Host 快照恢复；未知持久 id 清理为默认并尝试修复设置 | runtime 恢复与未知 id 测试 |
 | F8 | Light/Dark/System 仍由官方主题服务控制，overlay 提供完整明暗 token 对 | adapter 与官方 bundle 集成 |
@@ -67,6 +67,6 @@ Host accepted snapshot 是持久 authority；preview 不进入 durable settings�
 
 ## Acceptance and Limits
 
-Stage 1 的状态迁移、恢复与 settings 适配已由单测和官方 ThemeRuntime 发布 bundle 集成验证；Stage 2/3 由 commit `509b88e` 和 2026-10-02 全部十版矩阵验证。完整浏览器视觉、真实 Web profile 的本次磁盘持久化旅程、跨平台本机呈现与完整 WCAG 审核未完成。历史提交记录中的真实 profile 验证属于当时的证据，不自动覆盖当前未发布改动。
+Stage 1 的状态迁移、恢复与 settings 适配已由单测和官方 ThemeRuntime 发布 bundle 集成验证；Stage 2/3 的初始证据来自 commit `509b88e` 和 2026-10-02 全部十版矩阵。后续工程迁移的真实 Web profile、浏览器磁盘持久化旅程与跨版本复验，以及跨平台呈现、视觉和 WCAG 的未覆盖边界，以[兼容矩阵的有日期证据](../development/dsh-compatibility.md)为准。历史测试不自动覆盖之后的未发布改动。
 
 Host 拒绝保存时，界面恢复 accepted snapshot 并显示可重试的失败提示。重叠的应用按顺序提交，最新选择会在更早的 `set` 结算后再写入，避免旧的成功结果后落盘。结算完成后，accepted snapshot 仍覆盖乐观选择。官方字体和字号不属于 Theme Studio 的持久字段。

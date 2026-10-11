@@ -1,10 +1,57 @@
-import { readFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 
 const workflow = (name: string) => parse(readFileSync(new URL(`../../.github/workflows/${name}.yml`, import.meta.url), 'utf8'))
+
+// Release runs on Ubuntu. Execute its actual Bash gate with GitHub's pipefail
+// settings on POSIX; Windows matrix jobs do not run this publication step.
+describe.skipIf(process.platform === 'win32')('verified release tarball gate', () => {
+  it.each([
+    { name: 'large registered bundle', marker: 'window.__ModuleLoader__.load', version: '0.1.3', missing: undefined, passed: true, error: '' },
+    { name: 'unregistered bundle', marker: '', version: '0.1.3', missing: undefined, passed: false, error: 'no ModuleLoader registration' },
+    { name: 'lookalike marker', marker: 'windowX__ModuleLoader__Yload', version: '0.1.3', missing: undefined, passed: false, error: 'no ModuleLoader registration' },
+    { name: 'missing declaration', marker: 'window.__ModuleLoader__.load', version: '0.1.3', missing: 'lib/types/client/index.d.ts', passed: false, error: 'missing package/lib/types/client/index.d.ts' },
+    { name: 'mismatched version', marker: 'window.__ModuleLoader__.load', version: '0.1.4', missing: undefined, passed: false, error: 'does not match tag' },
+  ])('$name', ({ marker, version, missing, passed, error }) => {
+    const dir = mkdtempSync(join(tmpdir(), 'theme-studio-release-gate-'))
+    try {
+      mkdirSync(join(dir, 'dist'))
+      const files = [
+        'package.json', 'cordis.patch.yml', 'lib/index.js', 'lib/client.js',
+        'lib/types/index.d.ts', 'lib/types/client/index.d.ts',
+        'README.md', 'README.en.md', 'CHANGELOG.md', 'CHANGELOG.en.md',
+      ]
+      for (const file of files) {
+        if (file === missing) continue
+        const path = join(dir, 'package', file)
+        mkdirSync(dirname(path), { recursive: true })
+        const content = file === 'package.json' ? JSON.stringify({ version })
+          : file === 'lib/client.js' ? `// ${marker}\n${'x'.repeat(2 * 1024 * 1024)}\n` : 'fixture\n'
+        writeFileSync(path, content)
+      }
+      const packed = spawnSync('tar', ['-czf', 'dist/plugin.tgz', 'package'], { cwd: dir, encoding: 'utf8' })
+      expect(packed.status, packed.stderr).toBe(0)
+      const step = workflow('release').jobs.publish.steps.find((s: { name?: string }) => s.name === 'Check the verified tarball')
+      expect(step.shell).toBe('bash')
+      const result = spawnSync('bash', ['--noprofile', '--norc', '-eo', 'pipefail', '-c', step.run], {
+        cwd: dir,
+        env: { ...process.env, GITHUB_REF_NAME: 'v0.1.3', GITHUB_ENV: join(dir, 'github-env') },
+        encoding: 'utf8',
+        timeout: 15000,
+      })
+      expect(result.error).toBeUndefined()
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(passed ? 0 : 1)
+      if (!passed) expect(result.stdout).toContain(error)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})
 
 describe('verification and publication boundaries', () => {
   it('derives CI versions from the contract and bootstraps isolated matrix tooling', () => {

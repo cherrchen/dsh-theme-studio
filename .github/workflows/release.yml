@@ -44,7 +44,7 @@ jobs:
         run: |
           tarball="$(ls dist/*.tgz)"
           echo "TARBALL=$tarball" >> "$GITHUB_ENV"
-          tar -xzf "$tarball" -C dist package/package.json
+          tar -xzf "$tarball" -C dist package/package.json package/lib/client.js
           packed="v$(node -p 'require("./dist/package/package.json").version')"
           if [ "$GITHUB_REF_NAME" != "$packed" ]; then
             echo "::error::Verified tarball version $packed does not match tag $GITHUB_REF_NAME"
@@ -68,7 +68,7 @@ jobs:
               exit 1
             }
           done
-          if ! tar -xOzf "$tarball" package/lib/client.js | grep -q 'window.__ModuleLoader__.load'; then
+          if ! grep -Fq 'window.__ModuleLoader__.load' dist/package/lib/client.js; then
             echo "::error::The verified client bundle has no ModuleLoader registration"
             exit 1
           fi
