@@ -54,6 +54,8 @@ pnpm release patch --tag
 
 publish job 先把 manifest 和 Client bundle 解压为文件，再校验版本与 ModuleLoader 标记。Bash 的 `pipefail` 下不能用 `tar -xO | grep -q` 检查大 bundle：`grep` 提前匹配退出可能让 `tar` 收到 SIGPIPE，导致有效产物被误判为失败。标记使用固定字符串匹配，缺少标记的产物仍会阻止发布。
 
+传给 npm 的本地 tarball 路径必须带 `./` 前缀或使用绝对路径。publish job 从 `./dist/*.tgz` 选择制品并保存到 `TARBALL`，避免 `dist/plugin.tgz` 被 npm 解释成 GitHub 的 `owner/repo` 简写。对应失败日志与诊断见[发布路径排查](../troubleshooting/build-and-release-failures.md#npm-publish-把-tarball-当成-github-仓库)。
+
 ```sh
 pnpm pack --pack-destination /tmp/theme-studio-release
 ```

@@ -46,6 +46,9 @@ describe.skipIf(process.platform === 'win32')('verified release tarball gate', (
       })
       expect(result.error).toBeUndefined()
       expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(passed ? 0 : 1)
+      // npm also accepts owner/repo shorthand: keep the accepted artifact
+      // explicitly local when handing its path to the publication step.
+      if (passed) expect(readFileSync(join(dir, 'github-env'), 'utf8')).toMatch(/^TARBALL=(?:\.\/|\/)/m)
       if (!passed) expect(result.stdout).toContain(error)
     } finally {
       rmSync(dir, { recursive: true, force: true })

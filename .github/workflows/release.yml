@@ -42,7 +42,7 @@ jobs:
       - name: Check the verified tarball
         shell: bash
         run: |
-          tarball="$(ls dist/*.tgz)"
+          tarball="$(ls ./dist/*.tgz)"
           echo "TARBALL=$tarball" >> "$GITHUB_ENV"
           tar -xzf "$tarball" -C dist package/package.json package/lib/client.js
           packed="v$(node -p 'require("./dist/package/package.json").version')"

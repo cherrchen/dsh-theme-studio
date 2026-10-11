@@ -51,6 +51,12 @@ Windows 临时目录可同时出现长用户名路径与 `RUNNER~1` 短路径。
 
 在 [CI run 38064961202](https://github.com/cherrchen/dsh-theme-studio/actions/runs/38064961202) 中，Windows 开发基线已通过单测与 docs-check，随后 verify-package 的 tar 解压报告 `Cannot connect to C: resolve failed`。Git for Windows 的 GNU tar 把 archive 路径中的盘符冒号当成远端主机分隔符。修复是在 tarball 所在目录以相对文件名解压，并在解压失败时立即停止内容验证，避免随后大量 missing file 错误掩盖首个原因。命令约定见[发布工作流](../development/release-workflow.md#验证实际-tarball)。
 
+## npm publish 把 tarball 当成 GitHub 仓库
+
+2026-10-11 检查 [Release run 38121356798 的 publish 日志](https://github.com/cherrchen/dsh-theme-studio/actions/runs/38121356798/job/114419938860)：`v0.1.4` 在 tag/version、制品下载和内容校验通过后，发布步骤执行 `git ls-remote ssh://git@github.com/dist/plugin.tgz.git`，报 `Permission denied (publickey)` 并以 128 退出；GitHub Release 创建随后被跳过。这次错误发生在读取发布包阶段，不能据此判断 npm Trusted Publisher 是否配置正确。
+
+`dist/plugin.tgz` 没有明确的本地路径前缀，被 npm 当成 GitHub `owner/repo` 简写。修复时保留 `./` 或使用绝对路径，而不是配置 SSH key。实际命令约定见[发布工作流](../development/release-workflow.md#验证实际-tarball)；workflow gate 回归同时检查交给 publish 的路径明确指向本地。恢复前核对 registry 是否已有该版本，以及 GitHub Release 是否已经存在；直接重跑旧 tag 的任务仍会使用原 workflow，不能带入后续修复提交。
+
 ## History and Related Documents
 
 历史依据：e56004d创建tag发布；20f9632修Bash引用；599c468调整version脚本；2026-10-02迁移README配对并接docs:check。 [详细契约](../development/release-workflow.md)、[完整提交历史](../reference/repository-history.md)、[开发工作流](../development/plugin-development-workflow.md)。
