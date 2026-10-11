@@ -35,6 +35,22 @@ git tag --list 'v*'
 
 本地type/build/pack并检查actual tarball清单；release verify还检查必需patch/index/client/types/package文件。CI定义或本地git tag不是npm成功证明。Source-map缺失warning来自upstream package时与真实exit code区分，不通过忽略所有异常来修复。
 
+## Windows jsdom 测试找不到 setup
+
+2026-10-10 检查 [CI run 38063562976](https://github.com/cherrchen/dsh-theme-studio/actions/runs/38063562976)：十二个 Windows 版本均在 test 阶段失败；已读取最老支持版 `0.1.5-rc.2` 与开发基线 `0.2.1-alpha.2` 的日志，两者都在六个 jsdom 套件初始化时报告 `Cannot find module '/tests/setup/module-loader.client.ts'`。安装、compat、lint、typecheck 和 build 在这两个任务中已通过。上游缺失 source map 的 ENOENT 警告不是此处的失败原因。
+
+Windows 临时目录可同时出现长用户名路径与 `RUNNER~1` 短路径。Vite 8.2 起会 realpath 项目 root；Windows 的 safeRealpath 首次使用普通 `realpathSync`，随后可能改用 `realpathSync.native`，两者对 8.3 短名称的结果不同。node/jsdom 环境由此可能得到不同根目录。相关上游背景见 [Vite #23197](https://github.com/vitejs/vite/issues/23197) 与 [#23198](https://github.com/vitejs/vite/pull/23198)，后者处理 preserveSymlinks，不直接修复这里的短名称差异。首次仅使用普通 realpath 的修复在 [CI run 38064162111](https://github.com/cherrchen/dsh-theme-studio/actions/runs/38064162111) 中仍报同一错误。
+
+仅将测试配置 root native 展开也不充分：工具本身如果从短路径 CWD 启动，仍会加载短路径下的模块。矩阵在启动 pnpm 前将临时安装目录 native 展开，测试配置也使用 `realpathSync.native` 将项目 root 展开为长路径，并以同一 root 构造 setupFiles 和 renderer shim 的绝对路径，保持子进程 CWD、工具模块与 node/jsdom 的文件定位一致。不得通过跳过 jsdom 套件、删掉 setup 或移除 Windows 矩阵掩盖失败。复验运行 `pnpm verify:all`，再查看修复 commit 的三平台完整 CI；本机 macOS 结果不能替代 Windows runner 的通过证据。
+
+## Windows 文档审阅 hash 全部失效
+
+在 [CI run 38064716020](https://github.com/cherrchen/dsh-theme-studio/actions/runs/38064716020) 中，Windows `0.1.6-alpha.2` 的 131 个单测已通过，随后 docs-check 报三个根 README 的 reviewed blob hash 全部 stale/missing。Windows checkout 的自动 CRLF 转换既改变 README 字节，也使 YAML hash 行的严格匹配失败。仓库通过 [.gitattributes](../../.gitattributes) 固定文本为 LF；审阅记录仍按原内容校验，不重记或放宽 hash。详细约定见[文档工作流](../development/documentation-workflow.md#双语与旧入口)。
+
+## Windows tar 报 Cannot connect to C
+
+在 [CI run 38064961202](https://github.com/cherrchen/dsh-theme-studio/actions/runs/38064961202) 中，Windows 开发基线已通过单测与 docs-check，随后 verify-package 的 tar 解压报告 `Cannot connect to C: resolve failed`。Git for Windows 的 GNU tar 把 archive 路径中的盘符冒号当成远端主机分隔符。修复是在 tarball 所在目录以相对文件名解压，并在解压失败时立即停止内容验证，避免随后大量 missing file 错误掩盖首个原因。命令约定见[发布工作流](../development/release-workflow.md#验证实际-tarball)。
+
 ## History and Related Documents
 
 历史依据：e56004d创建tag发布；20f9632修Bash引用；599c468调整version脚本；2026-10-02迁移README配对并接docs:check。 [详细契约](../development/release-workflow.md)、[完整提交历史](../reference/repository-history.md)、[开发工作流](../development/plugin-development-workflow.md)。

@@ -1,0 +1,164 @@
+# Candidate probe. A green run is evidence only. It does not edit the allowlist,
+# commit, push, or publish.
+name: Upgrade smoke
+
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Exact DSH version. Empty uses the newest published @deepseek-ai/dsh pre-release.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.candidate.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - id: candidate
+        shell: bash
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$REQUESTED_VERSION" ]; then
+            version="$REQUESTED_VERSION"
+          else
+            version="$(node scripts/upgrade-dsh.mjs --print-latest-prerelease)"
+          fi
+          CANDIDATE_VERSION="$version" node --input-type=module -e 'import { isExactVersion } from "./scripts/lib/exact-pin.mjs"; if (!isExactVersion(process.env.CANDIDATE_VERSION)) { console.error("Invalid candidate version:", process.env.CANDIDATE_VERSION); process.exit(1) }'
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "### Candidate: \`$version\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "This job does not add the version to SUPPORTED_DSH_RELEASES." >> "$GITHUB_STEP_SUMMARY"
+
+  upgrade:
+    needs: candidate
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      CI: 'true'
+      FORCE_COLOR: '0'
+      CANDIDATE_VERSION: ${{ needs.candidate.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: pnpm
+      - name: Bootstrap the matrix tooling
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Probe the candidate in an isolated copy
+        shell: bash
+        run: |
+          if node scripts/list-dsh-releases.mjs | node -e 'let text="";process.stdin.on("data",c=>text+=c);process.stdin.on("end",()=>process.exit(JSON.parse(text).includes(process.env.CANDIDATE_VERSION)?0:1))'; then
+            node scripts/run-dsh-matrix.mjs "$CANDIDATE_VERSION"
+          else
+            node scripts/run-dsh-matrix.mjs --candidate "$CANDIDATE_VERSION"
+          fi
+        env:
+          DSH_MATRIX_EVIDENCE: ${{ github.workspace }}/matrix-evidence
+      - name: Upload candidate logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: upgrade-${{ matrix.os }}-${{ needs.candidate.outputs.version }}
+          path: matrix-evidence
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Promotion steps
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "DSH \`$CANDIDATE_VERSION\` passed the candidate probe on ${{ matrix.os }}."
+            echo
+            echo "This does not make it a supported release. To promote it, a human should:"
+            echo
+            echo "1. Add the exact version to \`SUPPORTED_DSH_RELEASES\` in \`src/compat/dsh-version.ts\`."
+            echo "2. Set every DSH \`peerDependencies\` range to that allowlist."
+            echo "3. Move the development pin, workspace overrides, lockfile, and both READMEs together."
+            echo "4. Run \`pnpm compat:check\` and \`pnpm compat:matrix\` on every previously supported release."
+            echo
+            echo "Not claimed by this run: a GitHub-hosted browser journey unless the browser job below also passed, and no change to the published support list."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Probe outcome
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          echo "DSH $CANDIDATE_VERSION on ${{ matrix.os }}: $JOB_STATUS. Step results and full errors are in the upgrade artifact (results.json and per-step logs)." >> "$GITHUB_STEP_SUMMARY"
+
+  browser:
+    needs: candidate
+    runs-on: ubuntu-latest
+    env:
+      CI: 'true'
+      FORCE_COLOR: '0'
+      DSH_BROWSER_E2E: '1'
+      CANDIDATE_VERSION: ${{ needs.candidate.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Admit the candidate in this throwaway checkout
+        shell: bash
+        run: |
+          if node scripts/list-dsh-releases.mjs | node -e 'let text="";process.stdin.on("data",c=>text+=c);process.stdin.on("end",()=>process.exit(JSON.parse(text).includes(process.env.CANDIDATE_VERSION)?0:1))'; then
+            node scripts/upgrade-dsh.mjs "$CANDIDATE_VERSION"
+          else
+            node scripts/upgrade-dsh.mjs --admit-candidate "$CANDIDATE_VERSION"
+          fi
+      - run: pnpm install --no-frozen-lockfile --config.minimumReleaseAge=0
+      - run: pnpm build
+      - name: Install Chromium
+        shell: bash
+        run: |
+          npm install --prefix "$RUNNER_TEMP/pw" playwright
+          sudo "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install-deps chromium
+          "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install chromium
+          echo "PLAYWRIGHT_MODULE=$RUNNER_TEMP/pw/node_modules/playwright/index.js" >> "$GITHUB_ENV"
+      - name: Browser client journey
+        shell: bash
+        run: node scripts/smoke-client.mjs
+      - name: State the browser boundary
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "Browser journey for \`$CANDIDATE_VERSION\` passed on ubuntu-latest."
+            echo "macOS and Windows browser journeys were not run."
+            echo "Passing here still does not add the release to the support allowlist."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: upgrade-browser-ubuntu-latest-${{ needs.candidate.outputs.version }}
+          path: matrix-evidence
+          if-no-files-found: ignore
+          retention-days: 14

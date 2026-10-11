@@ -1,137 +1,179 @@
-/** Verify each exact release in an isolated registry installation; leave the checkout untouched. */
-import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
+/**
+ * Verify exact DSH releases in isolated installations.
+ *
+ * The checkout this command starts from is copied and then left untouched.
+ * Supported releases are the default. `--candidate <version>` retargets an
+ * isolated copy, widens that copy's peer admission, and still fails on mixed
+ * or incomplete trees. It does not edit SUPPORTED_DSH_RELEASES.
+ */
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawnSync } from 'node:child_process'
+import { parse } from 'yaml'
+import { readContract } from './lib/contract.mjs'
+import { isExactVersion } from './lib/exact-pin.mjs'
+import { readLockfile } from './lib/lockfile.mjs'
+import { isDshPackage, renderWorkspace, repointInstallation } from './lib/repoint.mjs'
+import { runLogged } from './lib/run.mjs'
 
-const root = fileURLToPath(new URL('../', import.meta.url))
-const source = readFileSync(join(root, 'src/compat/dsh-version.ts'), 'utf8')
-const releases = [...source.match(/export const SUPPORTED_DSH_RELEASES = \[([^\]]*)\]/u)[1].matchAll(/'([^']+)'/gu)].map(match => match[1])
-/** Cordis and Schemastery versions published with each exact DSH release. */
-const VENDORS = {
-  '0.1.5-rc.2': ['4.0.2', '3.18.2'],
-  '0.1.5-rc.3': ['4.0.2', '3.18.2'],
-  '0.1.6-alpha.1': ['4.0.2', '3.18.2'],
-  '0.1.6-alpha.2': ['4.0.2', '3.18.2'],
-  '0.1.7-alpha.1': ['4.0.3', '3.18.3'],
-  '0.1.7-alpha.2': ['4.0.4', '3.18.4'],
-  '0.1.7-rc.1': ['4.0.4', '3.18.4'],
-  '0.1.7-rc.2': ['4.0.4', '3.18.4'],
-  '0.2.0-rc.1': ['4.0.4', '3.18.4'],
-  '0.2.0-rc.2': ['4.0.4', '3.18.4'],
-  '0.2.1-alpha.1': ['4.0.5-alpha.1', '3.18.5-alpha.1'],
-  '0.2.1-alpha.2': ['4.0.5-alpha.1', '3.18.5-alpha.1'],
-}
-const requested = process.argv.slice(2)
-const selected = requested.length ? requested : releases
-for (const version of selected) {
-  if (!releases.includes(version)) throw new Error(`Release is outside the support contract: ${version}`)
-  if (VENDORS[version] === undefined) throw new Error(`No Cordis/Schemastery pin recorded for ${version}`)
-}
+const root = join(dirname(fileURLToPath(import.meta.url)), '..')
+const SKIP = new Set([
+  'node_modules', '.git', 'lib', '.pnpm-store', 'dist', '.cursor', '.pack', 'matrix-evidence', 'coverage',
+])
 
-const RUNTIME_PACKAGES = [
-  '@deepseek-ai/cordis-plugin-group',
-  '@deepseek-ai/cordis-plugin-include',
-  '@deepseek-ai/cordis-plugin-loader',
-  '@deepseek-ai/cosmokit',
-]
-
-/** Cordis 4.0.5-alpha.1 rejects the previous stable plugin/cosmokit releases. */
-const ALPHA_RUNTIME = {
-  '@deepseek-ai/cordis-plugin-group': '1.0.5-alpha.1',
-  '@deepseek-ai/cordis-plugin-include': '1.0.10-alpha.1',
-  '@deepseek-ai/cordis-plugin-loader': '1.0.6-alpha.1',
-  '@deepseek-ai/cosmokit': '1.8.6-alpha.1',
-}
-
-function rewriteWorkspace(text, version, cordis, schema) {
-  let next = text
-    .replace(/(@deepseek-ai\/dsh[\w-]*(?:'?: |@))\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?/gu, `$1${version}`)
-    .replace(/('@deepseek-ai\/cordis':\s*)\S+/gu, `$1${cordis}`)
-    .replace(/('@deepseek-ai\/schemastery':\s*)\S+/gu, `$1${schema}`)
-    .replace(/@deepseek-ai\/cordis@[^'\s]+/gu, `@deepseek-ai/cordis@${cordis}`)
-    .replace(/@deepseek-ai\/schemastery@[^'\s]+/gu, `@deepseek-ai/schemastery@${schema}`)
-  if (cordis !== '4.0.5-alpha.1') {
-    for (const name of RUNTIME_PACKAGES) {
-      const escaped = name.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
-      next = next.replace(new RegExp(String.raw`\n  '${escaped}':\s*\S+`, 'gu'), '')
-      next = next.replace(new RegExp(String.raw`\n  - '${escaped}@\S+'`, 'gu'), '')
-    }
-    return next
+function parseArgs(argv) {
+  const positional = []
+  let candidate
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index]
+    if (arg === '--candidate') {
+      candidate = argv[index + 1]
+      index += 1
+      if (candidate === undefined) throw new Error('--candidate needs an exact version')
+    } else positional.push(arg)
   }
-  for (const [name, pin] of Object.entries(ALPHA_RUNTIME)) {
-    const escaped = name.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
-    if (next.includes(`'${name}':`)) {
-      next = next.replace(new RegExp(`('${escaped}':\\s*)\\S+`, 'gu'), `$1${pin}`)
-    } else {
-      next = next.replace('overrides:\n', `overrides:\n  '${name}': ${pin}\n`)
-    }
-    if (!next.includes(`'${name}@${pin}'`)) {
-      next = next.replace('minimumReleaseAgeExclude:\n', `minimumReleaseAgeExclude:\n  - '${name}@${pin}'\n`)
-    }
+  if (candidate !== undefined && positional.length > 0) {
+    throw new Error('Pass supported versions or one --candidate, not both')
   }
-  return next
+  return { positional, candidate }
 }
+
+function assertLock(dir, version, metadata) {
+  const { resolved } = readLockfile(join(dir, 'pnpm-lock.yaml'))
+  const problems = []
+  const dshVersions = [...new Set(resolved.filter(row => isDshPackage(row.name)).map(row => row.version))]
+  if (dshVersions.length !== 1 || dshVersions[0] !== version) {
+    problems.push(`DSH packages resolved to ${dshVersions.join(', ') || 'nothing'} instead of ${version}`)
+  }
+  for (const [name, pin] of Object.entries(metadata.pins)) {
+    if (isDshPackage(name)) continue
+    const found = [...new Set(resolved.filter(row => row.name === name).map(row => row.version))]
+    const required = name === '@deepseek-ai/cordis' || name === '@deepseek-ai/schemastery'
+    if (found.length > 1) problems.push(`${name} mixes ${found.join(', ')}`)
+    else if (found.length === 1 && found[0] !== pin) problems.push(`${name} resolved to ${found[0]} instead of metadata pin ${pin}`)
+    else if (required && found.length === 0) problems.push(`${name} was not installed`)
+  }
+  const drifting = [...new Set(resolved.filter(row => isDshPackage(row.name) && row.version !== version).map(row => row.name))]
+  return { problems, drifting }
+}
+
+function pinDrift(dir, names, version) {
+  const document = parse(readFileSync(join(dir, 'pnpm-workspace.yaml'), 'utf8'))
+  const pins = { ...(document.overrides ?? {}) }
+  for (const name of names) pins[name] = version
+  writeFileSync(join(dir, 'pnpm-workspace.yaml'), renderWorkspace(pins))
+}
+
+const { supported } = readContract(root)
+const { positional, candidate } = parseArgs(process.argv.slice(2))
+if (candidate !== undefined) {
+  if (!isExactVersion(candidate)) throw new Error(`Candidate ${JSON.stringify(candidate)} is not an exact version`)
+  if (supported.includes(candidate)) throw new Error(`${candidate} is already supported. Run it without --candidate.`)
+}
+for (const version of positional) {
+  if (!supported.includes(version)) throw new Error(`Release is outside the support contract: ${version}`)
+}
+const selected = candidate !== undefined ? [candidate] : (positional.length > 0 ? positional : supported)
+const evidence = process.env.DSH_MATRIX_EVIDENCE
+  ? resolve(process.env.DSH_MATRIX_EVIDENCE)
+  : mkdtempSync(join(tmpdir(), 'theme-studio-matrix-'))
+mkdirSync(evidence, { recursive: true })
+console.log(`[matrix] evidence: ${evidence}`)
+console.log(`[matrix] mode: ${candidate !== undefined ? 'candidate' : 'supported'}`)
+
 const results = []
-const scratch = mkdtempSync(join(tmpdir(), 'theme-studio-matrix-'))
-console.log(`[matrix] evidence: ${scratch}`)
-try {
-  for (const version of selected) {
-    const dir = join(scratch, version)
-    cpSync(root, dir, { recursive: true, filter: path => !['node_modules', '.git', '.cursor', 'lib', '.pnpm-store'].includes(path.split('/').filter(Boolean).at(-1)) })
+let failed = false
+for (const version of selected) {
+  // Canonicalize before launching pnpm/Vitest too: their own imports and CWD
+  // must use the same long Windows path as the test configuration.
+  const dir = realpathSync.native(mkdtempSync(join(tmpdir(), `theme-studio-${version}-`)))
+  const result = { version, candidate: candidate !== undefined, steps: [], passed: false, directory: dir }
+  try {
+    cpSync(root, dir, {
+      recursive: true,
+      filter: (src) => {
+        if (src === root) return true
+        const top = relative(root, src).split(sep)[0]
+        return top !== undefined && !SKIP.has(top)
+      },
+    })
     const manifest = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
-    for (const name of Object.keys(manifest.devDependencies)) {
-      if (name.startsWith('@deepseek-ai/dsh')) manifest.devDependencies[name] = version
+    const frozen = candidate === undefined && version === manifest.devDependencies['@deepseek-ai/dsh-settings']
+    const metadata = frozen
+      ? { pins: parse(readFileSync(join(dir, 'pnpm-workspace.yaml'), 'utf8')).overrides }
+      : repointInstallation(dir, version, { admitCandidate: candidate !== undefined }).metadata
+    result.metadata = {
+      cordis: metadata.pins['@deepseek-ai/cordis'],
+      schemastery: metadata.pins['@deepseek-ai/schemastery'],
     }
-    const [cordis, schema] = VENDORS[version]
-    manifest.devDependencies['@deepseek-ai/cordis'] = cordis
-    writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest, null, 2) + '\n')
-    const workspace = rewriteWorkspace(readFileSync(join(dir, 'pnpm-workspace.yaml'), 'utf8'), version, cordis, schema)
-    writeFileSync(join(dir, 'pnpm-workspace.yaml'), workspace)
-    // Resolve each release from scratch rather than verifying the development lockfile
-    // against exclusions for a different release.
-    rmSync(join(dir, 'pnpm-lock.yaml'), { force: true })
+    if (!frozen) rmSync(join(dir, 'pnpm-lock.yaml'), { force: true })
+    const env = { ...process.env, CI: 'true', DSH_MATRIX_EVIDENCE: evidence }
+    if (candidate !== undefined) env.DSH_THEME_STUDIO_CANDIDATE = version
+    else delete env.DSH_THEME_STUDIO_CANDIDATE
     const steps = [
-      ['install', '--ignore-scripts', '--no-frozen-lockfile'],
-      ['compat:check'], ['typecheck'], ['test'], ['build'], ['pack', '--dry-run'],
+      ['pnpm', ['install', '--ignore-scripts', frozen ? '--frozen-lockfile' : '--no-frozen-lockfile', '--config.minimumReleaseAge=0'], 'install'],
+      ['pnpm', ['compat:check'], 'compat-check'],
+      ['pnpm', ['lint'], 'lint'],
+      ['pnpm', ['typecheck'], 'typecheck'],
+      ['pnpm', ['build'], 'build'],
+      ['pnpm', ['test'], 'test'],
+      ['pnpm', ['docs:check'], 'docs-check'],
+      ['node', ['scripts/audit-theme-tokens.mjs'], 'audit-tokens'],
+      ['node', ['scripts/verify-package.mjs'], 'verify-package'],
+      ['node', ['scripts/smoke-theme.mjs'], 'smoke-theme'],
+      ['node', ['scripts/smoke-compose.mjs'], 'smoke-compose'],
     ]
-    const result = { version, steps: [], passed: true }
-    for (const args of steps) {
-      console.log(`[matrix] ${version}: pnpm ${args.join(' ')}`)
-      const run = spawnSync('pnpm', args, { cwd: dir, encoding: 'utf8', env: { ...process.env, CI: 'true' } })
-      let log = `${run.stdout ?? ''}${run.stderr ?? ''}${run.error ?? ''}`
-      if (args[0] === 'install' && run.status === 0) {
-        for (let attempt = 0; attempt < 5; attempt++) {
-          const lock = readFileSync(join(dir, 'pnpm-lock.yaml'), 'utf8')
-          const drifting = [...new Set([...lock.matchAll(/(@deepseek-ai\/dsh(?:-[\w-]+)?)@(\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?)/gu)].filter(match => match[2] !== version).map(match => match[1]))]
-          if (!drifting.length) break
-          console.log(`[matrix] ${version}: pin transitive peers ${drifting.join(', ')}`)
-          const configFile = join(dir, 'pnpm-workspace.yaml')
-          let config = readFileSync(configFile, 'utf8')
-          config = config.replace('overrides:\n', `overrides:\n${drifting.map(name => `  '${name}': ${version}`).join('\n')}\n`)
-          config += drifting.map(name => `  - '${name}@${version}'\n`).join('')
-          writeFileSync(configFile, config)
-          const normalized = spawnSync('pnpm', args, { cwd: dir, encoding: 'utf8', env: { ...process.env, CI: 'true' } })
-          log += `${normalized.stdout ?? ''}${normalized.stderr ?? ''}${normalized.error ?? ''}`
-          run.status = normalized.status
-          if (run.status !== 0) break
+    if (process.env.DSH_BROWSER_E2E === '1') {
+      steps.push(['node', ['scripts/smoke-client.mjs'], 'smoke-client'])
+    }
+    for (const [command, args, label] of steps) {
+      console.log(`[matrix] ${version}: ${command} ${args.join(' ')}`)
+      const logFile = join(evidence, `${version}-${label}.log`)
+      let code = await runLogged(command, args, { cwd: dir, env, logFile })
+      if (label === 'install' && code === 0) {
+        const checked = assertLock(dir, version, metadata)
+        if (!frozen && checked.drifting.length > 0) {
+          console.log(`[matrix] ${version}: pin transitive DSH packages ${checked.drifting.join(', ')}`)
+          pinDrift(dir, checked.drifting, version)
+          code = await runLogged(command, args, { cwd: dir, env, logFile: join(evidence, `${version}-install-repin.log`) })
+        }
+        if (code === 0) {
+          const again = assertLock(dir, version, metadata)
+          if (again.problems.length > 0) {
+            const message = again.problems.join('\n')
+            writeFileSync(join(evidence, `${version}-lockfile.txt`), message)
+            console.error(`[matrix] ${version}: dependency tree is not coherent\n${message}`)
+            code = 1
+          }
         }
       }
-      writeFileSync(join(scratch, `${version}-${args[0].replace(':', '-')}.log`), log)
-      result.steps.push({ command: `pnpm ${args.join(' ')}`, exitCode: run.status })
-      if (run.status !== 0) {
-        console.error(log.slice(-12000))
+      result.steps.push({ command: `${command} ${args.join(' ')}`, exitCode: code })
+      if (code !== 0) {
         result.passed = false
+        failed = true
+        console.error(`[matrix] ${version}: failed at ${label}. Install kept at ${dir}`)
         break
       }
     }
-    results.push(result)
-    writeFileSync(join(scratch, 'results.json'), JSON.stringify(results, null, 2) + '\n')
-    // Logs survive for inspection; remove the large isolated installation.
-    if (result.passed) rmSync(dir, { recursive: true, force: true })
+    if (result.steps.length === steps.length && result.steps.every(step => step.exitCode === 0)) {
+      result.passed = true
+      result.directory = undefined
+      rmSync(dir, { recursive: true, force: true })
+    }
+  } catch (error) {
+    result.passed = false
+    result.error = error.message
+    failed = true
+    console.error(`[matrix] ${version}: ${error.stack ?? error.message}`)
+    console.error(`[matrix] ${version}: install kept at ${dir}`)
   }
-} finally {
-  console.log(`[matrix] results: ${join(scratch, 'results.json')}`)
+  results.push(result)
+  writeFileSync(join(evidence, 'results.json'), `${JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    mode: candidate !== undefined ? 'candidate' : 'supported',
+    results,
+  }, null, 2)}\n`)
 }
-if (results.some(result => !result.passed)) process.exitCode = 1
+console.log(`[matrix] results: ${join(evidence, 'results.json')}`)
+if (failed) process.exitCode = 1

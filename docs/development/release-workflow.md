@@ -2,7 +2,7 @@
 
 ## 触发与产物
 
-源码真源为 [release.yml](../../.github/workflows/release.yml)、[bump-version.mjs](../../scripts/bump-version.mjs)、[release-notes.mjs](../../scripts/release-notes.mjs)。推送 annotated `v<version>` tag 触发 Release workflow；verify job 要求 tag 字符串与 package.json version 完全相同，先检查再允许 publish job。
+源码真源为 [release.yml](../../.github/workflows/release.yml)、[bump-version.mjs](../../scripts/bump-version.mjs)、[release-notes.mjs](../../scripts/release-notes.mjs)。推送 annotated `v<version>` tag 触发 Release workflow。verify job 复用完整 CI；通过后 publish job 先核对 tag、源码 package.json 与已验证 tarball 的版本完全相同，再允许发布。
 
 产物包括独立 Host ESM、Client ModuleLoader bundle、公开声明、cordis.patch.yml、语言 README、双语 CHANGELOG 与 LICENSE。npm 包 files 没有包含全部 docs/Agent 工程资料，源码仓库文档入口应明确；打包清单不能仅凭文件存在于源码推断。
 
@@ -18,10 +18,12 @@
 pnpm install --frozen-lockfile
 pnpm docs:check
 pnpm compat:check
+pnpm lint
 pnpm typecheck
-pnpm test
 rm -rf lib
 pnpm build
+pnpm test
+pnpm verify:package
 pnpm pack --dry-run
 ```
 
@@ -48,6 +50,10 @@ pnpm release patch --tag
 
 ## 验证实际 tarball
 
+`verify:package` 在 tarball 所在临时目录运行 `tar`，使用相对 archive 文件名和相对解压目录。Git for Windows 的 GNU tar 会把 Windows 盘符中的冒号识别为远端 archive 分隔符；不要把带盘符的绝对路径直接交给 `tar -f`。相对路径同时适用于 GNU tar 与 macOS BSD tar。
+
+publish job 先把 manifest 和 Client bundle 解压为文件，再校验版本与 ModuleLoader 标记。Bash 的 `pipefail` 下不能用 `tar -xO | grep -q` 检查大 bundle：`grep` 提前匹配退出可能让 `tar` 收到 SIGPIPE，导致有效产物被误判为失败。标记使用固定字符串匹配，缺少标记的产物仍会阻止发布。
+
 ```sh
 pnpm pack --pack-destination /tmp/theme-studio-release
 ```
@@ -64,7 +70,7 @@ pnpm pack --pack-destination /tmp/theme-studio-release
 | package/lib/types/client/index.d.ts | catalog/contrast公开声明及Context合并存在 |
 | README与CHANGELOG语言文件 | 中文/英文对应，旧中文导航可达 |
 
-release verify job 当前强制检查patch、HostJS、ClientJS、Host声明与manifest必需项；额外public declaration/语言契约需维护者一起审阅。pack dry-run只列文件，不是将tarball安装到真实profile。建议在受支持runtime用实际tarball确认admission、dump-config、Themes、durable write/reload、catalog consumer生命周期。
+可复用 CI 的 package job 检查表中的必需文件与 bundle 契约，并将真实 tarball 安装到临时包加载 Host；publish job 下载同一产物后再次核对必需文件、版本与 ModuleLoader 标记。pack dry-run 只列文件，不是将 tarball 安装到真实 profile。profile composition 与浏览器持久化的验证范围见[兼容矩阵](./dsh-compatibility.md)，catalog consumer 生命周期由对应集成测试覆盖。
 
 ## 推送与远端流程
 
@@ -76,11 +82,11 @@ git push origin main --follow-tags
 
 这里以正式main发版为例，不能把feat/stage-2-3的本地完成当已自动合并/推送。本次文档任务不触发新tag或npm发布。
 
-verify job使用Node22.19与pnpm11.7，先匹配tag/version，再install、docs/compat/type/test/build，pack actual tarball并检查内容。publish job仅在verify成功后继续，重新构建pack，以public access和provenance发布npm；notes脚本从两份changelog提取该version，再由GitHub token创建Release并附tarball。
+verify job 使用 Node 22.19 与 pnpm 11.7，通过可复用的 CI workflow 跑冻结安装，以及每个受支持 DSH 版本在 Ubuntu、macOS、Windows 上的隔离矩阵。PR 默认浏览器旅程在 Ubuntu 上跑注册时代代表与当前开发 pin；Release 强制 `browser_coverage: all` 跑全部支持版本。本地复验不等同于 GitHub 托管 runner 的结果，远端覆盖以该 commit 的 Actions 记录为准。publish job 下载 CI 已经验证的 tarball，不再自己重新构建。无预发布标记发布到 `latest`，`rc` 发布到 `next`，`alpha` 发布到 `alpha`，`beta` 发布到 `beta`。其他预发布标记会使发布失败。发布仅使用 npm Trusted Publishing / OIDC，要求 npm 包设置已把本仓库与 `release.yml` 绑定为 trusted publisher。未配置时发布失败，不回退到长期 token。
 
 ## npm权限与provenance
 
-包scope为@dsh-electron，publishConfig.access=public。workflow若得到NPM_TOKEN会写临时npmrc，随后npm publish；同时配置id-token权限用于支持OIDC/provenance。是否已给本repository/workflow配置Trusted Publishing、secret是否存在及账户权限，必须检查实际远端设置，不能把历史文档的“已配置”当当前保证。
+包 scope 为 `@dsh-electron`，`publishConfig.access=public`。workflow 配置 `id-token: write`，使用支持 OIDC 的 npm 11.5.1+ 执行 `npm publish --provenance`，无 `NPM_TOKEN` 或临时认证 npmrc。配置要求见 [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/)。npm 上是否已经绑定 `cherrchen/dsh-theme-studio` 与 `release.yml`，需要维护者在包的 Publishing 设置核实；本次没有权限证据确认这一外部配置，也没有执行 npm publish。
 
 只有matching v* tag push触发自动发布；普通文档commit没有发布权限副作用。若远端某阶段失败，先确认npm是否已接受该version、GitHub Release是否已存在，再恢复后续步骤，避免误以为整条链可无条件重复。诊断见[build/release排查](../troubleshooting/build-and-release-failures.md)。
 

@@ -15,6 +15,8 @@
 
 ### Changed
 
+- Client bundle 从宿主共享 `@deepseek-ai/dsh-client-store`，避免第二份 store 破坏客户端服务身份；提供隔离候选探测与多版本回归，发布复用完整验证。
+
 - 按当前代码与全部历史提交补齐需求、架构、ADR、实施计划、开发流程、完整 API/token 参考与故障排查；根文档统一为中文 README.md、英文 README.en.md，旧 README.zh.md 保留导航入口。
 - 新增 docs:check 文档结构检查并接入 CI/发布验证；同步 README 兼容检查与发布语言文件清单。
 

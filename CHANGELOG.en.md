@@ -15,6 +15,8 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Changed
 
+- The Client bundle shares the upstream Client runtime’s `@deepseek-ai/dsh-client-store` instead of bundling a second instance. Isolated candidate probes and multi-version regression gates now feed the release workflow.
+
 - Completed requirements, architecture, ADRs, implementation records, development workflows, full API/token references, and troubleshooting from current code and all historical commits. Root documentation now uses canonical Chinese README.md and English README.en.md; README.zh.md preserves the former Chinese link.
 - Added docs:check and wired it into CI/release verification, with matching README compatibility checks and publication language files.
 

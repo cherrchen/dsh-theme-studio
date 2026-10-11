@@ -327,6 +327,8 @@ Current，2026-10-02。数据由当前编译 preset 与源码派生表达式核�
 
 不覆写 `--dsw-static-neutral-00` 与 `--dsw-static-neutral-bluish-00`；宿主 tooltip/file tile 等把它们视为白色。light bubble 使用深色 labelPrimary，dark bubble 向 black 混色，保留白色语义。不能将 darkSurface 的简单 RGB 启发式误用为 Stage 2 luminance 计算。
 
+`pnpm audit:tokens` 从 `presets.ts` 和 `chrome-tokens.ts` 的源码 token 字面量取得覆盖集合，独立从 `STAGE1_TOKENS` 读取必需集合；必需清单不能补入覆盖集合。删除必需映射后，即使类型契约与上游 bundle 仍保留该名称，审计也必须失败。单测另外对每套 preset 的实际 light/dark token 键执行审计。
+
 DSH 0.2 提升新增八项语义表达式：document-selection、label-deep-diving、label-deep-diving-shimmer、label-shimmer、switch-thumb、turn-trigger-bg、turn-trigger-bg-hover、menu-group-header-fill。源码与上游角色之间的证据见 [compatibility matrix](../development/dsh-compatibility.md)。旧 host 能接受 overlay-only token，但这不保证某个名字在旧版本已有可见消费者。
 
 ## 扩展约束

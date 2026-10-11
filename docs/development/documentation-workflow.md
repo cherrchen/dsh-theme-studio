@@ -24,6 +24,8 @@ git hash-object README.md README.en.md README.zh.md
 
 两语言完成 semantic review 后才更新各键；不能用重记hash代替翻译一致。root两版的代码块保持相同命令与示例，语言说明写在块外。目录 README 通过 paired navigation 检查，结构检查不能判断翻译自然度。
 
+[.gitattributes](../../.gitattributes) 固定文本 checkout 使用 LF，确保 Windows 的 `core.autocrlf` 不改变 README 字节或 YAML 记录的行尾。审阅 hash 对应 Git 中的 LF blob；不能为平台换行差异重记 hash 或绕过一致性门禁。
+
 ## 历史追溯
 
 所有 ADR 与 completed 计划明确注明 2026-10-02 追溯整理、原始实现日期和 commit。不能伪称原始开发前有这些计划、原始提交运行 docs:check，或将已经删掉的 plugin-page 当现行功能。

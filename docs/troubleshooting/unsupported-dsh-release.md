@@ -16,16 +16,16 @@ dsh plugin add/boot 因 peer mismatch 不加载，compat:check 失败，typechec
 
 ```sh
 pnpm compat:check
-pnpm list --depth 0
+node scripts/upgrade-dsh.mjs --print-installed
 pnpm why @deepseek-ai/dsh-client-ui-theme
 pnpm why @deepseek-ai/cordis
 ```
 
-checker 按 required missing、mixed、uniform unsupported 分类并显示 drift。读取清单源码，不从此故障页建立第二支持表。检查实际 package resolution；不能只看 npm 显示安装完成。
+checker 输出 `diagnosis`：`consistent`、`declaration drift`、`incomplete installation`、`mixed installation` 或 `unsupported release`。它按 required missing、mixed、uniform unsupported 分类。读取清单源码，不从此故障页建立第二支持表。检查实际 package resolution 和结构化 lockfile；不能只看 npm 显示安装完成。
 
 ## Verified Solution
 
-恢复同一受支持 release 的直接/间接 DSH 和对应 vendor，再重新 install 与 gate。不要静默把 peer 扩为 ^0.1、删除 lockfile 后任意升级，或增加生产 Node probing。候选升级按 workflow建立独立树并复验全部旧版。headless 可没有可选 Client peers，但已安装的可选包若版本不一致仍是 mixed。
+恢复同一受支持 release 的直接/间接 DSH 和对应 vendor，再重新 install 与 gate。不要静默把 peer 扩为 ^0.1、删除 lockfile 后任意升级，或增加生产 Node probing。候选升级用 `node scripts/run-dsh-matrix.mjs --candidate <version>` 建立独立树；绿灯不是支持声明。headless 可没有可选 Client peers，但已安装的可选包若版本不一致仍是 mixed。
 
 ## Validation
 

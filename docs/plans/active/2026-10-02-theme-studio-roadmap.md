@@ -25,6 +25,7 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 | Stage 3 readonly Client catalog | Completed，commit 509b88e | Unreleased；未新打 tag | [Stage 2/3](../completed/2026-10-02-stage-2-3-validation-and-catalog.md) |
 | 完整文档体系 | Completed，本批次单独提交 | Unreleased 文档补充 | [文档补齐](../completed/2026-10-02-documentation-reconstruction.md)、[文档地图](../../README.md) |
 | DSH 0.2.1-alpha.1/alpha.2 与字体正交、保存失败提示 | Completed，本分支实现 | Unreleased；未打 tag、未发 npm | [兼容矩阵](../../development/dsh-compatibility.md) |
+| 元数据驱动的多版本矩阵、候选探测与发布复用 | Completed，本分支实现 | Unreleased；未打 tag、未发 npm；远端跨平台结果由 PR CI 提供 | [兼容矩阵](../../development/dsh-compatibility.md) |
 
 “发布状态”由本地 tag 与版本准备提交确认；不证明本轮已检查远端 npm 内容或 GitHub Actions 成功。package.version 仍为 0.1.3，Stage 2/3 未自动升版。每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
 

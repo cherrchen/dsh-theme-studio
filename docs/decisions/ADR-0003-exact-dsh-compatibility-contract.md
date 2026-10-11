@@ -39,6 +39,16 @@ Accepted（当前源码所体现的选择；2026-10-02 追溯整理，不冒充�
 
 compat.spec、compat:check 与全部十个版本的 matrix results；静态清单不复制为新的独立版本表。
 
+## Amendment（2026-10-10）
+
+原决定保持有效：支持清单仍是唯一承诺，生产入口仍不探测 Node 包版本，也不建立授权门禁。工具层改为：
+
+1. Cordis、Schemastery 和配套运行时的精确版本从被测 DSH 发布包的依赖声明解析。一个包名若不能确定唯一满足全部声明的版本，探测失败，不猜测。
+2. `pnpm-lock.yaml` 按 YAML 文档解析。DSH、Cordis 或 Schemastery 出现多个版本即视为混装。
+3. `scripts/run-dsh-matrix.mjs` 复制 checkout 后再改 pin。`--candidate` 只在副本里放宽 peer admission，不把候选写入 `SUPPORTED_DSH_RELEASES`。
+4. CI 在运行时读取清单。Release 复用该 workflow，并发布已经验证过的 tarball。稳定版使用 `latest`，rc 使用 `next`，alpha 使用 `alpha`，beta 使用 `beta`。
+5. 发布只使用 npm OIDC，不保留长期 token 回退。npm trusted publisher 的外部配置仍需维护者核实；缺失时发布应失败。
+
 ## Related Documents
 
 [实现真源](../../scripts/check-dsh-compat.mjs)、[相关详细文档](../development/dsh-compatibility.md)、[完整历史](../reference/repository-history.md)、[架构](../architecture/theme-studio.md)。

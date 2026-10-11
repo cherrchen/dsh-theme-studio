@@ -1,6 +1,20 @@
 name: CI
 
 on:
+  workflow_call:
+    inputs:
+      browser_coverage:
+        description: 'representatives or all'
+        required: false
+        default: representatives
+        type: string
+  workflow_dispatch:
+    inputs:
+      browser_coverage:
+        description: 'representatives runs the register-era release and the current pin. all runs every allowlisted release.'
+        required: false
+        default: representatives
+        type: string
   pull_request:
   push:
     branches:
@@ -10,7 +24,127 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  releases:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.contract.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+      - id: contract
+        run: echo "versions=$(node scripts/list-dsh-releases.mjs)" >> "$GITHUB_OUTPUT"
+
+  verify:
+    needs: releases
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh: ${{ fromJSON(needs.releases.outputs.versions) }}
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      CI: 'true'
+      FORCE_COLOR: '0'
+      DSH_MATRIX_VERSION: ${{ matrix.dsh }}
+      DSH_MATRIX_EVIDENCE: ${{ github.workspace }}/matrix-evidence
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: pnpm
+      - name: Bootstrap the matrix tooling
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Verify this exact DSH release
+        shell: bash
+        run: node scripts/run-dsh-matrix.mjs "$DSH_MATRIX_VERSION"
+      - name: Upload matrix logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-${{ matrix.os }}-${{ matrix.dsh }}
+          path: matrix-evidence
+          if-no-files-found: ignore
+          retention-days: 7
+
+  browser_plan:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.plan.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+      - id: plan
+        shell: bash
+        run: |
+          mode="${{ inputs.browser_coverage }}"
+          if [ "$mode" = "all" ]; then
+            echo "versions=$(node scripts/list-browser-releases.mjs --all)" >> "$GITHUB_OUTPUT"
+          else
+            echo "versions=$(node scripts/list-browser-releases.mjs)" >> "$GITHUB_OUTPUT"
+          fi
+
+  browser_e2e:
+    needs: browser_plan
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh: ${{ fromJSON(needs.browser_plan.outputs.versions) }}
+    runs-on: ubuntu-latest
+    env:
+      CI: 'true'
+      FORCE_COLOR: '0'
+      DSH_BROWSER_E2E: '1'
+      DSH_MATRIX_VERSION: ${{ matrix.dsh }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: pnpm
+      - name: Bootstrap the upgrade tooling
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Install this exact release
+        shell: bash
+        run: |
+          pin="$(node -p "require('./package.json').devDependencies['@deepseek-ai/dsh-settings']")"
+          if [ "$DSH_MATRIX_VERSION" = "$pin" ]; then
+            pnpm install --frozen-lockfile
+          else
+            node scripts/upgrade-dsh.mjs "$DSH_MATRIX_VERSION"
+            pnpm install --no-frozen-lockfile --config.minimumReleaseAge=0
+          fi
+      - run: pnpm build
+      - name: Install Chromium
+        shell: bash
+        run: |
+          npm install --prefix "$RUNNER_TEMP/pw" playwright
+          sudo "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install-deps chromium
+          "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install chromium
+          echo "PLAYWRIGHT_MODULE=$RUNNER_TEMP/pw/node_modules/playwright/index.js" >> "$GITHUB_ENV"
+      - name: Browser client journey
+        shell: bash
+        run: node scripts/smoke-client.mjs
+      - name: Upload the browser report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ubuntu-latest-${{ matrix.dsh }}
+          path: matrix-evidence
+          if-no-files-found: ignore
+          retention-days: 7
+
+  package:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,28 +158,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm docs:check
       - run: pnpm compat:check
+      - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test
       - run: pnpm build
-      - run: pnpm pack --dry-run
-
-  compatibility:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.7.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.19.0
-      - run: node scripts/run-dsh-matrix.mjs
-        env:
-          TMPDIR: ${{ runner.temp }}
+      - run: pnpm test
+      - run: node scripts/audit-theme-tokens.mjs
+      - run: node scripts/verify-package.mjs
       - uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: dsh-compatibility-evidence
-          path: |
-            ${{ runner.temp }}/theme-studio-matrix-*/*.log
-            ${{ runner.temp }}/theme-studio-matrix-*/results.json
+          name: theme-studio-release-tarball
+          path: .pack/plugin.tgz
+          if-no-files-found: error
+          retention-days: 7
