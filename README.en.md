@@ -10,7 +10,7 @@ Users can change palettes while keeping official Light, Dark, and System behavio
 
 This repository is canonical. [DeepSeek Harness Desktop](https://github.com/cherrchen/deepseek-harness-electron) mirrors it through git subtree at `apps/electron/runtime/plugins/dsh-theme-studio` and rebuilds Host and Client from source. The same package runs in standard DSH Web.
 
-The latest local release tag is `v0.1.3`. Stage 1 is implemented; the Stage 2 validator and Stage 3 catalog are committed but remain Unreleased and are absent from that tag. The [roadmap ledger](./docs/plans/active/2026-10-02-theme-studio-roadmap.md) owns progress and release state; the [changelog](./CHANGELOG.en.md) owns user-visible release changes. Earlier branches targeting older DSH versions do not define current support.
+Release preparation targets `v0.1.4` (not tagged or published); the latest release tag remains `v0.1.3`. The Stage 2 validator, Stage 3 catalog, DSH 0.2.1 support, and release verification improvements are included in this candidate. The [roadmap ledger](./docs/plans/active/2026-10-02-theme-studio-roadmap.md) owns progress and release state; the [changelog](./CHANGELOG.en.md) owns user-facing changes. Earlier branches targeting older DSH versions do not define current support.
 
 ## Quick Start
 
@@ -43,7 +43,7 @@ See the [DSH compatibility matrix](./docs/development/dsh-compatibility.md) for 
 | Source | Command | Notes |
 | --- | --- | --- |
 | npm | `dsh plugin --profile web add @dsh-electron/dsh-theme-studio` | Published prebuilt package |
-| tarball | `dsh plugin --profile web add ./dsh-electron-dsh-theme-studio-0.1.3.tgz` | Offline build from the matching Release/tag or your own pack |
+| tarball | `dsh plugin --profile web add ./dsh-electron-dsh-theme-studio-0.1.4.tgz` | Offline build; available only after the matching Release artifact is created |
 | GitHub | `dsh plugin --profile web add github:cherrchen/dsh-theme-studio` | Source installation runs prepare; pin a tag for reproducibility |
 | local | `dsh plugin --profile web add .` | Install dependencies and build this checkout first |
 
@@ -60,7 +60,7 @@ dsh plugin --profile web add .
 Pin an existing GitHub release:
 
 ```sh
-dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.3
+dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.4
 ```
 
 `dsh plugin add` activates `cordis.patch.yml`. The bare package loader row anchors Host/Client composition and official package-manager discovery. Keep it rather than mounting only the client subpath; the plugin no longer registers a separate Plugins-page card. If an installer reports pending lifecycle builds, follow its actual prepare prompt. This package has no multi-root plugin koffi/native-build dependency, so that project's installation exceptions do not apply. See [build and release troubleshooting](./docs/troubleshooting/build-and-release-failures.md).

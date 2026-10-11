@@ -10,7 +10,7 @@ Theme Studio 是 DSH/Cordis 的可移植主题 overlay 插件：在官方外观�
 
 本仓库是权威源码。[DeepSeek Harness Desktop](https://github.com/cherrchen/deepseek-harness-electron) 通过 git subtree 镜像到 `apps/electron/runtime/plugins/dsh-theme-studio`，从源码重建 Host 与 Client；同一包可在标准 DSH Web 中运行。
 
-仓库最近发布 tag 为 `v0.1.3`。Stage 1 已实现；Stage 2 校验器与 Stage 3 catalog 已提交，仍位于 Unreleased，未包含在该 tag 中。当前进度及发布状态见[路线图总账](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)，每版本用户可见变更见 [CHANGELOG](./CHANGELOG.md)。历史分支曾针对早期 DSH 版本，不代表当前支持承诺。
+当前发布准备目标为 `v0.1.4`（尚未打 tag、未发布）；最近发布 tag 仍为 `v0.1.3`。Stage 2 校验器、Stage 3 catalog、DSH 0.2.1 支持与发布验证改进已纳入本次候选内容。当前进度及发布状态见[路线图总账](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)，每版本用户可见变更见 [CHANGELOG](./CHANGELOG.md)。历史分支曾针对早期 DSH 版本，不代表当前支持承诺。
 
 ## 快速开始
 
@@ -43,7 +43,7 @@ npm/tarball 对应已发布构建；体验未发布 Stage 2/3 应构建包含该
 | 来源 | 命令 | 说明 |
 | --- | --- | --- |
 | npm | `dsh plugin --profile web add @dsh-electron/dsh-theme-studio` | 已发布的预构建包 |
-| tarball | `dsh plugin --profile web add ./dsh-electron-dsh-theme-studio-0.1.3.tgz` | 离线构建；文件应来自匹配 tag 的 Release 或自行 pack |
+| tarball | `dsh plugin --profile web add ./dsh-electron-dsh-theme-studio-0.1.4.tgz` | 离线构建；仅在对应 Release 产物生成后可用 |
 | GitHub | `dsh plugin --profile web add github:cherrchen/dsh-theme-studio` | 源码安装由 prepare 构建；固定 tag 可复现 |
 | 本地 | `dsh plugin --profile web add .` | 本仓库先完成依赖安装与构建 |
 
@@ -60,7 +60,7 @@ dsh plugin --profile web add .
 从 GitHub 固定已有发布版本：
 
 ```sh
-dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.3
+dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.4
 ```
 
 `dsh plugin add` 激活附带 `cordis.patch.yml`，bare package loader 行是 Host/Client 建图和官方包管理器的入口。不要把它改成仅加载 client 子路径；插件不再注册独立插件页卡片。若上层安装器提示生命周期构建待决，按实际提示处理 prepare；本包没有 multi-root 插件的 koffi/native-build 依赖，不能照搬它的安装例外。细节见[构建与发布排查](./docs/troubleshooting/build-and-release-failures.md)。

@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-10-11
+
 ### Added
 
 - 支持 DSH 0.2.1-alpha.1 与 0.2.1-alpha.2。官方正文字体、代码字体、终端字体及对应字号保持独立；主题预览、应用、取消、恢复默认和明暗切换不会改写这些偏好。
@@ -59,7 +61,8 @@
 - Host 侧持久化当前主题选择，并兼容受支持 DSH 版本间的 register/settingsScope 与 Config/configure/configForms 差异；设置服务停止重供后可重新启动主题行。
 - 发布 standalone Host、Client bundle、TypeScript 声明和 `cordis.patch.yml`，并声明精确的 DSH 兼容版本。
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/cherrchen/dsh-theme-studio/releases/tag/v0.1.1
