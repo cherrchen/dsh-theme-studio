@@ -55,7 +55,7 @@ export function apply(ctx: Context): void {
 
 ### `list(): readonly BuiltinThemePreset[]`
 
-同步返回 Settings 卡片顺序的内置主题列表。对于同一个 catalog 实例，重复调用返回同一个数组引用。数组、preset、tokens 容器、两个 palette、preview 容器与样本均冻结。Default 不在列表中；UI 自行添加 id 为 null 的默认卡。
+同步返回 Settings 行选项顺序的内置主题列表。对于同一个 catalog 实例，重复调用返回同一个数组引用。数组、preset、tokens 容器、两个 palette、preview 容器与样本均冻结。Default 不在列表中；UI 自行添加 id 为 null 的默认选项。
 
 ### `get(id: string): BuiltinThemePreset | undefined`
 

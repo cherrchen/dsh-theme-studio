@@ -10,7 +10,7 @@ Active：长期路线图。2026-10-02 根据实际提交与本地 tag 建立；�
 
 ## Background
 
-Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝；v0.1.0–v0.1.3 是仓库发布 tag。2026-10-02 用户指定完成 Stage 2 对比度校验与 Stage 3 catalog，已形成 `509b88e`。本路线图的职责是进度和发布状态，不重复各版变更正文。
+Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝；v0.1.0–v0.1.4 是仓库发布 tag。2026-10-02 用户指定完成 Stage 2 对比度校验与 Stage 3 catalog，已形成 `509b88e`。本路线图的职责是进度和发布状态，不重复各版变更正文。
 
 ## 进度总账
 
@@ -21,13 +21,13 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 | 官方 package registration | Completed；旧自定义插件页 Superseded | v0.1.2 | [注册调整](../completed/2026-09-27-official-plugin-registration.md) |
 | Claude/Codex/Cream 与派生 chrome | Completed | v0.1.3 | [Builtin/chrome](../completed/2026-09-30-builtin-palettes-and-chrome.md) |
 | DSH 0.2 精确支持与最新 pin | Completed | v0.1.3 | [0.2 兼容提升](../completed/2026-09-30-dsh-02-compatibility.md) |
-| Stage 2 自动对比度诊断 | Completed，commit 509b88e | v0.1.4 候选；未打 tag | [Stage 2/3](../completed/2026-10-02-stage-2-3-validation-and-catalog.md) |
-| Stage 3 readonly Client catalog | Completed，commit 509b88e | v0.1.4 候选；未打 tag | [Stage 2/3](../completed/2026-10-02-stage-2-3-validation-and-catalog.md) |
-| 完整文档体系 | Completed，本批次单独提交 | v0.1.4 候选文档补充 | [文档补齐](../completed/2026-10-02-documentation-reconstruction.md)、[文档地图](../../README.md) |
-| DSH 0.2.1-alpha.1/alpha.2 与字体正交、保存失败提示 | Completed，本分支实现 | v0.1.4 候选；未打 tag、未发 npm | [兼容矩阵](../../development/dsh-compatibility.md) |
-| 元数据驱动的多版本矩阵、候选探测与发布复用 | Completed，本分支实现 | v0.1.4 候选；未打 tag、未发 npm；远端跨平台结果由 PR CI 提供 | [兼容矩阵](../../development/dsh-compatibility.md) |
+| Stage 2 自动对比度诊断 | Completed，commit 509b88e | v0.1.4 | [Stage 2/3](../completed/2026-10-02-stage-2-3-validation-and-catalog.md) |
+| Stage 3 readonly Client catalog | Completed，commit 509b88e | v0.1.4 | [Stage 2/3](../completed/2026-10-02-stage-2-3-validation-and-catalog.md) |
+| 完整文档体系 | Completed，本批次单独提交 | v0.1.4 | [文档补齐](../completed/2026-10-02-documentation-reconstruction.md)、[文档地图](../../README.md) |
+| DSH 0.2.1-alpha.1/alpha.2 与字体正交、保存失败提示 | Completed，本分支实现 | v0.1.4 | [兼容矩阵](../../development/dsh-compatibility.md) |
+| 元数据驱动的多版本矩阵、候选探测与发布复用 | Completed，本分支实现 | v0.1.4；远端跨平台结果由 PR CI 提供 | [兼容矩阵](../../development/dsh-compatibility.md) |
 
-“发布状态”由本地 tag 与版本准备提交确认；不证明本轮已检查远端 npm 内容或 GitHub Actions 成功。package.version 已准备为 0.1.4，但尚未创建对应提交/tag。Stage 2/3 与兼容/发布改进纳入 v0.1.4 候选；每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
+“发布状态”以 tag 与远端产物为准：v0.1.4 于 2026-10-11 打 tag、发布 GitHub Release 并推上 npm（`@dsh-electron/dsh-theme-studio@0.1.4`），Stage 2/3、文档补齐与兼容/发布改进均纳入其中；每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
 
 ## Current State
 

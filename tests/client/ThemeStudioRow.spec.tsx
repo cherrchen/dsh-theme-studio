@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { ThemeStudioRow } from '../../src/client/ThemeStudioRow.tsx'
 import type { ThemeStudioRowComponentProps } from '../../src/client/ThemeStudioRow.tsx'
 import type { ThemeStudioCard, ThemeStudioRowState } from '../../src/client/store.ts'
@@ -69,7 +69,6 @@ function mount() {
   const previewTheme = vi.fn()
   const activateTheme = vi.fn()
   const cancelPreview = vi.fn()
-  const applyPreview = vi.fn()
   const props: ThemeStudioRowComponentProps = {
     useSessions: (() => undefined) as never,
     useWorkspaces: (() => undefined) as never,
@@ -79,45 +78,99 @@ function mount() {
     previewTheme,
     activateTheme,
     cancelPreview,
-    applyPreview,
   }
   render(<ThemeStudioRow {...props} />)
-  return { store, previewTheme, activateTheme, cancelPreview, applyPreview }
+  return { store, previewTheme, activateTheme, cancelPreview }
+}
+
+function selector(name = 'Default') {
+  return screen.getByRole('button', { name })
+}
+
+function option(name: string) {
+  return screen.getByRole('menuitem', { name })
 }
 
 describe('ThemeStudioRow', () => {
-  it('renders Themes, Default, and builtin cards with Preview and Apply', () => {
+  it('renders a collapsed selector pill showing the applied theme', () => {
     mount()
     expect(screen.getByText('Themes')).toBeDefined()
-    expect(screen.getByText('Default')).toBeDefined()
-    expect(screen.getByText('Graphite')).toBeDefined()
-    expect(screen.getByText('Nordic')).toBeDefined()
-    // Default is active when activeThemeId is null.
-    expect(screen.getByText('Current')).toBeDefined()
-    expect(screen.getAllByRole('button', { name: /Preview / })).toHaveLength(3)
-    expect(screen.getAllByRole('button', { name: /Apply / })).toHaveLength(3)
+    const trigger = selector()
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu')
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('menu')).toBeNull()
+    // The pill carries the applied theme's four-color swatch.
+    const swatch = trigger.querySelector('div[aria-hidden="true"]')
+    expect(swatch?.childElementCount).toBe(4)
   })
 
-  it('marks the active theme and does not persist on Preview', () => {
+  it('opens the menu on click and marks only the applied theme selected', () => {
+    mount()
+    const trigger = selector()
+    fireEvent.click(trigger)
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    expect(option('Default').getAttribute('aria-selected')).toBe('true')
+    expect(option('Graphite').getAttribute('aria-selected')).toBe('false')
+    expect(option('Nordic').getAttribute('aria-selected')).toBe('false')
+  })
+
+  it('previews on option hover and restores when the menu closes', () => {
     const b = mount()
-    act(() => {
-      b.store.actions.sync({
-        activeThemeId: 'dsh-theme-studio.graphite',
-        previewThemeId: null,
-        previewing: false,
-        settingsStatus: 'ready',
-        saveError: false,
-        revision: 1,
-      })
-    })
-    expect(screen.getByText('Current')).toBeDefined()
-    expect(screen.getAllByText('Current')).toHaveLength(1)
-    fireEvent.click(screen.getByRole('button', { name: 'Preview Nordic' }))
+    fireEvent.click(selector())
+    fireEvent.mouseEnter(within(option('Nordic')).getByText('Nordic'))
     expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
     expect(b.activateTheme).not.toHaveBeenCalled()
+    fireEvent.pointerDown(document.body)
+    expect(b.cancelPreview).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('menu')).toBeNull()
   })
 
-  it('exposes Apply, Cancel, and preview status to assistive tech', () => {
+  it('cancels the preview when the selector toggles the menu closed', () => {
+    const b = mount()
+    const trigger = selector()
+    fireEvent.click(trigger)
+    fireEvent.mouseEnter(within(option('Nordic')).getByText('Nordic'))
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+    fireEvent.click(trigger)
+    expect(b.cancelPreview).toHaveBeenCalled()
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('cancels the preview when the row unmounts', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.mouseEnter(within(option('Nordic')).getByText('Nordic'))
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+    cleanup()
+    expect(b.cancelPreview).toHaveBeenCalled()
+  })
+
+  it('restores the preview when Escape closes the menu', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.mouseEnter(within(option('Graphite')).getByText('Graphite'))
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.graphite')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(b.cancelPreview).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('applies the clicked theme and closes the menu', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.click(option('Nordic'))
+    expect(b.activateTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('maps the Default option back to a null theme id', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.click(option('Default'))
+    expect(b.activateTheme).toHaveBeenCalledWith(null)
+  })
+
+  it('announces the previewed name while keeping the applied theme in the selector', () => {
     const b = mount()
     act(() => {
       b.store.actions.sync({
@@ -126,18 +179,20 @@ describe('ThemeStudioRow', () => {
         previewing: true,
         settingsStatus: 'ready',
         saveError: false,
-        revision: 2,
+        revision: 1,
       })
     })
-    expect(screen.getAllByText('Previewing Nordic').length).toBeGreaterThan(0)
-    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
-    expect(b.applyPreview).toHaveBeenCalledOnce()
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    expect(b.cancelPreview).toHaveBeenCalledOnce()
-    expect(screen.getByRole('button', { name: 'Preview Nordic' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByText('Previewing Nordic')).toBeDefined()
+    const trigger = selector('Graphite')
+    // The swatch follows the applied theme, not the transient preview.
+    const cells = trigger.querySelector('div[aria-hidden="true"]')?.children
+    expect((cells?.[0] as HTMLElement | undefined)?.style.background).toBe('rgb(232, 234, 237)')
+    fireEvent.click(trigger)
+    expect(option('Graphite').getAttribute('aria-selected')).toBe('true')
+    expect(option('Nordic').getAttribute('aria-selected')).toBe('false')
   })
 
-  it('announces a rejected save and keeps the restored theme current', () => {
+  it('announces a rejected save while keeping the applied theme selected', () => {
     const b = mount()
     act(() => {
       b.store.actions.sync({
@@ -146,17 +201,10 @@ describe('ThemeStudioRow', () => {
         previewing: false,
         settingsStatus: 'ready',
         saveError: true,
-        revision: 3,
+        revision: 2,
       })
     })
     expect(screen.getByRole('alert').textContent).toContain('could not be saved')
-    expect(screen.getByText('Current')).toBeDefined()
-    expect(screen.getAllByText('Current')).toHaveLength(1)
-  })
-
-  it('restores Default through Apply on the Default card', () => {
-    const b = mount()
-    fireEvent.click(screen.getByRole('button', { name: 'Apply Default' }))
-    expect(b.activateTheme).toHaveBeenCalledWith(null)
+    expect(selector('Graphite')).toBeDefined()
   })
 })

@@ -10,7 +10,7 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 
 ## Goals
 
-1. 在设置 → 通用 → 主题提供默认与内置主题卡片，与官方外观行保持顺序和视觉层级。
+1. 在设置 → 通用 → 主题提供默认与内置主题选项列表，与官方外观行保持顺序和视觉层级。
 2. 保持官方外观所有权，通过 token overlay 改变配色。
 3. 将预览与持久选择分离，允许取消预览、应用预览和恢复默认。
 4. 在 Host 设置就绪、插件重启、设置服务停止/重供时正确恢复 UI 与覆盖层。
@@ -26,7 +26,7 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 
 | 编号 | 当前要求 | 验收依据 |
 | --- | --- | --- |
-| F1 | Themes 行 `id=themes`、`order=20`；官方 Appearance 在前 | `apply.client.spec.ts` 的注册断言 |
+| F1 | Themes 行 `id=themes`、`order=10.5`，位于官方 Appearance（10）与字号（11）之间 | `apply.client.spec.ts` 的注册断言 |
 | F2 | Default 使用 `null`，不是可注册的内置 id | runtime、catalog 和 UI 测试 |
 | F3 | 浏览按内置目录顺序提供八个主题，文案中英切换 | presets、NAME_KEYS 与 locale 测试 |
 | F4 | Preview 不调用 Host 写入，后续预览替换同一 preview source | runtime 预览测试 |
@@ -59,7 +59,7 @@ Host accepted snapshot 是持久 authority；preview 不进入 durable settings�
 
 ### UI 与可访问性
 
-预览/应用按钮提供带主题名的 aria-label，状态按钮提供 aria-pressed，预览消息通过 polite live region 告知；色块为装饰性 aria-hidden。主题行 CSS 消费宿主语义 token，色块样本使用预览颜色。当前 Mosaic 固定显示 light 样本，不能把 preview.dark 数据存在解释成 UI 已自动随 Appearance 切换样本。
+主题选择器与官方语言行一致：`aria-haspopup=menu`、带 `aria-expanded` 的 selector 按钮显示已应用主题并展开共享 Menu；选项悬停预览，菜单关闭（指针离开、外部点击、Esc 或再次点击选择器）恢复，点击应用，选中项带尾随勾选；预览消息通过 polite live region 告知；色块为装饰性 aria-hidden。主题行 CSS 消费宿主语义 token，色块样本使用预览颜色。当前 Mosaic 固定显示 light 样本，不能把 preview.dark 数据存在解释成 UI 已自动随 Appearance 切换样本。
 
 ### 兼容性与验证
 

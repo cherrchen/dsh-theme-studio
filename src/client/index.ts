@@ -109,13 +109,13 @@ function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> 
         else runtime.activateTheme(id)
       },
       cancelPreview: () => { runtime.cancelPreview() },
-      applyPreview: () => { runtime.applyPreview() },
     }
   }
   ctx.effect(() => ctx.slots.inject('settings.general.item', () => ctx.slots.register({
     name: 'settings.general.item',
     id: 'themes',
-    order: 20,
+    // Between official 'appearance' (10) and 'font-size' (11).
+    order: 10.5,
     store,
     locale: NS,
     inject: injected,

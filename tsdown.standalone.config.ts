@@ -34,6 +34,7 @@ const clientExternals = new Set([
   '@deepseek-ai/dsh-client-ui-settings/client',
   '@deepseek-ai/dsh-client-locale/client',
   '@deepseek-ai/dsh-client-store',
+  '@deepseek-ai/dsh-client-ui-primitives',
 ])
 
 function packageName(specifier: string): string {

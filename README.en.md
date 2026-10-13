@@ -1,53 +1,112 @@
+<div align="center">
+
 # dsh-theme-studio
 
 [中文](./README.md) | English
 
-## Project Overview (What & Why)
+</div>
 
-Theme Studio is a portable DSH/Cordis theme overlay plugin. It adds builtin palettes above official Appearance and provides browsing, preview, apply, persistence, contrast diagnostics, and readonly discovery.
+## What & Why
 
-Users can change palettes while keeping official Light, Dark, and System behavior. Theme Studio produces token overlays through `ctx.theme.overrideTokens()`; the host owns ThemeSnapshot, ThemePresenter, and DOM presentation. The package is `platform:web` without Electron, client Node capabilities, or a Desktop provider. The npm scope `@dsh-electron/` identifies the publisher rather than a runtime requirement.
+DSH (DeepSeek Harness) natively offers only three appearance modes — light, dark, and follow-system; this plugin is an out-of-tree extension that modifies no upstream code and injects a "Themes" row into **Settings → General**, widening the color choices to "**8 built-in themes + a Default entry**".
 
-This repository is canonical. [DeepSeek Harness Desktop](https://github.com/cherrchen/deepseek-harness-electron) mirrors it through git subtree at `apps/electron/runtime/plugins/dsh-theme-studio` and rebuilds Host and Client from source. The same package runs in standard DSH Web.
+The official "Appearance" owns the mode, not the palette, while peer desktop tools have long shipped multiple themes; this plugin brings the same capability to DSH: the Themes row lands between the official "Appearance" and "Font size" rows, its selector mirrors the official Language row dropdown — hover to preview, click to apply.
 
-Release preparation targets `v0.1.4` (not tagged or published); the latest release tag remains `v0.1.3`. The Stage 2 validator, Stage 3 catalog, DSH 0.2.1 support, and release verification improvements are included in this candidate. The [roadmap ledger](./docs/plans/active/2026-10-02-theme-studio-roadmap.md) owns progress and release state; the [changelog](./CHANGELOG.en.md) owns user-facing changes. Earlier branches targeting older DSH versions do not define current support.
+- **Official Appearance stays in charge**: light / dark / system mode, fonts, and font sizes remain official settings; this plugin only produces token overlays through `ctx.theme.overrideTokens`, while the snapshot and DOM rendering stay with the host.
+- **Preview never persists**: hovering a menu item applies colors temporarily and closing the menu restores them; only a click asks the Host to save, and the choice is restored after restarts.
+- **Absent when absent**: declares `platform:web`, with no dependency on Electron, Node client capabilities, or a Desktop provider, and no model tools or prompt content; with no theme chosen the UI is item-for-item identical to an uninstalled harness.
+
+Current released version: `v0.1.4`. The user-visible changes of each version live in the [CHANGELOG](./CHANGELOG.en.md); progress and release state live in the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
 
 ## Quick Start
 
-With a supported DSH Web runtime:
+The plugin is published on [npm](https://www.npmjs.com/package/@dsh-electron/dsh-theme-studio). You can paste the package name `@dsh-electron/dsh-theme-studio` into DSH's plugin install page, or install it in two commands:
 
 ```sh
 dsh plugin --profile web add @dsh-electron/dsh-theme-studio
 dsh --profile web
 ```
 
-Open **Settings → General → Themes**. Official Appearance comes first at order 10; Themes follows with id themes and order 20. Default clears overlays, preview is transient, and apply saves the selection on the Host. Desktop includes the package in its runtime inventory; headless loads only Host settings, with no browser row or Client catalog.
+Pick the `--profile` for how you launch DSH — see its docs for the values; other install options (tarball, GitHub, a local clone) are covered under [Installation](#installation).
 
-npm and release tarballs contain published builds. To use unreleased Stage 2/3, build source containing those changes. A successful install still requires the host's UI/theme/locale/connection/remotes and a settings transport. [Themes-row troubleshooting](./docs/troubleshooting/themes-row-missing.md) distinguishes missing services from a section that is not ready.
+Once it is up, open **Settings → General**: the "Themes" row sits between the official "Appearance" and "Font size" rows. Click the selector on the right to open the theme menu — hover any item to preview its palette instantly, click to apply and let the Host save; pick "Default" to clear every overlay and return to the official theme.
 
-## Environment Requirements
+## Requirements
 
-- Usage: a supported DSH profile, Web host, or Desktop integration.
-- Source development: Node.js `^22.19.0 || >=24`, pnpm `11.7.0`, and Git; package.json engines/packageManager are authoritative.
-- Development uses the newest supported DSH baseline. Compatibility checks verify the exact pin, vendor versions, and installed tree; do not copy a pin from an old plan.
-- No model tools or prompt content are registered. Tests and reports require no model credentials.
+**Using the plugin**: a Web profile on one of the supported DSH releases — an exact match, not a range; the list lives under [DSH compatibility](#dsh-compatibility). `dsh plugin` handles the install; no local Node toolchain is needed.
+
+**Building from source / contributing**: Node.js `^22.19.0 || >=24`, pnpm `11.7.0` (enable via corepack); the dev-pinned DSH is `0.2.1-alpha.2`.
+
+**Platforms**: any environment that runs a supported DSH Web; DeepSeek Harness Desktop integrates this package as a built-in runtime plugin.
 
 ## DSH compatibility
 
-Supported exact releases come from `src/compat/dsh-version.ts`: 0.1.5-rc.2, 0.1.5-rc.3, 0.1.6-alpha.1, 0.1.6-alpha.2, 0.1.7-alpha.1, 0.1.7-alpha.2, 0.1.7-rc.1, 0.1.7-rc.2, 0.2.0-rc.1, 0.2.0-rc.2, 0.2.1-alpha.1, and 0.2.1-alpha.2. `pnpm compat:check` verifies this section, the Chinese README, peers, the development pin, overrides, lockfile, and actual installed tree. Hosts enforcing peer admission load the plugin only when their release is declared supported. Production entry points do not probe package versions through Node.
+The exact supported releases are owned by `src/compat/dsh-version.ts` as the single allowlist:
 
-See the [DSH compatibility matrix](./docs/development/dsh-compatibility.md) for seam coverage, evidence, upgrade risks, and limits. `pnpm compat:matrix` checks every supported release in isolated temporary installations without changing the development tree. `node scripts/run-dsh-matrix.mjs --candidate <version>` probes a release that is not supported yet; a green probe does not add it to the allowlist.
+| DSH line | Supported releases |
+| --- | --- |
+| `v0.1.5` | `0.1.5-rc.2`, `0.1.5-rc.3` |
+| `v0.1.6` | `0.1.6-alpha.1`, `0.1.6-alpha.2` |
+| `v0.1.7` | `0.1.7-alpha.1`, `0.1.7-alpha.2`, `0.1.7-rc.1`, `0.1.7-rc.2` |
+| `v0.2.0` | `0.2.0-rc.1`, `0.2.0-rc.2` |
+| `v0.2.1` | `0.2.1-alpha.1`, `0.2.1-alpha.2` |
+
+Releases outside the table — or installs mixing different `@deepseek-ai/dsh-*` versions — are unverified: the plugin itself does not probe the installed tree or block itself at runtime. Peer admission during install may reject some mismatched releases, but an unrejected mixed install can still start; it simply falls outside the supported set.
+
+`pnpm compat:check` verifies that this section, the peer declarations, the development pin, the overrides, the lockfile, and the installed tree agree; `pnpm compat:matrix` regresses every listed release in an isolated install tree. Adaptation seams, verification evidence, and uncovered edges live in the [DSH compatibility matrix](./docs/development/dsh-compatibility.md).
 
 ## Installation
 
+`dsh plugin` supports four install sources. All commands below use the web profile as the example; for the Electron desktop swap `--profile web` for `--profile desktop` — the install method is the same.
+
 | Source | Command | Notes |
 | --- | --- | --- |
-| npm | `dsh plugin --profile web add @dsh-electron/dsh-theme-studio` | Published prebuilt package |
-| tarball | `dsh plugin --profile web add ./dsh-electron-dsh-theme-studio-0.1.4.tgz` | Offline build; available only after the matching Release artifact is created |
-| GitHub | `dsh plugin --profile web add github:cherrchen/dsh-theme-studio` | Source installation runs prepare; pin a tag for reproducibility |
-| local | `dsh plugin --profile web add .` | Install dependencies and build this checkout first |
+| npm registry (recommended) | `dsh plugin --profile web add @dsh-electron/dsh-theme-studio` | Pre-built artifacts, ready to use |
+| GitHub | `dsh plugin --profile web add github:cherrchen/dsh-theme-studio` | Builds automatically from source on install; `allowBuilds` must name this package — pin a version |
+| tarball | `dsh plugin --profile web add ./plugin.tgz` | Pre-built offline package, handy for air-gapped or offline delivery |
+| From source | `dsh plugin --profile web add /path/to/dsh-theme-studio` | pnpm `link:` to a local checkout — best for development; no `allowBuilds` needed |
 
-Build local source:
+**A first `dsh plugin add` from GitHub may fail with `[ERR_PNPM_IGNORED_BUILDS]`**: add the following line to that profile's `pnpm-workspace.yaml` (this package's `prepare` performs the build), then run `add` again:
+
+```yaml
+allowBuilds:
+  '@dsh-electron/dsh-theme-studio': true
+```
+
+If the retry exits 0 but the plugin never lands in `dsh.profile.bundles`, do a `remove` + `add`. Further diagnosis: [build and release troubleshooting](./docs/troubleshooting/build-and-release-failures.md).
+
+### Install from npm (recommended)
+
+```sh
+dsh plugin --profile web add @dsh-electron/dsh-theme-studio
+```
+
+This installs pre-built artifacts; no `allowBuilds` is needed.
+
+### Install from a tarball
+
+```sh
+pnpm pack @dsh-electron/dsh-theme-studio
+dsh plugin --profile web add ./plugin.tgz
+```
+
+You can also download `plugin.tgz` from the [GitHub Release assets](https://github.com/cherrchen/dsh-theme-studio/releases/download/v0.1.4/plugin.tgz). Also pre-built, handy for air-gapped or offline delivery.
+
+### Install from GitHub
+
+```sh
+dsh plugin --profile web add github:cherrchen/dsh-theme-studio
+```
+
+A GitHub install fetches source code and builds it automatically during `add` — no manual build needed — but `allowBuilds` has to name this package itself, as described above.
+
+Pinning a version (e.g. `#v0.1.4`) is recommended so a later push cannot silently change what actually runs:
+
+```sh
+dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.4
+```
+
+### Install from a local clone
 
 ```sh
 git clone https://github.com/cherrchen/dsh-theme-studio.git
@@ -57,126 +116,116 @@ pnpm build
 dsh plugin --profile web add .
 ```
 
-Pin an existing GitHub release:
+> [!TIP]
+> If `dsh` is not on your PATH (e.g. you run DSH from a source checkout), use `pnpm dsh` instead.
+
+## Running
+
+Development gates:
 
 ```sh
-dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.4
+pnpm lint && pnpm typecheck
+pnpm test
+pnpm build
+pnpm docs:check
+pnpm compat:check
 ```
 
-`dsh plugin add` activates `cordis.patch.yml`. The bare package loader row anchors Host/Client composition and official package-manager discovery. Keep it rather than mounting only the client subpath; the plugin no longer registers a separate Plugins-page card. If an installer reports pending lifecycle builds, follow its actual prepare prompt. This package has no multi-root plugin koffi/native-build dependency, so that project's installation exceptions do not apply. See [build and release troubleshooting](./docs/troubleshooting/build-and-release-failures.md).
+Install into a DSH runtime and verify the composition:
+
+```sh
+dsh plugin --profile web add /path/to/dsh-theme-studio
+dsh --profile web --dump-config | grep -A3 'theme-studio'
+```
+
+Expected output:
+
+```text
+# == @dsh-electron/dsh-theme-studio
+- id: theme-studio
+  name: '@dsh-electron/dsh-theme-studio'
+```
+
+That is `cordis.patch.yml` mounting the Host settings half and the Client overlay UI through the official package manager. After startup, **Settings → General** shows the "Themes" row.
 
 ## Usage
 
-- **Default** removes both Theme Studio layers, returns to the official theme, and saves activeThemeId=null.
-- **Preview** is transient and does not write the Host. Previewing Default temporarily hides the active overlay.
-- **Cancel** drops preview and restores the durable theme.
-- **Apply** saves a builtin id; Apply in the preview bar promotes the current preview.
-- **Appearance** still owns Light/Dark/System. Each overlay supplies both modes and follows the official resolution.
-- **Fonts**: text, code, and terminal families and sizes stay in the official theme settings. Preview, apply, cancel, and Default do not change them.
+### The theme selector
 
-Once the Host is ready, the last accepted theme is restored. Unknown durable ids return to Default and trigger a repair attempt. Unload removes both runtime layers and the settings row; transport re-provision starts them again. Without a transport, discovery is available but the UI does not start. An unavailable section shows that the connection will not save the selection. The four-color Mosaic currently displays the light sample, independently of the actual overlay mode.
+To the right of the "Themes" row is a dropdown selector in the style of the official Language row, showing the currently applied theme's four-color swatch and name. The opened menu lists "Default" and every built-in palette in order, each with its own swatch:
 
-Builtins are Claude, Codex, Claude Cream, Graphite, OLED, Nordic, Paper, and Warm. Their ids use `dsh-theme-studio.*`; Default is not a catalog member. See the [token reference](./docs/reference/theme-tokens.md) for the full directory and palette fields.
+- **Hover preview**: hovering a menu item applies that theme temporarily without writing to the Host; closing the menu (pointer leave, outside click, Esc, or toggling the selector again) restores the previous state.
+- **Click to apply**: clicking or pressing Enter asks the Host to persist the theme id, which is restored across restarts and new sessions.
+- **Default**: removes all of this plugin's overlays, returns to the official theme, and saves `activeThemeId=null`.
 
-## Runtime Model
+The official "Appearance" keeps controlling light / dark / system mode: every built-in theme ships both light and dark values that follow the official mode resolution. Fonts and font sizes likewise stay saved by the official settings — previewing, applying, cancelling, and restoring default never rewrite them.
 
-```text
-Official Light / Dark / System
-        ↓
-ACTIVE_SOURCE  (@dsh-electron/dsh-theme-studio:active)
-        ↓
-PREVIEW_SOURCE (@dsh-electron/dsh-theme-studio:preview)
-        ↓
-ThemeSnapshot → ThemePresenter → DOM
-```
+### Built-in themes
+
+Claude, Codex, Claude Cream, Graphite, OLED, Nordic, Paper, Warm — ids all under the `dsh-theme-studio.*` namespace; "Default" is not a catalog member. The four-color Mosaic in the selector and menu always uses the light sample and does not indicate the mode actually in effect. Full token and palette fields are documented in the [token reference](./docs/reference/theme-tokens.md).
+
+## Project structure
 
 ```text
-ui-theme.preference          system | light | dark
-theme-studio.activeThemeId   null | dsh-theme-studio.*
+.
+├── src/
+│   ├── index.ts                      Host 半部入口：settings 读写、持久化与恢复
+│   ├── settings.ts                   theme-studio.* 设置字段定义
+│   ├── constants.ts                  共享身份（包名、设置键、source id）
+│   ├── compat/
+│   │   ├── dsh-version.ts            受支持 DSH 精确版本清单（唯一权威）
+│   │   ├── settings-host.ts          Host settings 能力的版本结构适配
+│   │   ├── settings-client.ts        Client settingsScope/configForms 的版本结构适配
+│   │   └── menu-icons.tsx            下拉 chevron 图标导出探测与本地回退
+│   └── client/
+│       ├── index.ts                  Client 入口：注册「主题」行（order 10.5）、runtime action 注入
+│       ├── ThemeStudioRow.tsx        主题行与 Menu 下拉选择器
+│       ├── runtime.ts                active / preview 两层 overrideTokens 的所有者
+│       ├── presets.ts                8 套内置主题的 token 覆盖与预览色板
+│       ├── catalog.ts                ctx.themeStudio.catalog：只读主题发现与校验
+│       ├── contrast.ts               对比度逐配对诊断（report 命令后端）
+│       ├── store.ts / adapter.ts     宿主快照的 runtime 投影与 settings transport
+│       └── locales.ts                中英双语词典
+├── tests/                            runtime、UI 组件、Cordis 组装、官方主题 bundle 集成
+├── scripts/                          compat 检查与矩阵、对比度报告、smoke、发布工程
+└── docs/                             需求、架构、ADR、计划、参考、开发工作流、故障排查
 ```
 
-The Host adapts to actual settings register/configure capabilities; the Client uses settingsScope/configForms. The store projects runtime snapshots, while the Host accepted snapshot is durable authority. See [architecture](./docs/architecture/theme-studio.md), [runtime API](./docs/reference/theme-runtime.md), and [settings/package contract](./docs/reference/settings-and-package-contract.md).
+## Contributing
 
-## Contrast Validation (Stage 2, Unreleased)
+Issues and PRs are welcome:
 
-`validateThemeContrast(preset)` returns immutable per-pair results for both schemes. Defaults cover normal text, links, status colors, code syntax, toast/tooltip/menu copy, and focus indicators. Text uses 4.5:1 and focus uses 3:1. Comparisons use full precision; unresolved colors become unknown rather than passing silently.
+1. Read [`AGENTS.md`](./AGENTS.md) (repository rules) and the [development workflow](./docs/development/plugin-development-workflow.md) (environment, commands, runtime support matrix, upgrade procedure) first.
+2. Branch from `main`; commit messages follow conventional commits (`feat` / `fix` / `perf` / `refactor` + scope) — see the existing history.
+3. Before opening a PR, all of these must pass locally: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm docs:check`, `pnpm compat:check`; add `pnpm compat:matrix` when the change touches a compatibility seam.
+4. Behavior-affecting changes update the matching documents under `docs/` in the same change; the READMEs stay bilingual and in sync; engineering trade-offs get a new ADR.
+5. Hard constraint: **never modify any package of the upstream repository (deepseek-harness)** — the plugin is an out-of-tree extension only, and `src/compat/dsh-version.ts` is the single support allowlist.
 
-```sh
-pnpm contrast:report
-pnpm contrast:report --strict
-pnpm build:types
-node scripts/report-contrast.mjs --json > contrast-report.json
-```
+## Known limitations
 
-Default report mode fails only for unknown results; strict also fails for ratios below their threshold. The current 768 builtin checks include 188 failed and no unknowns, so strict returns nonzero as expected. Validation does not repair colors or block apply. The [contrast reference](./docs/reference/theme-contrast.md) documents formulas, pairs, all 16 scheme summaries, supported colors, and limits. The rules follow [W3C text contrast](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) and [non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html).
+- Only the 8 built-in themes: the public `.dsh-theme.json` schema, custom-theme import/export, and a theme editor are not implemented — see the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
+- The contrast check is a diagnostic, not a gate: some built-in palettes fall below threshold and are neither repaired automatically nor blocked from preview or apply; `pnpm contrast:report` is documented in the [token reference](./docs/reference/theme-tokens.md).
+- Preview is hover-driven: keyboard focus on menu items does not preview; press Enter to apply directly.
+- The read-only catalog `ctx.themeStudio.catalog` exists only on the Client, excludes "Default", and supports neither dynamic registration nor Host RPC — see the [catalog reference](./docs/reference/theme-catalog.md).
+- When the Host refuses to save, the row reports the failure and restores the last accepted choice; when the settings channel is unavailable the catalog still works but the row explains that this connection does not save selections — see [missing Themes row](./docs/troubleshooting/themes-row-missing.md).
+- The four-color Mosaic uses a fixed light sample; cross-platform browser visual coverage is limited — verified bounds are listed in the [compatibility matrix](./docs/development/dsh-compatibility.md).
 
-## Public Theme Catalog (Stage 3, Unreleased)
+## Documentation
 
-Client consumers add this package to their `dsh.client.inject` metadata and inject themeStudio:
+The project's long-lived documents live under [`docs/`](./docs/README.md):
 
-```ts
-import type { Context } from '@deepseek-ai/cordis'
-import type {} from '@dsh-electron/dsh-theme-studio/client'
+- [Changelog (CHANGELOG)](./CHANGELOG.en.md)
+- [Requirements](./docs/requirements/theme-studio.md)
+- [Target architecture](./docs/architecture/theme-studio.md)
+- [Settings and package contract](./docs/reference/settings-and-package-contract.md)
+- [DSH compatibility matrix](./docs/development/dsh-compatibility.md)
+- [Architecture decision records (ADR)](./docs/decisions/README.md)
+- [Plans](./docs/plans/README.md)
+- [Development workflow](./docs/development/plugin-development-workflow.md)
+- [Troubleshooting](./docs/troubleshooting/README.md)
 
-export const inject = ['themeStudio']
-export function apply(ctx: Context): void {
-  const catalog = ctx.themeStudio.catalog
-  const themes = catalog.list()
-  const theme = catalog.get('dsh-theme-studio.claude')
-  const report = catalog.validate('dsh-theme-studio.claude')
-  console.log(themes.length, theme?.name, report?.passed)
-}
-```
+Repository-level rules for Coding Agents are defined in [`AGENTS.md`](./AGENTS.md).
 
-list returns a stable, deeply frozen list in card order. get/validate return undefined for unknown ids. The runtime and service share a catalog; settings readiness or transport changes do not revoke it. Cordis stops injected consumers when the Client unloads. This is discovery; it neither registers themes nor controls Appearance. See the [complete catalog API](./docs/reference/theme-catalog.md).
+## License
 
-## Development and Verification
-
-```sh
-pnpm install --frozen-lockfile
-pnpm docs:check
-pnpm compat:check
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm pack --dry-run
-pnpm compat:matrix
-```
-
-Documentation checks must pass. Strict contrast reporting is a diagnostic distinct from a successful test suite. Generated artifacts live in lib and are not committed; build after cleaning generated output to avoid packaging stale declarations. Tests cover runtime, UI, real Cordis, the legacy provider, and the installed official theme bundle. They are not a complete browser/disk/cross-platform UI journey. See the [development workflow](./docs/development/plugin-development-workflow.md) for procedures and limits.
-
-## Project Structure and Documentation
-
-| Location | Responsibility |
-| --- | --- |
-| src/index.ts, settings.ts, constants.ts | Host settings and shared identities |
-| src/compat/ | Structural settings adapters, support list, and pure classification |
-| src/client/ | Presets/chrome, catalog, validation, runtime, store, UI, and locale |
-| tests/ | Unit, Client composition, Host provider, and official theme integration |
-| scripts/, .github/workflows/ | Checks, matrices, reports, versions, and release engineering |
-| docs/ | Requirements, architecture, ADRs, plans, development, reference, and troubleshooting |
-| .agent/ | Documentation rules, templates, and durable maintenance knowledge |
-
-The [documentation map](./docs/README.en.md) provides navigation, and [commit history](./docs/reference/repository-history.md) explains evolution. The npm package includes only the files-listed builds, language entry points, changelogs, patch, and license. Full source documentation is also available in the [GitHub documentation directory](https://github.com/cherrchen/dsh-theme-studio/tree/main/docs).
-
-## Releases
-
-An annotated v* tag matching package.json triggers release verification, builds, tarball checks, npm publication with provenance, and a GitHub Release. See the [release workflow](./docs/development/release-workflow.md) for preparation and tagging. This does not imply unreleased Stage 2/3 are published or establish current remote workflow, npm access, or OIDC settings.
-
-## Model Experience
-
-None. The package contributes human-facing Client UI and a catalog for plugins, without model tools or prompt content.
-
-### KV Cache effect
-
-None. The package does not add, replace, or retain model-request tokens.
-
-## Known Limits and Deferred Work
-
-- Builtins only: public .dsh-theme.json schema, import/export, registration/editing, and Theme Creator Agent are unimplemented.
-- Contrast is scoped token-pair diagnostics. Some builtin pairs fail; the package does not certify entire themes or a rendered host against WCAG.
-- Catalog is Client-only, excludes Default, and has no dynamic registration or Host RPC.
-- When the Host rejects a save, the Themes row reports the failure and restores the last accepted choice. The badge names the saved theme only after that reconciliation.
-- Mosaic uses the light sample. Full browser visual checks, this revision's real-profile disk journey, and native cross-platform presentation remain uncovered.
-
-The [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md) owns follow-up state; verified issues and diagnostics live in [troubleshooting](./docs/troubleshooting/README.en.md).
+[MIT](./LICENSE)

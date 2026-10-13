@@ -84,7 +84,7 @@ node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
 
 对比度差分门禁比较 `tests/client/contrast-baseline.json` 里已记录的失败配对。新增或消失的失败会让测试失败。`pnpm contrast:report --strict` 仍然对这些已知失败退出 1。
 
-Client bundle 把 `@deepseek-ai/dsh-client-store` 保持为 `require`，避免打进第二份 store。CSS Module 编译进 bundle 并用幂等 style 标签注入；清理 overlay 不移除该标签。
+Client bundle 把 `@deepseek-ai/dsh-client-store` 与 `@deepseek-ai/dsh-client-ui-primitives` 保持为 `require`，复用宿主模块表行而不是打进第二份实现；适配层对后者缺失的导出本地回退。CSS Module 编译进 bundle 并用幂等 style 标签注入；清理 overlay 不移除该标签。
 
 2026-10-10 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，对开发基线 0.2.1-alpha.2 执行了 `node scripts/smoke-compose.mjs`。它在临时 `DSH_HOME` 中用该版本的 `dsh` CLI 安装 `.pack/plugin.tgz`，dump 出一条 bare `theme-studio` 行，官方 `ui-theme` 仍在，安装后的 `lib/client.js` 含 ModuleLoader 注册。退出码 0。同日 `pnpm smoke:client` 在未设置 `DSH_BROWSER_E2E` 时打印 `not-run`，没有浏览器旅程。新的十二版矩阵是否全部通过，以本次命令的 `results.json` 为准，不能用早先那份十二版记录代替。
 
@@ -111,3 +111,15 @@ CLI 自身也需要统一依赖树：旧缓存中 `dsh-app-boot` / `dsh-plugin-m
 每周探测与手动候选使用 `contents: read`。如果最新 prerelease 已被支持，则重跑正式模式；未支持版本只能在独立副本或一次性 Actions checkout 放宽 admission。混装、缺包、非法版本或损坏的已安装元数据仍失败，探测不提交、推送、提升清单或发布。
 
 本机结果不证明 GitHub-hosted Ubuntu/Windows 或跨平台浏览器呈现已通过；这部分需 Draft PR 的 CI 另行提供证据。npm OIDC 的 trusted publisher 绑定仍须维护者在 npm 包设置核实；本轮没有执行 tag、npm publish 或 GitHub Release。
+
+## 主题下拉选择器与 ui-primitives 适配（2026-10-13）
+
+Themes 行改为与官方语言行同款的下拉选择器：selector 按钮（`aria-haspopup=menu`/`aria-expanded`）显示已应用主题，点击展开共享 `Menu`（items + `selectedId` + 尾随勾选，`align="end"`、`portal`、`closeOnPointerLeave`）；选项悬停预览，菜单关闭（指针离开、外部点击、Esc 或再次点击选择器）恢复，点击应用。`@deepseek-ai/dsh-client-ui-primitives` 是宿主模块表基线行，已加入全部受支持版本的 peer 清单、开发 pin、overrides、minimumReleaseAgeExclude、`OPTIONAL_CORE_PACKAGES` 与 client externals。
+
+逐版本导出审查：`Menu` 在全部受支持版本导出，surface、定位、键盘与外点关闭均由原生组件提供；`MenuItem.icon` 承载四色 Mosaic，label 用 `flex:1` span 把尾随勾选推到行尾。items API 没有行级 hover 钩子，预览只能挂在 icon 与 label 的内容元素上；0.1.5–0.1.6 的 `.list` min-width 为 218px（0.1.7 起 144px），行中部落在宿主 label 空白区时内联 span 收不到 mouseenter，`.itemLabel` 改为 block 并以负 margin + 等值 padding 把命中区撑到整行。Esc 关闭路径也分版本：0.1.6-alpha.2 实测 Escape 先关闭整个 Settings 对话框，`Menu` 的 `onClose` 不再运行；selector 再次点击同样绕过 `onClose`，触发器在收起前直接补 `cancelPreview`，行在 unmount 时再兜底一次，任何绕过 `onClose` 的关闭路径都不会泄漏预览；新版本仅菜单关闭。导出上的版本差异仍是触发器箭头：`IconChevronDownOutlineRegular` 自 0.1.7-alpha.1 起发布，0.1.5–0.1.6 只有 `IconChevronDownOutline14`。`src/compat/menu-icons.tsx` 对两个导出做结构探测并按此序绑定，都不存在时回退到同路径内联 SVG；0.1.5/0.1.6 的类型面不含新名，探测输入按未声明 namespace 处理，不做部分类型化断言。`--dsw-radius-*` 在 0.1.7-rc.2 前不存在，selector 与 Mosaic 的 `var()` 均带字面值兜底。
+
+发布包 `lib/index.js` 裸导入 clsx、shiki、katex 等未声明的宿主侧包，vitest 无法加载真实产物；测试经 `resolve.alias` 使用 `tests/shims/ui-primitives.tsx`（含 Menu 契约替身：anchor + 打开时渲染 menuitem、外点/Esc 调 `onClose`），适配层分支由 `tests/client/menu-icons.spec.tsx` 的模块 mock 覆盖。
+
+证据：2026-10-13 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上 `node scripts/run-dsh-matrix.mjs 0.1.5-rc.2` 全部步骤通过，含最老类型面的 typecheck 与 smoke-compose 真实 CLI tarball 安装；开发基线门禁（compat:check、lint、typecheck、test、docs:check、build、verify-package）同步通过。同日在 `DSH_BROWSER_E2E=1` 下 `node scripts/run-dsh-matrix.mjs 0.1.6-alpha.2` 全步骤通过（含真实 Chromium 旅程：悬停预览、Esc 恢复、应用与 Host 重启恢复），并在开发基线 0.2.1-alpha.2 上单独通过 `scripts/smoke-client.mjs`。仍未覆盖逐版本逐像素的视觉比对与本地 chevron 回退的截图。
+
+矩阵工具同步修复：重定向树（非 frozen）删除 lockfile 后全新解析，非 DSH dev 依赖可能新于 pnpm 默认 release-age 截止线，每个 `pnpm run`/`exec` 的前置 supply-chain verify 会误伤。脚本现给该隔离树补写 `minimumReleaseAge: 0`，源码 checkout 与 frozen 基线的策略不变。
