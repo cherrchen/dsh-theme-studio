@@ -9,6 +9,7 @@ import { Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import { ChevronDownIcon } from '../compat/menu-icons.tsx'
+import { DEFAULT_PREVIEW } from './presets.ts'
 import type { ThemePreview } from './types.ts'
 import type { createThemeStudioRowStore } from './store.ts'
 import { formatLocale, type ThemeStudioKey } from './locales.ts'
@@ -59,7 +60,8 @@ export function ThemeStudioRow({
   const saveError = useStore(s => s.saveError)
   const previewName = previewLabel(t, previewing, previewThemeId)
   const [open, setOpen] = useState(false)
-  const activeKey = (cards.find(card => card.id === activeThemeId)?.nameKey ?? 'default.name') as ThemeStudioKey
+  const activeCard = cards.find(card => card.id === activeThemeId)
+  const activeKey = (activeCard?.nameKey ?? 'default.name') as ThemeStudioKey
 
   return (
     <div className={css.row}>
@@ -101,6 +103,7 @@ export function ThemeStudioRow({
             aria-expanded={open}
             onClick={() => { setOpen(v => !v) }}
           >
+            <Mosaic preview={activeCard?.preview.light ?? DEFAULT_PREVIEW.light} />
             {t(activeKey)}
             <ChevronDownIcon className={css.chevron} />
           </button>
@@ -113,7 +116,7 @@ export function ThemeStudioRow({
   )
 }
 
-function Mosaic({ preview, onMouseEnter }: { preview: ThemePreview; onMouseEnter: () => void }) {
+function Mosaic({ preview, onMouseEnter }: { preview: ThemePreview; onMouseEnter?: () => void }) {
   return (
     <div className={css.mosaic} aria-hidden="true" onMouseEnter={onMouseEnter}>
       <span style={{ background: preview.background }} />

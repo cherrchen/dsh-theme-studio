@@ -77,8 +77,10 @@
   white-space: nowrap;
 }
 
-/* Four-color swatch filling the menu's leading icon slot. */
+/* Four-color swatch: the selector pill carries the applied theme's, and
+ * each menu row carries its own in the leading icon slot. */
 .mosaic {
+  flex: none;
   width: 14px;
   height: 14px;
   display: grid;

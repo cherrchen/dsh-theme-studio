@@ -99,6 +99,9 @@ describe('ThemeStudioRow', () => {
     expect(trigger.getAttribute('aria-haspopup')).toBe('menu')
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
     expect(screen.queryByRole('menu')).toBeNull()
+    // The pill carries the applied theme's four-color swatch.
+    const swatch = trigger.querySelector('div[aria-hidden="true"]')
+    expect(swatch?.childElementCount).toBe(4)
   })
 
   it('opens the menu on click and marks only the applied theme selected', () => {
@@ -160,7 +163,11 @@ describe('ThemeStudioRow', () => {
       })
     })
     expect(screen.getByText('Previewing Nordic')).toBeDefined()
-    fireEvent.click(selector('Graphite'))
+    const trigger = selector('Graphite')
+    // The swatch follows the applied theme, not the transient preview.
+    const cells = trigger.querySelector('div[aria-hidden="true"]')?.children
+    expect((cells?.[0] as HTMLElement | undefined)?.style.background).toBe('rgb(232, 234, 237)')
+    fireEvent.click(trigger)
     expect(option('Graphite').getAttribute('aria-selected')).toBe('true')
     expect(option('Nordic').getAttribute('aria-selected')).toBe('false')
   })
