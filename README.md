@@ -1,53 +1,112 @@
+<div align="center">
+
 # dsh-theme-studio
 
 中文 | [English](./README.en.md)
 
-## 项目简介（What & Why）
+</div>
 
-Theme Studio 是 DSH/Cordis 的可移植主题 overlay 插件：在官方外观偏好之上增加内置配色，提供浏览、预览、应用、持久化、对比度诊断与只读主题发现。
+## 项目简介
 
-用户可以切换配色，同时继续使用官方浅色、深色和跟随系统。Theme Studio 只调用 `ctx.theme.overrideTokens()` 产生 token 覆盖；官方 ThemeSnapshot、ThemePresenter 和 DOM 呈现仍由宿主管理。包声明 `platform:web`，不依赖 Electron、Node 客户端能力或 Desktop provider。npm 作用域 `@dsh-electron/` 标识发布者，不是 runtime 要求。
+DSH（DeepSeek Harness）原生只提供浅色 / 深色 / 跟随系统三种外观模式；本插件是一个不修改上游任何代码的外部扩展，在「设置 → 通用」注入「主题」行，把可选配色扩为"**8 套内置主题 + 默认项**"。
 
-本仓库是权威源码。[DeepSeek Harness Desktop](https://github.com/cherrchen/deepseek-harness-electron) 通过 git subtree 镜像到 `apps/electron/runtime/plugins/dsh-theme-studio`，从源码重建 Host 与 Client；同一包可在标准 DSH Web 中运行。
+官方「外观」管模式不管配色，同类桌面工具早已提供多套主题可选；本插件把同样的能力带给 DSH：主题行落在官方「外观」与「字号」之间，选择器沿用官方语言行同款下拉样式，悬停即预览、点击即应用。
 
-当前发布准备目标为 `v0.1.4`（尚未打 tag、未发布）；最近发布 tag 仍为 `v0.1.3`。Stage 2 校验器、Stage 3 catalog、DSH 0.2.1 支持与发布验证改进已纳入本次候选内容。当前进度及发布状态见[路线图总账](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)，每版本用户可见变更见 [CHANGELOG](./CHANGELOG.md)。历史分支曾针对早期 DSH 版本，不代表当前支持承诺。
+- **官方外观所有权不动**：浅色 / 深色 / 跟随系统、字体与字号仍由官方设置管理；本插件只通过 `ctx.theme.overrideTokens` 产生 token 覆盖层，快照与 DOM 呈现仍归宿主。
+- **预览不写盘**：悬停菜单项只临时套色，关闭菜单即恢复；只有点击应用才由 Host 持久化，重启后自动还原。
+- **不配等于没装**：声明 `platform:web`，不依赖 Electron、Node 客户端能力或 Desktop provider，也不注册模型工具或提示词内容；未选主题时界面与未装插件逐项一致。
+
+当前发布版本 `v0.1.4`。各版本的用户可见变更见 [CHANGELOG](./CHANGELOG.md)；进度与发布状态见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
 
 ## 快速开始
 
-已有受支持 DSH Web runtime 时：
+插件已发布到 [npm](https://www.npmjs.com/package/@dsh-electron/dsh-theme-studio)。可以在 DSH 的插件安装页面填入包名 `@dsh-electron/dsh-theme-studio`，也可以用命令行两步装完：
 
 ```sh
 dsh plugin --profile web add @dsh-electron/dsh-theme-studio
 dsh --profile web
 ```
 
-打开 **设置 → 通用 → 主题**。Themes 行（id themes，order 10.5）位于官方“外观”（order 10）与“字号”（order 11）之间。选择器按序排列 Default 与内置配色；悬停菜单选项即时预览且不写 Host，点击应用后由 Host 保存，Default 项清除覆盖层。Desktop 将本包作为内置 runtime 插件；headless 仅加载 Host 设置半，不启动浏览器行或 Client catalog。
+`--profile` 按你的启动方式选择，可选值见 DSH 文档；tarball、GitHub、本地源码等其他安装方式见[安装](#安装)。
 
-npm/tarball 对应已发布构建；体验未发布 Stage 2/3 应构建包含该提交的源码。安装成功仍需宿主提供 UI/theme/locale/connection/remotes 与可用 settings transport；[主题行排查](./docs/troubleshooting/themes-row-missing.md)解释依赖缺失与服务未就绪的差别。
+启动后打开 **设置 → 通用**，「主题」行位于官方「外观」与「字号」之间。点击右侧选择器展开主题菜单：悬停任意项即时预览配色，点击应用并由 Host 保存；选「默认」清除全部覆盖、回到官方主题。
 
 ## 环境要求
 
-- 使用：受支持的 DSH profile，Web host 或集成本包的 Desktop。
-- 源码开发：Node.js `^22.19.0 || >=24`、pnpm `11.7.0`、Git；以 package.json engines/packageManager 为准。
-- 开发安装固定在最新受支持 DSH 基线；具体 pin、vendor 版本和安装树由兼容检查验证，不从旧计划抄值。
-- 本包不注册模型工具或提示内容；运行单测和报告无需模型凭据。
+**使用本插件**：一个受支持的 DSH 版本（精确匹配，不是范围；清单见 [DSH 兼容性](#dsh-兼容性)）下的 Web profile。`dsh plugin` 负责安装，无需本地 Node 工具链。
+
+**从源码构建 / 贡献**：Node.js `^22.19.0 || >=24`，pnpm `11.7.0`（建议经 corepack 启用）；开发 pin 的 DSH 为 `0.2.1-alpha.2`。
+
+**运行平台**：任何能运行受支持 DSH Web 的环境；DeepSeek Harness Desktop 将本包作为内置 runtime 插件集成。
 
 ## DSH 兼容性
 
-支持的精确版本以 `src/compat/dsh-version.ts` 为准：0.1.5-rc.2、0.1.5-rc.3、0.1.6-alpha.1、0.1.6-alpha.2、0.1.7-alpha.1、0.1.7-alpha.2、0.1.7-rc.1、0.1.7-rc.2、0.2.0-rc.1、0.2.0-rc.2、0.2.1-alpha.1、0.2.1-alpha.2。`pnpm compat:check` 检查本节、英文 README、peer 声明、开发 pin、overrides、lockfile 与实际安装树。启用 peer admission 的宿主仅在其运行版本被声明支持时加载插件。本包生产入口不通过 Node 探测包版本。
+支持的精确版本以 `src/compat/dsh-version.ts` 为唯一清单：
 
-完整证据、适配接缝、升级风险与未覆盖边界见 [DSH 兼容矩阵](./docs/development/dsh-compatibility.md)。运行 `pnpm compat:matrix` 会在独立临时安装树验证全部清单版本，不修改当前依赖树。候选版本用 `node scripts/run-dsh-matrix.mjs --candidate <version>` 探测；探测成功不会写入支持清单。
+| DSH 系列 | 受支持的版本 |
+| --- | --- |
+| `v0.1.5` | `0.1.5-rc.2`、`0.1.5-rc.3` |
+| `v0.1.6` | `0.1.6-alpha.1`、`0.1.6-alpha.2` |
+| `v0.1.7` | `0.1.7-alpha.1`、`0.1.7-alpha.2`、`0.1.7-rc.1`、`0.1.7-rc.2` |
+| `v0.2.0` | `0.2.0-rc.1`、`0.2.0-rc.2` |
+| `v0.2.1` | `0.2.1-alpha.1`、`0.2.1-alpha.2` |
+
+DSH 版本不在表内、或 `@deepseek-ai/dsh-*` 各包版本不一致时，插件不会启动，行为等同没装。
+
+`pnpm compat:check` 校验本节、peer 声明、开发 pin、overrides、lockfile 与安装树一致；`pnpm compat:matrix` 在隔离安装树中逐版本回归。适配接缝、验证证据与未覆盖边界见 [DSH 兼容矩阵](./docs/development/dsh-compatibility.md)。
 
 ## 安装
 
+`dsh plugin` 支持四种安装来源。以下均以 web profile 为例；桌面端（Electron）把 `--profile web` 换成 `--profile desktop`，安装方式同源。
+
 | 来源 | 命令 | 说明 |
 | --- | --- | --- |
-| npm | `dsh plugin --profile web add @dsh-electron/dsh-theme-studio` | 已发布的预构建包 |
-| tarball | `dsh plugin --profile web add ./dsh-electron-dsh-theme-studio-0.1.4.tgz` | 离线构建；仅在对应 Release 产物生成后可用 |
-| GitHub | `dsh plugin --profile web add github:cherrchen/dsh-theme-studio` | 源码安装由 prepare 构建；固定 tag 可复现 |
-| 本地 | `dsh plugin --profile web add .` | 本仓库先完成依赖安装与构建 |
+| npm 注册表（推荐） | `dsh plugin --profile web add @dsh-electron/dsh-theme-studio` | 预构建产物，即装即用 |
+| GitHub | `dsh plugin --profile web add github:cherrchen/dsh-theme-studio` | 安装时自动从源码构建；`allowBuilds` 需含本包，建议锁定版本 |
+| tarball | `dsh plugin --profile web add ./plugin.tgz` | 预构建离线包，适合内网/离线 |
+| 从源码安装 | `dsh plugin --profile web add /path/to/dsh-theme-studio` | pnpm `link:` 链接本地 checkout，适合开发调试；无需 `allowBuilds` |
 
-构建本地源码：
+**GitHub 来源首次安装时 `dsh plugin add` 可能以 `[ERR_PNPM_IGNORED_BUILDS]` 失败**：在该 profile 的 `pnpm-workspace.yaml` 里补上下面这行（本包的 `prepare` 负责构建），再执行一次 `add` 即可：
+
+```yaml
+allowBuilds:
+  '@dsh-electron/dsh-theme-studio': true
+```
+
+如果重跑退出 0 但插件没有进入 `dsh.profile.bundles`，做一次 `remove` + `add`。更多排查见[构建与发布故障](./docs/troubleshooting/build-and-release-failures.md)。
+
+### 从 npm 安装（推荐）
+
+```sh
+dsh plugin --profile web add @dsh-electron/dsh-theme-studio
+```
+
+安装的是预构建产物，无需 `allowBuilds`。
+
+### 从 tarball 安装
+
+```sh
+pnpm pack @dsh-electron/dsh-theme-studio
+dsh plugin --profile web add ./plugin.tgz
+```
+
+也可以从 [GitHub Release 资产](https://github.com/cherrchen/dsh-theme-studio/releases/download/v0.1.4/plugin.tgz)下载 `plugin.tgz`。同样是预构建产物，适合内网或离线环境交付。
+
+### 从 GitHub 安装
+
+```sh
+dsh plugin --profile web add github:cherrchen/dsh-theme-studio
+```
+
+GitHub 来源装的是源码，`add` 时会自动构建，不需要手动编译；但 `allowBuilds` 要含本包自身，见上文说明。
+
+建议锁定版本（如 `#v0.1.4`），让后续推送无法悄悄改变实际运行的内容：
+
+```sh
+dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.4
+```
+
+### 从本地源码安装
 
 ```sh
 git clone https://github.com/cherrchen/dsh-theme-studio.git
@@ -57,126 +116,116 @@ pnpm build
 dsh plugin --profile web add .
 ```
 
-从 GitHub 固定已有发布版本：
+> [!TIP]
+> `dsh` 不在 PATH 里时（例如用源码仓库跑 DSH），把命令里的 `dsh` 换成 `pnpm dsh`。
+
+## 运行方法
+
+开发自检：
 
 ```sh
-dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.4
+pnpm lint && pnpm typecheck
+pnpm test
+pnpm build
+pnpm docs:check
+pnpm compat:check
 ```
 
-`dsh plugin add` 激活附带 `cordis.patch.yml`，bare package loader 行是 Host/Client 建图和官方包管理器的入口。不要把它改成仅加载 client 子路径；插件不再注册独立插件页卡片。若上层安装器提示生命周期构建待决，按实际提示处理 prepare；本包没有 multi-root 插件的 koffi/native-build 依赖，不能照搬它的安装例外。细节见[构建与发布排查](./docs/troubleshooting/build-and-release-failures.md)。
+安装进 DSH 运行时并验证组合：
+
+```sh
+dsh plugin --profile web add /path/to/dsh-theme-studio
+dsh --profile web --dump-config | grep -A3 'theme-studio'
+```
+
+预期输出：
+
+```text
+# == @dsh-electron/dsh-theme-studio
+- id: theme-studio
+  name: '@dsh-electron/dsh-theme-studio'
+```
+
+即 `cordis.patch.yml` 把 Host 设置半部与 Client 覆盖 UI 挂进官方包管理器。启动后「设置 → 通用」应出现「主题」行。
 
 ## 使用方法
 
-- **默认**：删除 Theme Studio 两层覆盖，回到官方主题，保存 activeThemeId=null。
-- **预览**：悬停菜单选项时临时显示主题，不写 Host；预览默认会暂时隐藏原 active 层。
-- **取消**：菜单关闭（指针离开、点击外部或 Esc）即移除预览，恢复之前持久主题。
-- **应用**：点击或 Enter/Space 选中菜单项，保存该内置 id。
-- **外观**：继续由官方控制浅色/深色/系统；每套 overlay 提供两种模式，自动跟随解析。
-- **字体**：正文字体、代码字体、终端字体和对应字号仍由官方主题设置保存。Theme Studio 的预览、应用、取消和恢复默认都不改这些值。
+### 主题选择器
 
-Host ready 后恢复最后接受的主题，未知持久 id 恢复默认并尝试修复。插件卸载移除 runtime 两层与设置行；设置通道重供后重新启动。没有 transport 时 catalog 可用但 UI 不启动；transport 返回 unavailable 时 row 说明此连接不保存选择。当前四色 Mosaic 固定使用浅色样本，不代表实际 overlay 模式。
+「主题」行右侧是与官方语言行同款的下拉选择器，显示当前已应用主题的四色预览块与名称。点开后的菜单按序列出「默认」与全部内置配色，每项也带预览块：
 
-内置主题：Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm。id 使用 `dsh-theme-studio.*` 命名空间，默认不是目录成员。完整 token 和配色字段见[token 参考](./docs/reference/theme-tokens.md)。
+- **悬停预览**：指针悬停菜单项即临时套用该主题，不写 Host；菜单关闭（指针离开、点击外部、Esc）即恢复原状。
+- **点击应用**：点击或 Enter 选中后由 Host 持久化该主题 id，重启与新会话自动恢复。
+- **默认**：移除本插件的全部覆盖层，回到官方主题，保存 `activeThemeId=null`。
 
-## 运行模型
+官方「外观」继续控制浅色 / 深色 / 跟随系统：每套内置主题都提供明暗两套色值，随官方模式解析。字体与字号同理仍由官方设置保存，主题的预览、应用、取消、恢复默认都不改写它们。
 
-```text
-Official Light / Dark / System
-        ↓
-ACTIVE_SOURCE  (@dsh-electron/dsh-theme-studio:active)
-        ↓
-PREVIEW_SOURCE (@dsh-electron/dsh-theme-studio:preview)
-        ↓
-ThemeSnapshot → ThemePresenter → DOM
-```
+### 内置主题
+
+Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均在 `dsh-theme-studio.*` 命名空间下；「默认」不是目录成员。选择器与菜单中的四色 Mosaic 固定使用浅色样本，不代表实际生效的模式。完整 token 与配色字段见[token 参考](./docs/reference/theme-tokens.md)。
+
+## 项目结构
 
 ```text
-ui-theme.preference          system | light | dark
-theme-studio.activeThemeId   null | dsh-theme-studio.*
+.
+├── src/
+│   ├── index.ts                      Host 半部入口：settings 读写、持久化与恢复
+│   ├── settings.ts                   theme-studio.* 设置字段定义
+│   ├── constants.ts                  共享身份（包名、设置键、source id）
+│   ├── compat/
+│   │   ├── dsh-version.ts            受支持 DSH 精确版本清单（唯一权威）
+│   │   ├── settings-host.ts          Host settings 能力的版本结构适配
+│   │   ├── settings-client.ts        Client settingsScope/configForms 的版本结构适配
+│   │   └── menu-icons.tsx            下拉 chevron 图标导出探测与本地回退
+│   └── client/
+│       ├── index.ts                  Client 入口：注册「主题」行（order 10.5）、runtime action 注入
+│       ├── ThemeStudioRow.tsx        主题行与 Menu 下拉选择器
+│       ├── runtime.ts                active / preview 两层 overrideTokens 的所有者
+│       ├── presets.ts                8 套内置主题的 token 覆盖与预览色板
+│       ├── catalog.ts                ctx.themeStudio.catalog：只读主题发现与校验
+│       ├── contrast.ts               对比度逐配对诊断（report 命令后端）
+│       ├── store.ts / adapter.ts     宿主快照的 runtime 投影与 settings transport
+│       └── locales.ts                中英双语词典
+├── tests/                            runtime、UI 组件、Cordis 组装、官方主题 bundle 集成
+├── scripts/                          compat 检查与矩阵、对比度报告、smoke、发布工程
+└── docs/                             需求、架构、ADR、计划、参考、开发工作流、故障排查
 ```
 
-Host 使用实际 settings register/configure 能力；Client 使用 settingsScope/configForms。store 只是 runtime 快照投影，Host accepted snapshot 才是持久 authority。详见[架构](./docs/architecture/theme-studio.md)、[runtime API](./docs/reference/theme-runtime.md)与[设置/包契约](./docs/reference/settings-and-package-contract.md)。
+## 贡献指南
 
-## 对比度校验（Stage 2，Unreleased）
+欢迎 Issue 与 PR：
 
-`validateThemeContrast(preset)` 对明暗两套配色返回不可变逐配对报告。默认覆盖普通文字、链接、状态色、代码语法、toast/tooltip/menu 和 focus。文本阈值 4.5:1，焦点指示 3:1；比较使用全精度，解析失败为 unknown，不能静默通过。
+1. 先读 [`AGENTS.md`](./AGENTS.md)（仓库级规则）与[开发工作流](./docs/development/plugin-development-workflow.md)（环境、命令、运行时支持矩阵、升级流程）。
+2. 从 `main` 拉分支；提交信息遵循 conventional commits（`feat` / `fix` / `perf` / `refactor` + scope），参见现有历史。
+3. PR 前本地必须全部通过：`pnpm lint`、`pnpm typecheck`、`pnpm build`、`pnpm test`、`pnpm docs:check`、`pnpm compat:check`；改动兼容面时追加 `pnpm compat:matrix`。
+4. 影响行为的变更需同批更新 `docs/` 下的对应文档；README 保持中英双语同步；有取舍的工程决策请新增 ADR。
+5. 硬约束：**不修改上游仓库（deepseek-harness）任何包**；插件只做 out-of-tree 扩展，`src/compat/dsh-version.ts` 是唯一支持清单。
 
-```sh
-pnpm contrast:report
-pnpm contrast:report --strict
-pnpm build:types
-node scripts/report-contrast.mjs --json > contrast-report.json
-```
+## 已知限制
 
-默认报告仅对 unknown 返回失败；strict 同时对低于阈值返回失败。当前内置 768 项中 188 failed、0 unknown，strict 返回非零是预期。校验不自动改色或阻止应用。完整算法、配对、16 个模式基线、色值支持及未覆盖范围见[对比度参考](./docs/reference/theme-contrast.md)。采用的规则依据 [W3C 文字对比度](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)与[非文字对比度](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)。
+- 仅 8 套内置主题：公共 `.dsh-theme.json` schema、自定义主题导入导出与主题编辑器尚未实现，规划见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
+- 对比度校验是诊断而非门禁：部分内置配色低于阈值，不自动修色也不阻止预览或应用；`pnpm contrast:report` 见[token 参考](./docs/reference/theme-tokens.md)。
+- 预览由悬停驱动：键盘聚焦菜单项不触发预览，可直接 Enter 应用。
+- 只读 catalog `ctx.themeStudio.catalog` 只在 Client 提供，不含「默认」项，不支持动态注册或 Host RPC，契约见 [catalog 参考](./docs/reference/theme-catalog.md)。
+- Host 拒绝保存时主题行提示失败并恢复上次已接受的选择；设置通道不可用时目录仍在但行会说明该连接不保存选择，排查见[主题行缺失](./docs/troubleshooting/themes-row-missing.md)。
+- 四色 Mosaic 固定浅色样本；跨平台浏览器视觉回归覆盖有限，已验证边界见[兼容矩阵](./docs/development/dsh-compatibility.md)。
 
-## 公开主题目录（Stage 3，Unreleased）
+## 文档
 
-Client 消费者在自己的 `dsh.client.inject` metadata 加入本包，再注入 themeStudio：
+项目长期文档位于 [`docs/`](./docs/README.md)：
 
-```ts
-import type { Context } from '@deepseek-ai/cordis'
-import type {} from '@dsh-electron/dsh-theme-studio/client'
+- [版本变更记录（CHANGELOG）](./CHANGELOG.md)
+- [需求](./docs/requirements/theme-studio.md)
+- [目标架构](./docs/architecture/theme-studio.md)
+- [设置与包契约](./docs/reference/settings-and-package-contract.md)
+- [DSH 兼容矩阵](./docs/development/dsh-compatibility.md)
+- [决策记录（ADR）](./docs/decisions/README.md)
+- [计划](./docs/plans/README.md)
+- [开发工作流](./docs/development/plugin-development-workflow.md)
+- [常见问题排查](./docs/troubleshooting/README.md)
 
-export const inject = ['themeStudio']
-export function apply(ctx: Context): void {
-  const catalog = ctx.themeStudio.catalog
-  const themes = catalog.list()
-  const theme = catalog.get('dsh-theme-studio.claude')
-  const report = catalog.validate('dsh-theme-studio.claude')
-  console.log(themes.length, theme?.name, report?.passed)
-}
-```
+Coding Agent 的仓库级规则定义于 [`AGENTS.md`](./AGENTS.md)。
 
-list 返回稳定、深层冻结的 card 顺序列表；get/validate 对未知 id 返回 undefined。服务与 runtime 共用 catalog，设置未 ready 或 transport 切换不会撤销它，Client 卸载时 Cordis 停止依赖消费者。它只负责发现，不能注册新主题或改变 Appearance。完整契约见 [catalog API](./docs/reference/theme-catalog.md)。
+## 许可证
 
-## 开发与验证
-
-```sh
-pnpm install --frozen-lockfile
-pnpm docs:check
-pnpm compat:check
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm pack --dry-run
-pnpm compat:matrix
-```
-
-文档结构检查必须通过；对比度 strict 是诊断，不与单测成功混淆。构建产物在 lib，不进入 Git；清理生成目录后构建避免旧 declaration 混入包。测试直接覆盖 runtime、UI、真实 Cordis、legacy provider 与已安装官方主题 bundle；不把这些测试扩大解释为完整 browser/磁盘/跨平台 UI e2e。操作与验证边界见[开发工作流](./docs/development/plugin-development-workflow.md)。
-
-## 项目结构与文档
-
-| 位置 | 责任 |
-| --- | --- |
-| src/index.ts、settings.ts、constants.ts | Host 设置与共享身份 |
-| src/compat/ | settings 结构适配、兼容清单与纯分类 |
-| src/client/ | preset/chrome、catalog、validator、runtime、store、UI 与 locale |
-| tests/ | 单元、Client 组装、Host provider 与官方主题集成 |
-| scripts/、.github/workflows/ | 检查、矩阵、报告、版本与发布工程 |
-| docs/ | 需求、架构、ADR、计划、开发、参考与故障排查 |
-| .agent/ | 文档规范、模板与可复用维护知识 |
-
-完整[文档地图](./docs/README.md)与[提交历史](./docs/reference/repository-history.md)分别负责导航与演进事实。npm 包仅包含 files 清单中的构建、语言入口、changelog、patch 与 license；完整源码文档也可从 [GitHub 文档目录](https://github.com/cherrchen/dsh-theme-studio/tree/main/docs)访问。
-
-## 发布
-
-发布由与 package.json 匹配的 annotated v* tag 触发。CI 校验、构建、检查 tarball，随后 npm provenance 发布并生成 GitHub Release。版本准备与 tag 操作见[发布流程](./docs/development/release-workflow.md)；本文不表示未发布 Stage 2/3 已发布，也不代替检查远端 workflow、npm 权限或 OIDC 配置。
-
-## Model Experience
-
-无。本包贡献面向用户的 Client UI 与其他插件可读的目录，不注册模型工具或提示内容。
-
-### KV Cache effect
-
-无。本包不增加、替换或保留模型请求 token。
-
-## 已知限制与后续工作
-
-- 仅内置主题；公共 .dsh-theme.json schema、导入导出、注册/编辑和 Theme Creator Agent 仍未实现。
-- 对比度是有限 token 配对诊断，部分内置配色低于阈值；不认证完整主题或实际 host UI 符合 WCAG。
-- catalog 只在 Client 提供，不包含 Default、不支持动态目录或 Host RPC。
-- Host 拒绝保存时，主题行会提示失败并恢复上次已接受的选择；徽标只在回收敛之后表示已保存的主题。
-- Mosaic 固定浅色样本；完整浏览器视觉、实际 profile 的本次磁盘旅程与跨平台呈现验证尚未补齐。
-
-这些限制的处理状态在[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)维护；已验证故障与诊断入口见[故障排查](./docs/troubleshooting/README.md)。
+[MIT](./LICENSE)
