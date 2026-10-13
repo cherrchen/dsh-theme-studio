@@ -145,6 +145,13 @@ try {
   const cancelled = await background()
   if (cancelled !== before) throw new Error('closing the menu did not restore --dsw-alias-bg-base')
   note('closing the menu restored the background variable')
+  // Older hosts close the whole Settings dialog on Escape; reopen it before
+  // driving the selector again.
+  if (!await pill.isVisible()) {
+    await openSettings.click()
+    const general = page.getByText(/通用|General/u).first()
+    if (await general.count()) await general.click()
+  }
   await pill.click()
   await menu.first().waitFor({ timeout: 30000 })
   await menu.first().getByRole('menuitem').nth(1).click()

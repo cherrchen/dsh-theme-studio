@@ -68,10 +68,15 @@
 }
 
 /* Option label fills the row so the trailing check sits at the far edge;
- * the native Menu wraps the label itself on newer hosts. */
+ * the native Menu wraps the label itself on newer hosts. The block box is
+ * stretched over the item's padding and icon gap so a hover anywhere on the
+ * row reaches the preview handler; the text keeps its position. */
 .itemLabel {
+  display: block;
   flex: 1;
   min-width: 0;
+  margin: -10px -12px;
+  padding: 10px 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

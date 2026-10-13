@@ -125,6 +125,15 @@ describe('ThemeStudioRow', () => {
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
+  it('cancels the preview when the row unmounts', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.mouseEnter(within(option('Nordic')).getByText('Nordic'))
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+    cleanup()
+    expect(b.cancelPreview).toHaveBeenCalled()
+  })
+
   it('restores the preview when Escape closes the menu', () => {
     const b = mount()
     fireEvent.click(selector())

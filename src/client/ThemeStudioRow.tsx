@@ -4,7 +4,7 @@
  * opens a Menu whose rows preview on hover; closing the menu restores the
  * applied theme; selecting an option applies it.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
@@ -60,6 +60,10 @@ export function ThemeStudioRow({
   const saveError = useStore(s => s.saveError)
   const previewName = previewLabel(t, previewing, previewThemeId)
   const [open, setOpen] = useState(false)
+  // A host that unmounts the row while the menu is open (e.g. an Escape that
+  // closes the whole Settings surface before Menu's own onClose runs) must
+  // not leak the transient preview.
+  useEffect(() => () => { cancelPreview() }, [cancelPreview])
   const activeCard = cards.find(card => card.id === activeThemeId)
   const activeKey = (activeCard?.nameKey ?? 'default.name') as ThemeStudioKey
 
