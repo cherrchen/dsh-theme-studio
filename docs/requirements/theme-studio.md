@@ -26,7 +26,7 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 
 | 编号 | 当前要求 | 验收依据 |
 | --- | --- | --- |
-| F1 | Themes 行 `id=themes`、`order=20`；官方 Appearance 在前 | `apply.client.spec.ts` 的注册断言 |
+| F1 | Themes 行 `id=themes`、`order=10.5`，位于官方 Appearance（10）与字号（11）之间 | `apply.client.spec.ts` 的注册断言 |
 | F2 | Default 使用 `null`，不是可注册的内置 id | runtime、catalog 和 UI 测试 |
 | F3 | 浏览按内置目录顺序提供八个主题，文案中英切换 | presets、NAME_KEYS 与 locale 测试 |
 | F4 | Preview 不调用 Host 写入，后续预览替换同一 preview source | runtime 预览测试 |

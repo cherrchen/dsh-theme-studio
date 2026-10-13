@@ -133,14 +133,14 @@ describe('Theme Studio client apply', () => {
     expect(loader).toMatch(/- id: theme-studio\s+name: '@dsh-electron\/dsh-theme-studio'/)
   })
 
-  it('registers localized copy and the Themes row at order 20', async () => {
+  it('registers localized copy and the Themes row at order 10.5', async () => {
     const b = await bench()
     await b.ctx.plugin({ inject: [...inject], apply }).await()
     expect(b.locale.bind(SETTINGS_NS)('title')).toBe('主题')
     b.locale.setLocale('en')
     expect(b.locale.bind(SETTINGS_NS)('title')).toBe('Themes')
     const entry = b.slots.entries().find(item => item.component === ThemeStudioRow)!
-    expect(entry.options).toMatchObject({ id: 'themes', order: 20 })
+    expect(entry.options).toMatchObject({ id: 'themes', order: 10.5 })
     // A host that declares none of the Plugins-page slots registers nothing there.
     expect(b.slots.entries('plugins.item')).toEqual([])
     expect(b.slots.entries('plugins.detail.badge')).toEqual([])

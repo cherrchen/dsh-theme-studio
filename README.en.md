@@ -21,7 +21,7 @@ dsh plugin --profile web add @dsh-electron/dsh-theme-studio
 dsh --profile web
 ```
 
-Open **Settings → General → Themes**. Official Appearance comes first at order 10; Themes follows with id themes and order 20. Default clears overlays, preview is transient, and apply saves the selection on the Host. Desktop includes the package in its runtime inventory; headless loads only Host settings, with no browser row or Client catalog.
+Open **Settings → General → Themes**. The Themes row (id themes, order 10.5) sits between official Appearance (order 10) and Font Size (order 11). Default clears overlays, preview is transient, and apply saves the selection on the Host. Desktop includes the package in its runtime inventory; headless loads only Host settings, with no browser row or Client catalog.
 
 npm and release tarballs contain published builds. To use unreleased Stage 2/3, build source containing those changes. A successful install still requires the host's UI/theme/locale/connection/remotes and a settings transport. [Themes-row troubleshooting](./docs/troubleshooting/themes-row-missing.md) distinguishes missing services from a section that is not ready.
 

@@ -21,7 +21,7 @@ dsh plugin --profile web add @dsh-electron/dsh-theme-studio
 dsh --profile web
 ```
 
-打开 **设置 → 通用 → 主题**。官方“外观”先出现（order 10），Themes 在下面（id themes，order 20）。默认卡清除覆盖层，预览不保存，应用后 Host 保存主题选择。Desktop 将本包作为内置 runtime 插件；headless 仅加载 Host 设置半，不启动浏览器行或 Client catalog。
+打开 **设置 → 通用 → 主题**。Themes 行（id themes，order 10.5）位于官方“外观”（order 10）与“字号”（order 11）之间。默认卡清除覆盖层，预览不保存，应用后 Host 保存主题选择。Desktop 将本包作为内置 runtime 插件；headless 仅加载 Host 设置半，不启动浏览器行或 Client catalog。
 
 npm/tarball 对应已发布构建；体验未发布 Stage 2/3 应构建包含该提交的源码。安装成功仍需宿主提供 UI/theme/locale/connection/remotes 与可用 settings transport；[主题行排查](./docs/troubleshooting/themes-row-missing.md)解释依赖缺失与服务未就绪的差别。
 
