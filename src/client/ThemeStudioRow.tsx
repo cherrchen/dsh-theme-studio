@@ -105,7 +105,12 @@ export function ThemeStudioRow({
             className={css.selector}
             aria-haspopup="menu"
             aria-expanded={open}
-            onClick={() => { setOpen(v => !v) }}
+            onClick={() => {
+              // Toggling the selector closed bypasses Menu's own onClose;
+              // the mounted row still owns the transient preview.
+              if (open) cancelPreview()
+              setOpen(v => !v)
+            }}
           >
             <Mosaic preview={activeCard?.preview.light ?? DEFAULT_PREVIEW.light} />
             {t(activeKey)}

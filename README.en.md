@@ -51,7 +51,7 @@ The exact supported releases are owned by `src/compat/dsh-version.ts` as the sin
 | `v0.2.0` | `0.2.0-rc.1`, `0.2.0-rc.2` |
 | `v0.2.1` | `0.2.1-alpha.1`, `0.2.1-alpha.2` |
 
-The plugin does not start — as if it were not installed — when the DSH release is not in the table or the `@deepseek-ai/dsh-*` packages disagree on a version.
+Releases outside the table — or installs mixing different `@deepseek-ai/dsh-*` versions — are unverified: the plugin itself does not probe the installed tree or block itself at runtime. Peer admission during install may reject some mismatched releases, but an unrejected mixed install can still start; it simply falls outside the supported set.
 
 `pnpm compat:check` verifies that this section, the peer declarations, the development pin, the overrides, the lockfile, and the installed tree agree; `pnpm compat:matrix` regresses every listed release in an isolated install tree. Adaptation seams, verification evidence, and uncovered edges live in the [DSH compatibility matrix](./docs/development/dsh-compatibility.md).
 
@@ -154,7 +154,7 @@ That is `cordis.patch.yml` mounting the Host settings half and the Client overla
 
 To the right of the "Themes" row is a dropdown selector in the style of the official Language row, showing the currently applied theme's four-color swatch and name. The opened menu lists "Default" and every built-in palette in order, each with its own swatch:
 
-- **Hover preview**: hovering a menu item applies that theme temporarily without writing to the Host; closing the menu (pointer leave, outside click, Esc) restores the previous state.
+- **Hover preview**: hovering a menu item applies that theme temporarily without writing to the Host; closing the menu (pointer leave, outside click, Esc, or toggling the selector again) restores the previous state.
 - **Click to apply**: clicking or pressing Enter asks the Host to persist the theme id, which is restored across restarts and new sessions.
 - **Default**: removes all of this plugin's overlays, returns to the official theme, and saves `activeThemeId=null`.
 
