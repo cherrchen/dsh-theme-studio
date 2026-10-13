@@ -13,6 +13,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@deepseek-ai/dsh-client-ui-renderer/client': join(root, 'tests/shims/runtime.client.ts'),
+      // The published bundle imports host-only packages it does not declare;
+      // specs see the exports the compat adapter reads instead.
+      '@deepseek-ai/dsh-client-ui-primitives': join(root, 'tests/shims/ui-primitives.tsx'),
     },
   },
   test: {

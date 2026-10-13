@@ -31,7 +31,7 @@ Client 必需服务是 `theme`、`slots`、`locale`、`connection`、`remote`。
 | Locale namespace | settings.theme-studio | en、zh；zh 为 key set 真源 |
 | Public Cordis service | themeStudio | readonly catalog，与父 plugin fiber 同寿命 |
 
-官方 Appearance 为 order 10、字号为 order 11，Themes 取 10.5 位于两者之间。Default 卡使用 DEFAULT_PREVIEW，不是 catalog 成员。theme id → locale key 从 namespaced suffix 推导；预览名使用 NAME_KEYS，新增主题需同步两个位置及词典，避免状态栏回落到 Default。
+官方 Appearance 为 order 10、字号为 order 11，Themes 取 10.5 位于两者之间。Default 选项使用 DEFAULT_PREVIEW，不是 catalog 成员。theme id → locale key 从 namespaced suffix 推导；预览名使用 NAME_KEYS，新增主题需同步两个位置及词典，避免状态栏回落到 Default。
 
 ## Package exports
 

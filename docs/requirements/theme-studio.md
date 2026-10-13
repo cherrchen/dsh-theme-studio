@@ -10,7 +10,7 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 
 ## Goals
 
-1. 在设置 → 通用 → 主题提供默认与内置主题卡片，与官方外观行保持顺序和视觉层级。
+1. 在设置 → 通用 → 主题提供默认与内置主题选项列表，与官方外观行保持顺序和视觉层级。
 2. 保持官方外观所有权，通过 token overlay 改变配色。
 3. 将预览与持久选择分离，允许取消预览、应用预览和恢复默认。
 4. 在 Host 设置就绪、插件重启、设置服务停止/重供时正确恢复 UI 与覆盖层。
@@ -59,7 +59,7 @@ Host accepted snapshot 是持久 authority；preview 不进入 durable settings�
 
 ### UI 与可访问性
 
-预览/应用按钮提供带主题名的 aria-label，状态按钮提供 aria-pressed，预览消息通过 polite live region 告知；色块为装饰性 aria-hidden。主题行 CSS 消费宿主语义 token，色块样本使用预览颜色。当前 Mosaic 固定显示 light 样本，不能把 preview.dark 数据存在解释成 UI 已自动随 Appearance 切换样本。
+主题列表使用 listbox/option/aria-selected 语义，悬停与聚焦预览、离开列表恢复、点击或 Enter/Space 应用、方向键移动，选中项带尾随勾选；预览消息通过 polite live region 告知；色块为装饰性 aria-hidden。主题行 CSS 消费宿主语义 token，色块样本使用预览颜色。当前 Mosaic 固定显示 light 样本，不能把 preview.dark 数据存在解释成 UI 已自动随 Appearance 切换样本。
 
 ### 兼容性与验证
 

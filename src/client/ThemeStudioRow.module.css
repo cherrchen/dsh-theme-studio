@@ -1,7 +1,6 @@
-/* Themes row: title + description + compact theme cards (Appearance-style
- * boxes: small top-left swatch, name/badge in the header, actions bottom-right).
- * Chrome follows the Appearance cube: 0.5px hairlines, radius tokens,
- * transparent fill, selected = module fill + bluish border. */
+/* Themes row: title + description + a menu-style option list (the shared
+ * Menu recipe: padded surface card, 34px rows with leading swatch, trailing
+ * selection check, hover fill as the row's focus indication). */
 
 .group {
   display: flex;
@@ -31,131 +30,71 @@
   color: var(--dsw-alias-state-error-primary);
 }
 
-.grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.card {
-  box-sizing: border-box;
-  flex: 1 1 180px;
-  max-width: 280px;
+/* List card: same pad and elevation as the shared Menu's floating card. */
+.list {
+  padding: 4px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px;
-  border: 0.5px solid var(--dsw-alias-border-l4);
-  border-radius: var(--dsw-radius-xl);
-  background: transparent;
-  min-height: 0;
+  gap: 0;
+  --dsw-elevation-stroke-color: var(--dsw-alias-border-l1);
+  box-shadow: var(--dsw-elevation-prominent);
 }
 
-/* Selected card: same recipe as the Appearance row's selected cube. */
-.active {
-  background: var(--dsw-alias-bg-module-platform);
-  border-color: var(--dsw-static-neutral-bluish-400);
-}
-
-/* Previewing repaints the card's own border so the frame stays single. */
-.previewing {
-  border-style: dashed;
-  border-color: var(--dsw-alias-label-secondary);
-}
-
-.cardTop {
+/* Menu cell: compact text, leading swatch, and selection spacing. */
+.option {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-radius: var(--dsw-radius-md, 12px);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.option:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+/* Arrow navigation moves real focus: the row the keyboard is on carries the
+   same fill the pointer gets, and the browser's default ring would double it. */
+.option:focus-visible {
+  background: var(--dsw-alias-interactive-bg-hover);
+  outline: none;
 }
 
 .mosaic {
-  flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
+  flex: none;
+  width: 16px;
+  height: 16px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   overflow: hidden;
-  border-radius: var(--dsw-radius-xs);
+  border-radius: var(--dsw-radius-xs, 4px);
 }
 
 .mosaic span {
   display: block;
 }
 
-.cardMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 8px;
+.optionLabel {
+  flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.name {
-  font-size: 14px;
-  line-height: 22px;
+.check {
+  flex: none;
+  width: 14px;
+  height: 14px;
   color: var(--dsw-alias-label-primary);
-}
-
-.cardStatus {
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--dsw-alias-label-secondary);
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-  align-self: flex-end;
-}
-
-.action {
-  font: inherit;
-  font-size: 12px;
-  line-height: 18px;
-  padding: 4px 8px;
-  border: 0.5px solid var(--dsw-alias-border-l4);
-  border-radius: var(--dsw-radius-sm);
-  background: transparent;
-  color: var(--dsw-alias-label-primary);
-  cursor: pointer;
-}
-
-.action:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
-}
-
-/* Ring color/width and pointer suppression come from the host focus
- * stylesheet; the button only owns its offset. */
-.action:focus-visible {
-  outline-offset: 2px;
-}
-
-.action[aria-pressed='true'] {
-  background: var(--dsw-alias-bg-module-platform);
-}
-
-.bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 0.5px solid var(--dsw-alias-border-l4);
-  border-radius: var(--dsw-radius-md);
-  color: var(--dsw-alias-label-primary);
-  font-size: 13px;
-  line-height: 20px;
-}
-
-.bar .actions {
-  align-self: auto;
 }
 
 .live {
@@ -164,11 +103,4 @@
   height: 1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .card,
-  .action {
-    transition: none;
-  }
 }

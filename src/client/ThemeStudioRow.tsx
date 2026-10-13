@@ -1,9 +1,13 @@
 /**
  * Themes preference row registered into the General section item slot:
- * title, description, theme cards with preview/apply, and a preview action bar.
+ * title, description, and a menu-style option list. Hovering or focusing
+ * an option previews its theme; leaving the list restores the applied
+ * theme; selecting an option applies it.
  */
+import { useState } from 'react'
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
+import { CheckIcon, MenuSurfaceLike } from '../compat/menu-surface.tsx'
 import type { ThemePreview } from './types.ts'
 import type { createThemeStudioRowStore } from './store.ts'
 import { formatLocale, type ThemeStudioKey } from './locales.ts'
@@ -17,8 +21,6 @@ export interface ThemeStudioRowInjected {
   activateTheme: (id: string | null) => void
   /** Drop the transient preview. */
   cancelPreview: () => void
-  /** Persist the theme currently being previewed. */
-  applyPreview: () => void
 }
 
 /** Full component props: runtime share + store share + locale seat + injected face. */
@@ -43,7 +45,7 @@ export const NAME_KEYS: Record<string, ThemeStudioKey> = {
  * @returns the row element tree.
  */
 export function ThemeStudioRow({
-  t, useStore, previewTheme, activateTheme, cancelPreview, applyPreview,
+  t, useStore, previewTheme, activateTheme, cancelPreview,
 }: ThemeStudioRowComponentProps) {
   const cards = useStore(s => s.cards)
   const activeThemeId = useStore(s => s.activeThemeId)
@@ -52,6 +54,10 @@ export function ThemeStudioRow({
   const settingsStatus = useStore(s => s.settingsStatus)
   const saveError = useStore(s => s.saveError)
   const previewName = previewLabel(t, previewing, previewThemeId)
+  const [focusIndex, setFocusIndex] = useState(() => {
+    const index = cards.findIndex(card => card.id === activeThemeId)
+    return index < 0 ? 0 : index
+  })
 
   return (
     <div className={css.group}>
@@ -60,61 +66,54 @@ export function ThemeStudioRow({
       {settingsStatus === 'loading' ? <p className={css.status}>{t('status.loading')}</p> : null}
       {settingsStatus === 'unavailable' ? <p className={css.status}>{t('status.unavailable')}</p> : null}
       {saveError ? <p className={css.alert} role="alert">{t('status.saveFailed')}</p> : null}
-      <div className={css.grid} role="list">
-        {cards.map((card) => {
+      <MenuSurfaceLike
+        className={css.list}
+        role="listbox"
+        aria-label={t('title')}
+        onMouseLeave={() => { cancelPreview() }}
+        onBlur={(event) => {
+          const next = event.relatedTarget
+          if (next instanceof Node && event.currentTarget.contains(next)) return
+          cancelPreview()
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+          event.preventDefault()
+          const count = cards.length
+          const delta = event.key === 'ArrowDown' ? 1 : -1
+          const next = (focusIndex + delta + count) % count
+          event.currentTarget.querySelectorAll<HTMLElement>('[role="option"]')[next]?.focus()
+        }}
+      >
+        {cards.map((card, index) => {
           const name = t(card.nameKey as ThemeStudioKey)
-          const active = activeThemeId === card.id
-          const cardPreviewing = previewing && previewThemeId === card.id
-          const badge = active ? t('current') : cardPreviewing ? t('preview') : null
+          const selected = activeThemeId === card.id
           return (
-            <article key={card.id ?? 'default'} className={cardClass(css, active, cardPreviewing)} role="listitem">
-              <div className={css.cardTop}>
-                <Mosaic preview={card.preview.light} />
-                <div className={css.cardMeta}>
-                  <div className={css.name}>{name}</div>
-                  {badge ? <div className={css.cardStatus}>{badge}</div> : null}
-                </div>
-              </div>
-              <div className={css.actions}>
-                <button
-                  type="button"
-                  className={css.action}
-                  aria-pressed={cardPreviewing}
-                  aria-label={formatLocale(t('previewNamed'), { name })}
-                  onClick={() => { previewTheme(card.id) }}
-                >
-                  {t('preview')}
-                </button>
-                <button
-                  type="button"
-                  className={css.action}
-                  aria-pressed={active && !previewing}
-                  aria-label={formatLocale(t('applyNamed'), { name })}
-                  onClick={() => { activateTheme(card.id) }}
-                >
-                  {t('apply')}
-                </button>
-              </div>
-            </article>
+            <div
+              key={card.id ?? 'default'}
+              role="option"
+              aria-selected={selected}
+              tabIndex={index === focusIndex ? 0 : -1}
+              className={css.option}
+              onMouseEnter={() => { previewTheme(card.id) }}
+              onFocus={() => { setFocusIndex(index); previewTheme(card.id) }}
+              onClick={() => { activateTheme(card.id) }}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return
+                event.preventDefault()
+                activateTheme(card.id)
+              }}
+            >
+              <Mosaic preview={card.preview.light} />
+              <span className={css.optionLabel}>{name}</span>
+              {selected ? <CheckIcon className={css.check} /> : null}
+            </div>
           )
         })}
-      </div>
+      </MenuSurfaceLike>
       <div className={css.live} role="status" aria-live="polite">
         {previewing ? formatLocale(t('previewing'), { name: previewName }) : ''}
       </div>
-      {previewing ? (
-        <div className={css.bar}>
-          <span>{formatLocale(t('previewing'), { name: previewName })}</span>
-          <div className={css.actions}>
-            <button type="button" className={css.action} onClick={() => { applyPreview() }}>
-              {t('apply')}
-            </button>
-            <button type="button" className={css.action} onClick={() => { cancelPreview() }}>
-              {t('cancel')}
-            </button>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }
@@ -128,17 +127,6 @@ function Mosaic({ preview }: { preview: ThemePreview }) {
       <span style={{ background: preview.accent }} />
     </div>
   )
-}
-
-function cardClass(
-  styles: Record<string, string>,
-  active: boolean,
-  previewing: boolean,
-): string {
-  const names = [styles['card'] ?? '']
-  if (active) names.push(styles['active'] ?? '')
-  if (previewing) names.push(styles['previewing'] ?? '')
-  return names.filter(name => name.length > 0).join(' ')
 }
 
 function previewLabel(

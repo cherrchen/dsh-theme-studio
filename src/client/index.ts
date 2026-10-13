@@ -109,7 +109,6 @@ function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> 
         else runtime.activateTheme(id)
       },
       cancelPreview: () => { runtime.cancelPreview() },
-      applyPreview: () => { runtime.applyPreview() },
     }
   }
   ctx.effect(() => ctx.slots.inject('settings.general.item', () => ctx.slots.register({

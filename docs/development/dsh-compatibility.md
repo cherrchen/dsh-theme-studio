@@ -84,7 +84,7 @@ node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
 
 对比度差分门禁比较 `tests/client/contrast-baseline.json` 里已记录的失败配对。新增或消失的失败会让测试失败。`pnpm contrast:report --strict` 仍然对这些已知失败退出 1。
 
-Client bundle 把 `@deepseek-ai/dsh-client-store` 保持为 `require`，避免打进第二份 store。CSS Module 编译进 bundle 并用幂等 style 标签注入；清理 overlay 不移除该标签。
+Client bundle 把 `@deepseek-ai/dsh-client-store` 与 `@deepseek-ai/dsh-client-ui-primitives` 保持为 `require`，复用宿主模块表行而不是打进第二份实现；适配层对后者缺失的导出本地回退。CSS Module 编译进 bundle 并用幂等 style 标签注入；清理 overlay 不移除该标签。
 
 2026-10-10 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，对开发基线 0.2.1-alpha.2 执行了 `node scripts/smoke-compose.mjs`。它在临时 `DSH_HOME` 中用该版本的 `dsh` CLI 安装 `.pack/plugin.tgz`，dump 出一条 bare `theme-studio` 行，官方 `ui-theme` 仍在，安装后的 `lib/client.js` 含 ModuleLoader 注册。退出码 0。同日 `pnpm smoke:client` 在未设置 `DSH_BROWSER_E2E` 时打印 `not-run`，没有浏览器旅程。新的十二版矩阵是否全部通过，以本次命令的 `results.json` 为准，不能用早先那份十二版记录代替。
 
@@ -111,3 +111,15 @@ CLI 自身也需要统一依赖树：旧缓存中 `dsh-app-boot` / `dsh-plugin-m
 每周探测与手动候选使用 `contents: read`。如果最新 prerelease 已被支持，则重跑正式模式；未支持版本只能在独立副本或一次性 Actions checkout 放宽 admission。混装、缺包、非法版本或损坏的已安装元数据仍失败，探测不提交、推送、提升清单或发布。
 
 本机结果不证明 GitHub-hosted Ubuntu/Windows 或跨平台浏览器呈现已通过；这部分需 Draft PR 的 CI 另行提供证据。npm OIDC 的 trusted publisher 绑定仍须维护者在 npm 包设置核实；本轮没有执行 tag、npm publish 或 GitHub Release。
+
+## 主题选项列表与 ui-primitives 适配（2026-10-13）
+
+Themes 行改为 listbox 样式的主题列表（`role=listbox/option`、悬停与聚焦预览、离开列表恢复、点击或 Enter/Space 应用、方向键移动、尾随勾选），容器按宿主 `MenuSurface` 配方绘制。`@deepseek-ai/dsh-client-ui-primitives` 是宿主模块表基线行，已加入全部受支持版本的 peer 清单、开发 pin、overrides、minimumReleaseAgeExclude、`OPTIONAL_CORE_PACKAGES` 与 client externals。
+
+逐版本导出审查：`MenuSurface` 自 0.2.0-rc.1 起发布，`IconCheckOutlineRegular` 自 0.1.7-alpha.1 起，`MenuGroup` 仅 0.2.1-alpha.2（本插件不用）。`src/compat/menu-surface.tsx` 对两个导出做结构探测；缺失时本地回退绘制同一 token 配方，并为 0.1.7-rc.2 前不存在的 `--dsw-radius-*`、`--dsw-menu-surface-fill`、`--dsw-menu-backdrop-filter` 提供 `var()` 字面值兜底。0.1.5/0.1.6 的类型面不含这两个导出名，探测输入按未声明 namespace 处理，不做部分类型化断言。
+
+发布包 `lib/index.js` 裸导入 clsx、shiki、katex 等未声明的宿主侧包，vitest 无法加载真实产物；测试经 `resolve.alias` 使用 `tests/shims/ui-primitives.tsx`，适配层原生/回退分支由 `tests/client/menu-surface.spec.tsx` 的模块 mock 覆盖。
+
+证据：2026-10-13 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上 `node scripts/run-dsh-matrix.mjs 0.1.5-rc.2` 全部步骤通过，含最老类型面的 typecheck 与 smoke-compose 真实 CLI tarball 安装；开发基线门禁（compat:check、lint、typecheck、test、docs:check、build、verify-package）同步通过。未覆盖真实浏览器中 MenuSurface 与本地回退的视觉差异。
+
+矩阵工具同步修复：重定向树（非 frozen）删除 lockfile 后全新解析，非 DSH dev 依赖可能新于 pnpm 默认 release-age 截止线，每个 `pnpm run`/`exec` 的前置 supply-chain verify 会误伤。脚本现给该隔离树补写 `minimumReleaseAge: 0`，源码 checkout 与 frozen 基线的策略不变。

@@ -69,7 +69,6 @@ function mount() {
   const previewTheme = vi.fn()
   const activateTheme = vi.fn()
   const cancelPreview = vi.fn()
-  const applyPreview = vi.fn()
   const props: ThemeStudioRowComponentProps = {
     useSessions: (() => undefined) as never,
     useWorkspaces: (() => undefined) as never,
@@ -79,45 +78,63 @@ function mount() {
     previewTheme,
     activateTheme,
     cancelPreview,
-    applyPreview,
   }
   render(<ThemeStudioRow {...props} />)
-  return { store, previewTheme, activateTheme, cancelPreview, applyPreview }
+  return { store, previewTheme, activateTheme, cancelPreview }
+}
+
+function option(name: string) {
+  return screen.getByRole('option', { name })
 }
 
 describe('ThemeStudioRow', () => {
-  it('renders Themes, Default, and builtin cards with Preview and Apply', () => {
+  it('renders a listbox whose options mark only the applied theme selected', () => {
     mount()
     expect(screen.getByText('Themes')).toBeDefined()
-    expect(screen.getByText('Default')).toBeDefined()
-    expect(screen.getByText('Graphite')).toBeDefined()
-    expect(screen.getByText('Nordic')).toBeDefined()
-    // Default is active when activeThemeId is null.
-    expect(screen.getByText('Current')).toBeDefined()
-    expect(screen.getAllByRole('button', { name: /Preview / })).toHaveLength(3)
-    expect(screen.getAllByRole('button', { name: /Apply / })).toHaveLength(3)
+    expect(screen.getByRole('listbox')).toBeDefined()
+    expect(option('Default').getAttribute('aria-selected')).toBe('true')
+    expect(option('Graphite').getAttribute('aria-selected')).toBe('false')
+    expect(option('Nordic').getAttribute('aria-selected')).toBe('false')
   })
 
-  it('marks the active theme and does not persist on Preview', () => {
+  it('previews on hover, restores on mouse leave, and applies on click', () => {
     const b = mount()
-    act(() => {
-      b.store.actions.sync({
-        activeThemeId: 'dsh-theme-studio.graphite',
-        previewThemeId: null,
-        previewing: false,
-        settingsStatus: 'ready',
-        saveError: false,
-        revision: 1,
-      })
-    })
-    expect(screen.getByText('Current')).toBeDefined()
-    expect(screen.getAllByText('Current')).toHaveLength(1)
-    fireEvent.click(screen.getByRole('button', { name: 'Preview Nordic' }))
+    fireEvent.mouseEnter(option('Nordic'))
     expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
     expect(b.activateTheme).not.toHaveBeenCalled()
+    fireEvent.mouseLeave(screen.getByRole('listbox'))
+    expect(b.cancelPreview).toHaveBeenCalledOnce()
+    fireEvent.click(option('Nordic'))
+    expect(b.activateTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
   })
 
-  it('exposes Apply, Cancel, and preview status to assistive tech', () => {
+  it('previews on focus and restores when focus leaves the list', () => {
+    const b = mount()
+    fireEvent.focus(option('Graphite'))
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.graphite')
+    // Moving between options keeps the preview cycle alive.
+    fireEvent.blur(option('Graphite'), { relatedTarget: option('Nordic') })
+    expect(b.cancelPreview).not.toHaveBeenCalled()
+    fireEvent.blur(option('Graphite'), { relatedTarget: document.body })
+    expect(b.cancelPreview).toHaveBeenCalledOnce()
+  })
+
+  it('walks options with arrow keys and applies with Enter', () => {
+    const b = mount()
+    const nordic = option('Nordic')
+    fireEvent.focus(option('Graphite'))
+    fireEvent.keyDown(nordic, { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(nordic)
+    expect(b.previewTheme).toHaveBeenLastCalledWith('dsh-theme-studio.nordic')
+    fireEvent.keyDown(nordic, { key: 'ArrowUp' })
+    expect(document.activeElement).toBe(option('Graphite'))
+    fireEvent.keyDown(nordic, { key: 'Enter' })
+    expect(b.activateTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+    fireEvent.keyDown(option('Default'), { key: ' ' })
+    expect(b.activateTheme).toHaveBeenCalledWith(null)
+  })
+
+  it('announces the previewed name to assistive tech', () => {
     const b = mount()
     act(() => {
       b.store.actions.sync({
@@ -126,18 +143,15 @@ describe('ThemeStudioRow', () => {
         previewing: true,
         settingsStatus: 'ready',
         saveError: false,
-        revision: 2,
+        revision: 1,
       })
     })
     expect(screen.getAllByText('Previewing Nordic').length).toBeGreaterThan(0)
-    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
-    expect(b.applyPreview).toHaveBeenCalledOnce()
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    expect(b.cancelPreview).toHaveBeenCalledOnce()
-    expect(screen.getByRole('button', { name: 'Preview Nordic' }).getAttribute('aria-pressed')).toBe('true')
+    expect(option('Graphite').getAttribute('aria-selected')).toBe('true')
+    expect(option('Nordic').getAttribute('aria-selected')).toBe('false')
   })
 
-  it('announces a rejected save and keeps the restored theme current', () => {
+  it('announces a rejected save while keeping the applied theme selected', () => {
     const b = mount()
     act(() => {
       b.store.actions.sync({
@@ -146,17 +160,10 @@ describe('ThemeStudioRow', () => {
         previewing: false,
         settingsStatus: 'ready',
         saveError: true,
-        revision: 3,
+        revision: 2,
       })
     })
     expect(screen.getByRole('alert').textContent).toContain('could not be saved')
-    expect(screen.getByText('Current')).toBeDefined()
-    expect(screen.getAllByText('Current')).toHaveLength(1)
-  })
-
-  it('restores Default through Apply on the Default card', () => {
-    const b = mount()
-    fireEvent.click(screen.getByRole('button', { name: 'Apply Default' }))
-    expect(b.activateTheme).toHaveBeenCalledWith(null)
+    expect(option('Graphite').getAttribute('aria-selected')).toBe('true')
   })
 })
