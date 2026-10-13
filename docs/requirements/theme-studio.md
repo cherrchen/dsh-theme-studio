@@ -59,7 +59,7 @@ Host accepted snapshot 是持久 authority；preview 不进入 durable settings�
 
 ### UI 与可访问性
 
-主题列表使用 listbox/option/aria-selected 语义，悬停与聚焦预览、离开列表恢复、点击或 Enter/Space 应用、方向键移动，选中项带尾随勾选；预览消息通过 polite live region 告知；色块为装饰性 aria-hidden。主题行 CSS 消费宿主语义 token，色块样本使用预览颜色。当前 Mosaic 固定显示 light 样本，不能把 preview.dark 数据存在解释成 UI 已自动随 Appearance 切换样本。
+主题选择器与官方语言行一致：`aria-haspopup=menu`、带 `aria-expanded` 的 selector 按钮显示已应用主题并展开共享 Menu；选项悬停预览，菜单关闭（指针离开、外部点击或 Esc）恢复，点击应用，选中项带尾随勾选；预览消息通过 polite live region 告知；色块为装饰性 aria-hidden。主题行 CSS 消费宿主语义 token，色块样本使用预览颜色。当前 Mosaic 固定显示 light 样本，不能把 preview.dark 数据存在解释成 UI 已自动随 Appearance 切换样本。
 
 ### 兼容性与验证
 

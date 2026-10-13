@@ -26,12 +26,12 @@ describe('Theme Studio CSS module injection', () => {
       minify: true,
     })
     const classes = Object.fromEntries(Object.entries(result.exports ?? {}).map(([local, value]) => [local, value.name]))
-    expect(classes.group).toMatch(/_group$/)
-    expect(classes.list).toMatch(/_list$/)
-    expect(classes.option).toMatch(/_option$/)
+    expect(classes.row).toMatch(/_row$/)
+    expect(classes.selector).toMatch(/_selector$/)
+    expect(classes.itemLabel).toMatch(/_itemLabel$/)
     expect(classes.title).toMatch(/_title$/)
     const css = result.code.toString()
-    expect(css).toContain(classes.group)
+    expect(css).toContain(classes.row)
     expect(css).not.toContain('.module.css')
     const tagId = `${PACKAGE_NAME}/ThemeStudioRow.module.css`
     injectStyle(tagId, css)

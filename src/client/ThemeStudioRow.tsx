@@ -1,13 +1,14 @@
 /**
  * Themes preference row registered into the General section item slot:
- * title, description, and a menu-style option list. Hovering or focusing
- * an option previews its theme; leaving the list restores the applied
- * theme; selecting an option applies it.
+ * title, description, and a language-row-style selector. The trigger pill
+ * opens a Menu whose rows preview on hover; closing the menu restores the
+ * applied theme; selecting an option applies it.
  */
 import { useState } from 'react'
+import { Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
-import { CheckIcon, MenuSurfaceLike } from '../compat/menu-surface.tsx'
+import { ChevronDownIcon } from '../compat/menu-icons.tsx'
 import type { ThemePreview } from './types.ts'
 import type { createThemeStudioRowStore } from './store.ts'
 import { formatLocale, type ThemeStudioKey } from './locales.ts'
@@ -39,6 +40,9 @@ export const NAME_KEYS: Record<string, ThemeStudioKey> = {
   'dsh-theme-studio.warm': 'warm.name',
 }
 
+/** MenuItem ids are strings; the Default card carries a `null` theme id. */
+const DEFAULT_ITEM_ID = 'default'
+
 /**
  * Render the Themes row.
  * @param props - composed slot props.
@@ -54,63 +58,54 @@ export function ThemeStudioRow({
   const settingsStatus = useStore(s => s.settingsStatus)
   const saveError = useStore(s => s.saveError)
   const previewName = previewLabel(t, previewing, previewThemeId)
-  const [focusIndex, setFocusIndex] = useState(() => {
-    const index = cards.findIndex(card => card.id === activeThemeId)
-    return index < 0 ? 0 : index
-  })
+  const [open, setOpen] = useState(false)
+  const activeKey = (cards.find(card => card.id === activeThemeId)?.nameKey ?? 'default.name') as ThemeStudioKey
 
   return (
-    <div className={css.group}>
-      <div className={css.title}>{t('title')}</div>
-      <p className={css.description}>{t('description')}</p>
-      {settingsStatus === 'loading' ? <p className={css.status}>{t('status.loading')}</p> : null}
-      {settingsStatus === 'unavailable' ? <p className={css.status}>{t('status.unavailable')}</p> : null}
-      {saveError ? <p className={css.alert} role="alert">{t('status.saveFailed')}</p> : null}
-      <MenuSurfaceLike
-        className={css.list}
-        role="listbox"
-        aria-label={t('title')}
-        onMouseLeave={() => { cancelPreview() }}
-        onBlur={(event) => {
-          const next = event.relatedTarget
-          if (next instanceof Node && event.currentTarget.contains(next)) return
+    <div className={css.row}>
+      <div className={css.rowText}>
+        <div className={css.title}>{t('title')}</div>
+        <p className={css.description}>{t('description')}</p>
+        {settingsStatus === 'loading' ? <p className={css.status}>{t('status.loading')}</p> : null}
+        {settingsStatus === 'unavailable' ? <p className={css.status}>{t('status.unavailable')}</p> : null}
+        {saveError ? <p className={css.alert} role="alert">{t('status.saveFailed')}</p> : null}
+      </div>
+      <Menu
+        open={open}
+        onClose={() => {
           cancelPreview()
+          setOpen(false)
         }}
-        onKeyDown={(event) => {
-          if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
-          event.preventDefault()
-          const count = cards.length
-          const delta = event.key === 'ArrowDown' ? 1 : -1
-          const next = (focusIndex + delta + count) % count
-          event.currentTarget.querySelectorAll<HTMLElement>('[role="option"]')[next]?.focus()
+        items={cards.map(card => ({
+          id: card.id ?? DEFAULT_ITEM_ID,
+          icon: <Mosaic preview={card.preview.light} onMouseEnter={() => { previewTheme(card.id) }} />,
+          label: (
+            <span className={css.itemLabel} onMouseEnter={() => { previewTheme(card.id) }}>
+              {t(card.nameKey as ThemeStudioKey)}
+            </span>
+          ),
+        }))}
+        selectedId={activeThemeId ?? DEFAULT_ITEM_ID}
+        onSelect={(id) => {
+          activateTheme(id === DEFAULT_ITEM_ID ? null : id)
+          setOpen(false)
         }}
-      >
-        {cards.map((card, index) => {
-          const name = t(card.nameKey as ThemeStudioKey)
-          const selected = activeThemeId === card.id
-          return (
-            <div
-              key={card.id ?? 'default'}
-              role="option"
-              aria-selected={selected}
-              tabIndex={index === focusIndex ? 0 : -1}
-              className={css.option}
-              onMouseEnter={() => { previewTheme(card.id) }}
-              onFocus={() => { setFocusIndex(index); previewTheme(card.id) }}
-              onClick={() => { activateTheme(card.id) }}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter' && event.key !== ' ') return
-                event.preventDefault()
-                activateTheme(card.id)
-              }}
-            >
-              <Mosaic preview={card.preview.light} />
-              <span className={css.optionLabel}>{name}</span>
-              {selected ? <CheckIcon className={css.check} /> : null}
-            </div>
-          )
-        })}
-      </MenuSurfaceLike>
+        align="end"
+        portal
+        closeOnPointerLeave
+        anchor={(
+          <button
+            type="button"
+            className={css.selector}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            onClick={() => { setOpen(v => !v) }}
+          >
+            {t(activeKey)}
+            <ChevronDownIcon className={css.chevron} />
+          </button>
+        )}
+      />
       <div className={css.live} role="status" aria-live="polite">
         {previewing ? formatLocale(t('previewing'), { name: previewName }) : ''}
       </div>
@@ -118,9 +113,9 @@ export function ThemeStudioRow({
   )
 }
 
-function Mosaic({ preview }: { preview: ThemePreview }) {
+function Mosaic({ preview, onMouseEnter }: { preview: ThemePreview; onMouseEnter: () => void }) {
   return (
-    <div className={css.mosaic} aria-hidden="true">
+    <div className={css.mosaic} aria-hidden="true" onMouseEnter={onMouseEnter}>
       <span style={{ background: preview.background }} />
       <span style={{ background: preview.surface }} />
       <span style={{ background: preview.foreground }} />

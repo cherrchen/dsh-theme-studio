@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { ThemeStudioRow } from '../../src/client/ThemeStudioRow.tsx'
 import type { ThemeStudioRowComponentProps } from '../../src/client/ThemeStudioRow.tsx'
 import type { ThemeStudioCard, ThemeStudioRowState } from '../../src/client/store.ts'
@@ -83,58 +83,71 @@ function mount() {
   return { store, previewTheme, activateTheme, cancelPreview }
 }
 
+function selector(name = 'Default') {
+  return screen.getByRole('button', { name })
+}
+
 function option(name: string) {
-  return screen.getByRole('option', { name })
+  return screen.getByRole('menuitem', { name })
 }
 
 describe('ThemeStudioRow', () => {
-  it('renders a listbox whose options mark only the applied theme selected', () => {
+  it('renders a collapsed selector pill showing the applied theme', () => {
     mount()
     expect(screen.getByText('Themes')).toBeDefined()
-    expect(screen.getByRole('listbox')).toBeDefined()
+    const trigger = selector()
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu')
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('opens the menu on click and marks only the applied theme selected', () => {
+    mount()
+    const trigger = selector()
+    fireEvent.click(trigger)
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
     expect(option('Default').getAttribute('aria-selected')).toBe('true')
     expect(option('Graphite').getAttribute('aria-selected')).toBe('false')
     expect(option('Nordic').getAttribute('aria-selected')).toBe('false')
   })
 
-  it('previews on hover, restores on mouse leave, and applies on click', () => {
+  it('previews on option hover and restores when the menu closes', () => {
     const b = mount()
-    fireEvent.mouseEnter(option('Nordic'))
+    fireEvent.click(selector())
+    fireEvent.mouseEnter(within(option('Nordic')).getByText('Nordic'))
     expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
     expect(b.activateTheme).not.toHaveBeenCalled()
-    fireEvent.mouseLeave(screen.getByRole('listbox'))
+    fireEvent.pointerDown(document.body)
     expect(b.cancelPreview).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('restores the preview when Escape closes the menu', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.mouseEnter(within(option('Graphite')).getByText('Graphite'))
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.graphite')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(b.cancelPreview).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('applies the clicked theme and closes the menu', () => {
+    const b = mount()
+    fireEvent.click(selector())
     fireEvent.click(option('Nordic'))
     expect(b.activateTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+    expect(screen.queryByRole('menu')).toBeNull()
   })
 
-  it('previews on focus and restores when focus leaves the list', () => {
+  it('maps the Default option back to a null theme id', () => {
     const b = mount()
-    fireEvent.focus(option('Graphite'))
-    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.graphite')
-    // Moving between options keeps the preview cycle alive.
-    fireEvent.blur(option('Graphite'), { relatedTarget: option('Nordic') })
-    expect(b.cancelPreview).not.toHaveBeenCalled()
-    fireEvent.blur(option('Graphite'), { relatedTarget: document.body })
-    expect(b.cancelPreview).toHaveBeenCalledOnce()
-  })
-
-  it('walks options with arrow keys and applies with Enter', () => {
-    const b = mount()
-    const nordic = option('Nordic')
-    fireEvent.focus(option('Graphite'))
-    fireEvent.keyDown(nordic, { key: 'ArrowDown' })
-    expect(document.activeElement).toBe(nordic)
-    expect(b.previewTheme).toHaveBeenLastCalledWith('dsh-theme-studio.nordic')
-    fireEvent.keyDown(nordic, { key: 'ArrowUp' })
-    expect(document.activeElement).toBe(option('Graphite'))
-    fireEvent.keyDown(nordic, { key: 'Enter' })
-    expect(b.activateTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
-    fireEvent.keyDown(option('Default'), { key: ' ' })
+    fireEvent.click(selector())
+    fireEvent.click(option('Default'))
     expect(b.activateTheme).toHaveBeenCalledWith(null)
   })
 
-  it('announces the previewed name to assistive tech', () => {
+  it('announces the previewed name while keeping the applied theme in the selector', () => {
     const b = mount()
     act(() => {
       b.store.actions.sync({
@@ -146,7 +159,8 @@ describe('ThemeStudioRow', () => {
         revision: 1,
       })
     })
-    expect(screen.getAllByText('Previewing Nordic').length).toBeGreaterThan(0)
+    expect(screen.getByText('Previewing Nordic')).toBeDefined()
+    fireEvent.click(selector('Graphite'))
     expect(option('Graphite').getAttribute('aria-selected')).toBe('true')
     expect(option('Nordic').getAttribute('aria-selected')).toBe('false')
   })
@@ -164,6 +178,6 @@ describe('ThemeStudioRow', () => {
       })
     })
     expect(screen.getByRole('alert').textContent).toContain('could not be saved')
-    expect(option('Graphite').getAttribute('aria-selected')).toBe('true')
+    expect(selector('Graphite')).toBeDefined()
   })
 })

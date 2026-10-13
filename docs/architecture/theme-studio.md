@@ -36,7 +36,7 @@ flowchart TD
 | `src/index.ts`、`settings.ts` | Host 注册/Config、导出 schema 与默认值 | UI、浏览器服务、主题呈现 |
 | `compat/settings-host.ts` | register/configure 能力探测、volatile 适配、effect 返回值 | 版本字符串驱动分支 |
 | `compat/settings-client.ts` | 两种 transport 的最小结构契约 | 独立 RPC 协议 |
-| `compat/menu-surface.tsx` | ui-primitives MenuSurface/勾选图标探测与本地回退 | 版本字符串分支 |
+| `compat/menu-icons.tsx` | ui-primitives 下拉箭头图标探测与本地回退 | 版本字符串分支 |
 | `client/index.ts` | provider、字典、槽位、runtime/store 组装与启停 | durable authority |
 | `client/presets.ts`、`chrome-tokens.ts` | 八套明暗配色与派生语义 token | 修改官方 stylesheets |
 | `client/catalog.ts` | 防御性复制、冻结、按序发现、报告 | 注册/编辑第三方主题 |
@@ -44,7 +44,7 @@ flowchart TD
 | `client/font-boundary.ts` | 安装 overlay 前去掉官方字体变量 | 字体设置 UI、字号和字体列表写入 |
 | `client/runtime.ts` | active/preview、Host adoption、状态与监听器 | CSS 呈现 |
 | `client/store.ts` | 单向同步 runtime snapshot 与静态 cards | 第二持久设置源 |
-| `ThemeStudioRow.tsx`、CSS、`locales.ts` | 设置行、主题选项列表与勾选、装饰色块、可访问性与文案 | 直接操纵 body 主题状态 |
+| `ThemeStudioRow.tsx`、CSS、`locales.ts` | 设置行、Menu 下拉选择器与色块、可访问性与文案 | 直接操纵 body 主题状态 |
 | `contrast.ts`、`contrast-colors.ts` | 规则报告、sRGB 色值解析、混色、alpha 与亮度 | DOM/computed style 审核 |
 | `compat/dsh-version.ts`、开发脚本 | 清单、纯分类、安装树静态检查与矩阵 | 生产 Host 的 Node 探测 |
 
@@ -72,7 +72,7 @@ ThemeSnapshot → ThemePresenter → DOM
 
 ### 从 UI 到持久设置
 
-Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`。槽位注入组件时绑定 actions 并立即同步当前快照。列表交互调用 runtime facade：悬停与聚焦走 previewTheme，离开列表走 cancelPreview，选中走 activateTheme/restoreDefault。Apply 乐观更新 active 层并异步调用 Host.set。Host 写入串行，尚未发出的更早 id 让位给最新选择。进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
+Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`。槽位注入组件时绑定 actions 并立即同步当前快照。下拉交互调用 runtime facade：选项悬停走 previewTheme，菜单关闭走 cancelPreview，选中走 activateTheme/restoreDefault。Apply 乐观更新 active 层并异步调用 Host.set。Host 写入串行，尚未发出的更早 id 让位给最新选择。进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
 
 ### catalog 与校验
 

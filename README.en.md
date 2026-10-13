@@ -21,7 +21,7 @@ dsh plugin --profile web add @dsh-electron/dsh-theme-studio
 dsh --profile web
 ```
 
-Open **Settings → General → Themes**. The Themes row (id themes, order 10.5) sits between official Appearance (order 10) and Font Size (order 11). The list lays out Default and the builtin palettes in order; hovering or keyboard-focusing an option previews it without writing the Host, and clicking or pressing Enter/Space applies the choice for the Host to save. Desktop includes the package in its runtime inventory; headless loads only Host settings, with no browser row or Client catalog.
+Open **Settings → General → Themes**. The Themes row (id themes, order 10.5) sits between official Appearance (order 10) and Font Size (order 11). The selector lays out Default and the builtin palettes in order; hovering a menu option previews it without writing the Host, and clicking applies the choice for the Host to save. Desktop includes the package in its runtime inventory; headless loads only Host settings, with no browser row or Client catalog.
 
 npm and release tarballs contain published builds. To use unreleased Stage 2/3, build source containing those changes. A successful install still requires the host's UI/theme/locale/connection/remotes and a settings transport. [Themes-row troubleshooting](./docs/troubleshooting/themes-row-missing.md) distinguishes missing services from a section that is not ready.
 
@@ -68,8 +68,8 @@ dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.4
 ## Usage
 
 - **Default** removes both Theme Studio layers, returns to the official theme, and saves activeThemeId=null.
-- **Preview** shows a theme transiently while an option is hovered or keyboard-focused; it does not write the Host. Previewing Default temporarily hides the active overlay.
-- **Cancel** drops preview when the pointer or focus leaves the list, restoring the durable theme.
+- **Preview** shows a theme transiently while a menu option is hovered; it does not write the Host. Previewing Default temporarily hides the active overlay.
+- **Cancel** drops preview when the menu closes (pointer leaves, outside click, or Escape), restoring the durable theme.
 - **Apply** saves a builtin id when an option is clicked or activated with Enter/Space.
 - **Appearance** still owns Light/Dark/System. Each overlay supplies both modes and follows the official resolution.
 - **Fonts**: text, code, and terminal families and sizes stay in the official theme settings. Preview, apply, cancel, and Default do not change them.

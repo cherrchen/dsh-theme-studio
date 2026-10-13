@@ -1,13 +1,23 @@
-/* Themes row: title + description + a menu-style option list (the shared
- * Menu recipe: padded surface card, 34px rows with leading swatch, trailing
- * selection check, hover fill as the row's focus indication). */
+/* Themes row (figma 'Setting-Cell', matching the locale row): title +
+ * description on the left, a selector pill on the right that opens the
+ * shared Menu. The menu itself supplies surface, rows, and the selection
+ * check; this file only paints the row and the option internals. */
 
-.group {
+.row {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
   padding: 16px 0;
   border-bottom: 0.5px solid var(--dsw-alias-border-l2);
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 48px;
 }
 
 .title {
@@ -30,47 +40,47 @@
   color: var(--dsw-alias-state-error-primary);
 }
 
-/* List card: same pad and elevation as the shared Menu's floating card. */
-.list {
-  padding: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  --dsw-elevation-stroke-color: var(--dsw-alias-border-l1);
-  box-shadow: var(--dsw-elevation-prominent);
-}
-
-/* Menu cell: compact text, leading swatch, and selection spacing. */
-.option {
-  display: flex;
+/* Theme selector uses the standard control size. The radius token postdates
+ * the oldest supported hosts, so the var() names its literal value. */
+.selector {
+  flex: none;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  width: 100%;
-  min-height: 34px;
-  padding: 6px 8px;
+  gap: 12px;
+  height: 36px;
+  padding: 0 14px;
+  border: none;
   border-radius: var(--dsw-radius-md, 12px);
-  font-size: 13px;
-  line-height: 20px;
+  background: var(--dsw-alias-bg-module-platform);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
   color: var(--dsw-alias-label-primary);
   cursor: pointer;
-  user-select: none;
 }
 
-.option:hover {
+.selector:hover {
   background: var(--dsw-alias-interactive-bg-hover);
 }
 
-/* Arrow navigation moves real focus: the row the keyboard is on carries the
-   same fill the pointer gets, and the browser's default ring would double it. */
-.option:focus-visible {
-  background: var(--dsw-alias-interactive-bg-hover);
-  outline: none;
-}
-
-.mosaic {
+.chevron {
   flex: none;
-  width: 16px;
-  height: 16px;
+}
+
+/* Option label fills the row so the trailing check sits at the far edge;
+ * the native Menu wraps the label itself on newer hosts. */
+.itemLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Four-color swatch filling the menu's leading icon slot. */
+.mosaic {
+  width: 14px;
+  height: 14px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
@@ -80,21 +90,6 @@
 
 .mosaic span {
   display: block;
-}
-
-.optionLabel {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.check {
-  flex: none;
-  width: 14px;
-  height: 14px;
-  color: var(--dsw-alias-label-primary);
 }
 
 .live {

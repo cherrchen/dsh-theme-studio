@@ -21,7 +21,7 @@ dsh plugin --profile web add @dsh-electron/dsh-theme-studio
 dsh --profile web
 ```
 
-打开 **设置 → 通用 → 主题**。Themes 行（id themes，order 10.5）位于官方“外观”（order 10）与“字号”（order 11）之间。列表按序排列 Default 与内置配色；悬停或键盘聚焦即时预览且不写 Host，点击或 Enter/Space 应用后由 Host 保存，Default 项清除覆盖层。Desktop 将本包作为内置 runtime 插件；headless 仅加载 Host 设置半，不启动浏览器行或 Client catalog。
+打开 **设置 → 通用 → 主题**。Themes 行（id themes，order 10.5）位于官方“外观”（order 10）与“字号”（order 11）之间。选择器按序排列 Default 与内置配色；悬停菜单选项即时预览且不写 Host，点击应用后由 Host 保存，Default 项清除覆盖层。Desktop 将本包作为内置 runtime 插件；headless 仅加载 Host 设置半，不启动浏览器行或 Client catalog。
 
 npm/tarball 对应已发布构建；体验未发布 Stage 2/3 应构建包含该提交的源码。安装成功仍需宿主提供 UI/theme/locale/connection/remotes 与可用 settings transport；[主题行排查](./docs/troubleshooting/themes-row-missing.md)解释依赖缺失与服务未就绪的差别。
 
@@ -68,9 +68,9 @@ dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.4
 ## 使用方法
 
 - **默认**：删除 Theme Studio 两层覆盖，回到官方主题，保存 activeThemeId=null。
-- **预览**：悬停或键盘聚焦列表项时临时显示主题，不写 Host；预览默认会暂时隐藏原 active 层。
-- **取消**：指针或焦点离开列表即移除预览，恢复之前持久主题。
-- **应用**：点击或 Enter/Space 选中列表项，保存该内置 id。
+- **预览**：悬停菜单选项时临时显示主题，不写 Host；预览默认会暂时隐藏原 active 层。
+- **取消**：菜单关闭（指针离开、点击外部或 Esc）即移除预览，恢复之前持久主题。
+- **应用**：点击或 Enter/Space 选中菜单项，保存该内置 id。
 - **外观**：继续由官方控制浅色/深色/系统；每套 overlay 提供两种模式，自动跟随解析。
 - **字体**：正文字体、代码字体、终端字体和对应字号仍由官方主题设置保存。Theme Studio 的预览、应用、取消和恢复默认都不改这些值。
 

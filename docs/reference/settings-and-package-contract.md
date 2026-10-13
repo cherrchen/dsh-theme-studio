@@ -27,7 +27,7 @@ Client 必需服务是 `theme`、`slots`、`locale`、`connection`、`remote`。
 
 | 注册项 | 标识 | 行为 |
 | --- | --- | --- |
-| 通用设置槽位 | settings.general.item / themes / order 10.5 | 列表、预览与应用 |
+| 通用设置槽位 | settings.general.item / themes / order 10.5 | 下拉选择器、预览与应用 |
 | Locale namespace | settings.theme-studio | en、zh；zh 为 key set 真源 |
 | Public Cordis service | themeStudio | readonly catalog，与父 plugin fiber 同寿命 |
 
