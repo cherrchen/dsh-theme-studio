@@ -6,7 +6,7 @@
  * isolated copy, widens that copy's peer admission, and still fails on mixed
  * or incomplete trees. It does not edit SUPPORTED_DSH_RELEASES.
  */
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { appendFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -58,11 +58,20 @@ function assertLock(dir, version, metadata) {
   return { problems, drifting }
 }
 
+// Retargeted trees resolve fresh, so their dev tools can be newer than
+// pnpm's default release-age cutoff — which install, exec, and run-script
+// calls re-verify. Relax the isolated tree only; the source checkout and
+// the frozen development baseline keep their policy.
+function relaxReleaseAge(dir) {
+  appendFileSync(join(dir, 'pnpm-workspace.yaml'), 'minimumReleaseAge: 0\n')
+}
+
 function pinDrift(dir, names, version) {
   const document = parse(readFileSync(join(dir, 'pnpm-workspace.yaml'), 'utf8'))
   const pins = { ...(document.overrides ?? {}) }
   for (const name of names) pins[name] = version
   writeFileSync(join(dir, 'pnpm-workspace.yaml'), renderWorkspace(pins))
+  relaxReleaseAge(dir)
 }
 
 const { supported } = readContract(root)
@@ -107,7 +116,10 @@ for (const version of selected) {
       cordis: metadata.pins['@deepseek-ai/cordis'],
       schemastery: metadata.pins['@deepseek-ai/schemastery'],
     }
-    if (!frozen) rmSync(join(dir, 'pnpm-lock.yaml'), { force: true })
+    if (!frozen) {
+      rmSync(join(dir, 'pnpm-lock.yaml'), { force: true })
+      relaxReleaseAge(dir)
+    }
     const env = { ...process.env, CI: 'true', DSH_MATRIX_EVIDENCE: evidence }
     if (candidate !== undefined) env.DSH_THEME_STUDIO_CANDIDATE = version
     else delete env.DSH_THEME_STUDIO_CANDIDATE
