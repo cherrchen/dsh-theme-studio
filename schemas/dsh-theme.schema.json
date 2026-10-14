@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "dsh-theme.json",
+  "description": "Portable Theme Studio theme file, format v1. One file carries one theme: a 13-field color palette per official scheme plus optional sparse token overrides. The plugin's TypeScript parser (src/client/theme-file.ts) is the authoritative validator; this schema additionally covers the structural and identifier rules so editors can lint theme files. Color syntax beyond the listed prefixes, the light/dark override key symmetry, and duplicate-id policy are enforced by the parser.",
+  "type": "object",
+  "required": ["id", "name", "palette"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional editor hint pointing at this schema; ignored by the plugin."
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "description": "File format version. Omitted means 1; any other value is rejected."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]{0,63}$",
+      "not": {
+        "pattern": "^(dsh-theme-studio\\.|default$|light$|dark$|system$)"
+      },
+      "description": "Stable theme identifier. Lowercase letters, digits, dots and dashes; 1-64 chars. Must not use the builtin 'dsh-theme-studio.' namespace or the reserved words default/light/dark/system."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name shown in the theme menu. A plain string; no localization object."
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional longer description shown in dialogs and management."
+    },
+    "author": {
+      "type": "string",
+      "description": "Optional author attribution stored verbatim."
+    },
+    "palette": {
+      "type": "object",
+      "required": ["light", "dark"],
+      "additionalProperties": false,
+      "properties": {
+        "light": { "$ref": "#/$defs/chromePalette" },
+        "dark": { "$ref": "#/$defs/chromePalette" }
+      },
+      "description": "The 13 chrome colors per official color scheme. deriveChrome() expands them into the full token surface."
+    },
+    "overrides": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "light": { "$ref": "#/$defs/tokenOverrides" },
+        "dark": { "$ref": "#/$defs/tokenOverrides" }
+      },
+      "description": "Optional sparse token overrides applied after deriveChrome(). Both schemes must list the same token names."
+    }
+  },
+  "$defs": {
+    "color": {
+      "type": "string",
+      "pattern": "^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{4}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|rgba?\\(|var\\(--|color-mix\\(|transparent$|black$|white$)",
+      "description": "CSS color in the plugin's resolver subset: #hex 3/4/6/8, rgb()/rgba(), var(--token[, fallback]), color-mix(in srgb, ...), or the keywords transparent/black/white."
+    },
+    "chromePalette": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bgBase", "bgLayer1", "bgLayer2", "bgOverlay",
+        "borderL1", "borderL2",
+        "brand",
+        "labelPrimary", "labelSecondary",
+        "error", "success", "warn",
+        "sidebar"
+      ],
+      "properties": {
+        "bgBase": { "$ref": "#/$defs/color" },
+        "bgLayer1": { "$ref": "#/$defs/color" },
+        "bgLayer2": { "$ref": "#/$defs/color" },
+        "bgOverlay": { "$ref": "#/$defs/color" },
+        "borderL1": { "$ref": "#/$defs/color" },
+        "borderL2": { "$ref": "#/$defs/color" },
+        "brand": { "$ref": "#/$defs/color" },
+        "labelPrimary": { "$ref": "#/$defs/color" },
+        "labelSecondary": { "$ref": "#/$defs/color" },
+        "error": { "$ref": "#/$defs/color" },
+        "success": { "$ref": "#/$defs/color" },
+        "warn": { "$ref": "#/$defs/color" },
+        "sidebar": { "$ref": "#/$defs/color" }
+      }
+    },
+    "tokenOverrides": {
+      "type": "object",
+      "propertyNames": {
+        "allOf": [
+          { "pattern": "^--(dsw|shiki|dsh)-" },
+          {
+            "not": {
+              "pattern": "^(--dsh-font-family-|--dsh-content-font-size$|--dsh-code-font-size$|--dsh-terminal-font-size$|--dsw-font-family$|--dsw-font-family-brand$)"
+            }
+          }
+        ]
+      },
+      "additionalProperties": { "$ref": "#/$defs/color" },
+      "description": "Token names restricted to --dsw-*, --shiki-* and --dsh-* prefixes; variables owned by official font settings are rejected."
+    }
+  }
+}

@@ -7,6 +7,7 @@ Stable APIs, configuration, and token contracts. Commit history is separate and 
 | Document |
 | --- |
 | [Public catalog API](./theme-catalog.md) |
+| [`dsh-theme.json` file format](./theme-file-format.en.md) |
 | [Overlay runtime and snapshots](./theme-runtime.md) |
 | [Builtin themes and token directory](./theme-tokens.md) |
 | [Contrast algorithm, scope, and results](./theme-contrast.md) |

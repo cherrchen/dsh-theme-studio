@@ -104,6 +104,76 @@ function resolve(value: string, tokens: Tokens, trail: readonly string[] = [], d
   throw new Error(`unsupported color: ${color}`)
 }
 
+/**
+ * Grammar walk for {@link resolve} without token resolution: same color
+ * subset, but `var()` references are checked for shape only and bare
+ * `--token` values are rejected (a custom property name alone is not a CSS
+ * value; files must use `var()`).
+ */
+function check(color: string, depth: number): void {
+  if (depth > 32) throw new Error('color expression is too deeply nested')
+  const value = color.trim()
+  if (value.startsWith('--')) throw new Error(`bare token reference: ${value}`)
+  const variable = /^var\((.*)\)$/i.exec(value)
+  if (variable) {
+    const args = split(variable[1]!)
+    const name = args[0]!
+    if (!/^--[\w-]+$/.test(name) || args.length > 2) throw new Error(`invalid var(): ${value}`)
+    if (args[1] !== undefined) check(args[1], depth + 1)
+    return
+  }
+  const named = value.toLowerCase()
+  if (named === 'transparent' || named === 'black' || named === 'white') return
+  if (/^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(value)) return
+  const rgb = /^rgba?\((.*)\)$/i.exec(value)
+  if (rgb) {
+    const body = rgb[1]!.trim()
+    let args: string[]
+    if (body.includes(',')) {
+      args = split(body)
+      const percents = args.slice(0, 3).filter(arg => arg.endsWith('%')).length
+      if ((args.length !== 3 && args.length !== 4) || (percents !== 0 && percents !== 3)) {
+        throw new Error(`invalid rgb(): ${value}`)
+      }
+    } else {
+      const [channels, alpha, ...extra] = body.split('/')
+      args = channels!.trim().split(/\s+/)
+      if (args.length !== 3 || extra.length !== 0) throw new Error(`invalid rgb(): ${value}`)
+      if (alpha !== undefined) args.push(alpha.trim())
+    }
+    channel(args[0]!, 255); channel(args[1]!, 255); channel(args[2]!, 255); channel(args[3] ?? '1', 1)
+    return
+  }
+  const mix = /^color-mix\((.*)\)$/i.exec(value)
+  if (mix) {
+    const args = split(mix[1]!)
+    if (args.length !== 3 || args[0]?.toLowerCase() !== 'in srgb') throw new Error(`unsupported color-mix(): ${value}`)
+    for (const input of args.slice(1)) {
+      const weight = /\s+([\d.]+%)$/.exec(input!)
+      if (weight) channel(weight[1]!, 1)
+      check(weight ? input!.slice(0, weight.index) : input!, depth + 1)
+    }
+    return
+  }
+  throw new Error(`unsupported color: ${value}`)
+}
+
+/**
+ * Whether a theme-file color value uses only the resolver's syntax subset.
+ * Numeric channels are range-checked; `var()` target existence is deferred
+ * to diagnostics, never silently passing.
+ * @param value - raw CSS value from a theme file.
+ * @returns true when the value parses under the supported grammar.
+ */
+export function checkColorSyntax(value: string): boolean {
+  try {
+    check(value, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
 function over(front: Color, back: Color): Color {
   const a = front.a + back.a * (1 - front.a)
   const component = (key: 'r' | 'g' | 'b'): number => a === 0 ? 0

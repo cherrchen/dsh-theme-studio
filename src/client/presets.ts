@@ -1,36 +1,12 @@
 /** Compiled Stage 1 builtin themes. Default is the absence of an overlay. */
 
-import { deriveChrome, type ChromePalette } from './chrome-tokens.ts'
+import { baseAliasTokens, deriveChrome, palettePreview, type ChromePalette } from './chrome-tokens.ts'
 import type { BuiltinThemePreset, ThemePreview } from './types.ts'
 
 type Palette = ChromePalette
 
 function tokens(palette: Palette): Readonly<Record<string, string>> {
-  return {
-    ...deriveChrome(palette),
-    '--dsw-alias-bg-base': palette.bgBase,
-    '--dsw-alias-bg-layer-1': palette.bgLayer1,
-    '--dsw-alias-bg-layer-2': palette.bgLayer2,
-    '--dsw-alias-bg-overlay': palette.bgOverlay,
-    '--dsw-alias-border-l1': palette.borderL1,
-    '--dsw-alias-border-l2': palette.borderL2,
-    '--dsw-alias-brand-primary': palette.brand,
-    '--dsw-alias-label-primary': palette.labelPrimary,
-    '--dsw-alias-label-secondary': palette.labelSecondary,
-    '--dsw-alias-state-error-primary': palette.error,
-    '--dsw-alias-state-success-primary': palette.success,
-    '--dsw-alias-state-warn-primary': palette.warn,
-    '--dsw-specific-sidebar-fill': palette.sidebar,
-  }
-}
-
-function previewOf(palette: Palette): ThemePreview {
-  return {
-    background: palette.bgBase,
-    surface: palette.bgLayer1,
-    foreground: palette.labelPrimary,
-    accent: palette.brand,
-  }
+  return { ...deriveChrome(palette), ...baseAliasTokens(palette) }
 }
 
 function preset(
@@ -44,13 +20,17 @@ function preset(
     id,
     name,
     description,
+    palette: Object.freeze({
+      light: Object.freeze({ ...light }),
+      dark: Object.freeze({ ...dark }),
+    }),
     tokens: Object.freeze({
       light: Object.freeze(tokens(light)),
       dark: Object.freeze(tokens(dark)),
     }),
     preview: Object.freeze({
-      light: Object.freeze(previewOf(light)),
-      dark: Object.freeze(previewOf(dark)),
+      light: Object.freeze(palettePreview(light)),
+      dark: Object.freeze(palettePreview(dark)),
     }),
   })
 }

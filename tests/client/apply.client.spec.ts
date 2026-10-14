@@ -240,6 +240,36 @@ describe('Theme Studio client apply', () => {
     expect(b.overlay.has(PREVIEW_SOURCE)).toBe(false)
   })
 
+  it('exposes imported themes through the public catalog once settings arrive', async () => {
+    const ocean = {
+      version: 1, id: 'user.ocean', name: 'Ocean',
+      palette: {
+        light: {
+          bgBase: '#f4f8fb', bgLayer1: '#ffffff', bgLayer2: '#eef3f7', bgOverlay: '#ffffff',
+          borderL1: '#d7e0e8', borderL2: '#c3d0da', brand: '#2b6cb0',
+          labelPrimary: '#1b2a3a', labelSecondary: '#51606f',
+          error: '#b3282d', success: '#22793d', warn: '#975a16', sidebar: '#eef3f7',
+        },
+        dark: {
+          bgBase: '#101820', bgLayer1: '#1a2430', bgLayer2: '#223040', bgOverlay: '#101820',
+          borderL1: '#2c3c4e', borderL2: '#3a4d63', brand: '#63a4d8',
+          labelPrimary: '#e6edf3', labelSecondary: '#9fb0bf',
+          error: '#f0838a', success: '#6cc596', warn: '#e0b56a', sidebar: '#1a2430',
+        },
+      },
+    }
+    const b = await bench({ activeThemeId: 'user.ocean', importedThemes: [ocean] })
+    await b.ctx.plugin({ inject: [...inject], apply }).await()
+    await settle(b.ctx)
+    const catalog = b.ctx.themeStudio.catalog
+    expect(catalog.get('user.ocean')?.name).toBe('Ocean')
+    expect(catalog.validate('user.ocean')?.checks.length).toBeGreaterThan(0)
+    expect(b.overlay.layers.get(ACTIVE_SOURCE)?.tokens['--dsw-alias-brand-primary']?.light).toBe('#2b6cb0')
+    const { instance } = faceOf(b.slots)
+    const imported = instance.getSnapshot().cards.find(card => card.id === 'user.ocean')
+    expect(imported).toMatchObject({ imported: true, name: 'Ocean' })
+  })
+
   it('teardown without a declaration is quiet', async () => {
     const b = await bench()
     const fiber = b.ctx.plugin({ inject: [...inject], apply })

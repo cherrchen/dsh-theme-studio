@@ -4,13 +4,27 @@ import { apply, Config, THEME_STUDIO_SETTINGS_NAMESPACE, ThemeStudioSettingsSche
 
 describe('Theme Studio host settings', () => {
   it('accepts a persisted theme id and the Default null value', () => {
-    expect(ThemeStudioSettingsSchema({ activeThemeId: null })).toEqual({ activeThemeId: null })
+    expect(ThemeStudioSettingsSchema({ activeThemeId: null }))
+      .toEqual({ activeThemeId: null, importedThemes: [] })
     expect(ThemeStudioSettingsSchema({ activeThemeId: 'dsh-theme-studio.nordic' }))
-      .toEqual({ activeThemeId: 'dsh-theme-studio.nordic' })
+      .toEqual({ activeThemeId: 'dsh-theme-studio.nordic', importedThemes: [] })
   })
 
   it('rejects a non-string, non-null activeThemeId', () => {
     expect(() => ThemeStudioSettingsSchema({ activeThemeId: 1 })).toThrow()
+  })
+
+  it('keeps importedThemes permissive so future file versions survive a downgrade', () => {
+    const entries = [{ version: 9, id: 'user.future' }, 'not-an-object', 42]
+    // The union's default does not materialize an absent activeThemeId; the
+    // Client treats a missing field as Default anyway.
+    expect(ThemeStudioSettingsSchema({ importedThemes: entries }))
+      .toEqual({ importedThemes: entries })
+  })
+
+  it('rejects a non-array importedThemes value', () => {
+    expect(() => ThemeStudioSettingsSchema({ importedThemes: 'x' })).toThrow()
+    expect(() => ThemeStudioSettingsSchema({ importedThemes: {} })).toThrow()
   })
 
   it('registers the namespace with a host that returns the legacy namespace scope', async () => {

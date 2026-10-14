@@ -12,28 +12,44 @@ import {
   THEME_STUDIO_SETTINGS_NAMESPACE, type ThemeStudioSettings,
 } from '../constants.ts'
 import type { ConfigFormsCarrier, SettingsScopeCarrier, ThemeSettingsHost } from '../compat/settings-client.ts'
-import { BuiltinPresetRegistry } from './catalog.ts'
+import { ThemeStudioRegistry } from './catalog.ts'
 import type { ThemeStudioService } from './types.ts'
 import { en, NS, zh, type ThemeStudioKey } from './locales.ts'
 import { DEFAULT_PREVIEW } from './presets.ts'
 import { ThemeStudioRuntime } from './runtime.ts'
 import { createThemeStudioRowStore, type ThemeStudioCard } from './store.ts'
+import {
+  exportThemeById, inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
+} from './theme-import.ts'
 import { ThemeStudioRow, type ThemeStudioRowInjected } from './ThemeStudioRow.tsx'
 
 
 export { ThemeStudioRuntime } from './runtime.ts'
-export type { ThemeStudioSnapshot, ThemeOverrideSurface } from './runtime.ts'
+export type { ImportedThemeSink, ThemeStudioSnapshot, ThemeOverrideSurface } from './runtime.ts'
 export { presetToOverrides, PresetAdapterError } from './adapter.ts'
-export { BuiltinPresetRegistry } from './catalog.ts'
+export { BuiltinPresetRegistry, ThemeStudioRegistry } from './catalog.ts'
 export { BUILTIN_PRESETS, DEFAULT_PREVIEW } from './presets.ts'
 export { createThemeStudioRowStore } from './store.ts'
 export type { ThemeStudioCard, ThemeStudioRowState } from './store.ts'
 export type { BuiltinThemePreset, ThemeCatalog, ThemeStudioCatalog, ThemeStudioService, ThemePreview } from './types.ts'
 export { contrastRatio, validateThemeContrast, DEFAULT_CONTRAST_PAIRS } from './contrast.ts'
 export type { ThemeContrastPair, ThemeContrastCheck, ThemeContrastReport } from './contrast.ts'
+export { checkColorSyntax } from './contrast-colors.ts'
+export {
+  compileThemeFile, parseThemeFile, parseStoredThemeFiles, serializeThemeFile, themeFileForPreset,
+  themeFileName, uniqueThemeId, validateThemeFileData,
+  THEME_FILE_EXTENSION, THEME_FILE_MAX_LENGTH, THEME_FILE_VERSION, USER_THEME_ID_PREFIX,
+} from './theme-file.ts'
+export type { DshThemeFile, StoredThemeEntry, StoredThemeParse, ThemeFileError, ThemeFileErrorCode, ThemeFileParse } from './theme-file.ts'
+export {
+  exportThemeById, inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
+} from './theme-import.ts'
+export type { ImportContrastSummary, ImportResolution, ThemeFileInspection } from './theme-import.ts'
+export type { ChromePalette } from './chrome-tokens.ts'
+export { CHROME_PALETTE_KEYS, CHROME_TOKEN_NAMES } from './chrome-tokens.ts'
 export { NS as SETTINGS_NS } from './locales.ts'
 export type { ThemeStudioKey } from './locales.ts'
-export { ACTIVE_SOURCE, PREVIEW_SOURCE, THEME_STUDIO_SETTINGS_NAMESPACE } from '../constants.ts'
+export { ACTIVE_SOURCE, IMPORTED_THEMES_FIELD, PREVIEW_SOURCE, THEME_STUDIO_SETTINGS_NAMESPACE } from '../constants.ts'
 export type { ThemeStudioSettings } from '../constants.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -57,7 +73,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
  */
 export const inject = ['theme', 'slots', 'locale', 'connection', 'remote']
 
-function cardsOf(catalog: BuiltinPresetRegistry): ThemeStudioCard[] {
+function cardsOf(registry: ThemeStudioRegistry): ThemeStudioCard[] {
   return [
     {
       id: null,
@@ -65,10 +81,13 @@ function cardsOf(catalog: BuiltinPresetRegistry): ThemeStudioCard[] {
       descriptionKey: 'default.description',
       preview: DEFAULT_PREVIEW,
     },
-    ...catalog.list().map(preset => ({
+    ...registry.list().map(preset => ({
       id: preset.id,
       nameKey: nameKeyOf(preset.id),
       descriptionKey: descriptionKeyOf(preset.id),
+      ...(registry.isImported(preset.id)
+        ? { imported: true as const, name: preset.name, description: preset.description }
+        : {}),
       preview: preset.preview,
     })),
   ]
@@ -88,17 +107,27 @@ function descriptionKeyOf(id: string): string {
  * Restore the durable overlay and register the Themes row on one context.
  * @param ctx - client context that already carries theme, slots, and locale.
  */
-function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> | undefined, catalog: BuiltinPresetRegistry): void {
-  const runtime = new ThemeStudioRuntime({ theme: ctx.theme, host, catalog })
+function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> | undefined, registry: ThemeStudioRegistry): void {
+  const runtime = new ThemeStudioRuntime({ theme: ctx.theme, host, catalog: registry, imports: registry })
   ctx.effect(() => () => { runtime.dispose() }, 'theme-studio: runtime')
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'theme-studio: settings row dictionaries')
 
-  const store = createThemeStudioRowStore(cardsOf(catalog))
+  let cardCache: { rev: number; cards: ThemeStudioCard[] } | undefined
+  const currentCards = (): ThemeStudioCard[] => {
+    if (cardCache === undefined || cardCache.rev !== registry.revision) {
+      cardCache = { rev: registry.revision, cards: cardsOf(registry) }
+    }
+    return cardCache.cards
+  }
+
+  const store = createThemeStudioRowStore(currentCards())
   let bound: BoundActions<typeof store> | undefined
   const sync = (): void => {
     bound?.sync(runtime.getSnapshot())
+    bound?.setCards(currentCards())
   }
   ctx.effect(() => runtime.subscribe(sync), 'theme-studio: store projection')
+  ctx.effect(() => registry.subscribe(sync), 'theme-studio: imported themes projection')
   const injected = (actions: BoundActions<typeof store>): ThemeStudioRowInjected => {
     bound = actions
     sync()
@@ -109,6 +138,14 @@ function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> 
         else runtime.activateTheme(id)
       },
       cancelPreview: () => { runtime.cancelPreview() },
+      inspectThemeFile: (text) => inspectThemeFile(text, registry),
+      saveImportedTheme: (source, mode) => {
+        const id = saveImportedTheme(runtime, registry, source, mode)
+        previewWhenImported(registry, runtime, id)
+        return id
+      },
+      removeImportedTheme: (id) => { removeImportedTheme(runtime, registry, id) },
+      exportTheme: (id) => { exportThemeById(registry, id) },
     }
   }
   ctx.effect(() => ctx.slots.inject('settings.general.item', () => ctx.slots.register({
@@ -127,9 +164,9 @@ function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> 
  * @param ctx - client cordis context.
  */
 export function apply(ctx: ClientContext): void {
-  const catalog = new BuiltinPresetRegistry()
+  const registry = new ThemeStudioRegistry()
   // provide() is owned by this plugin's fiber, not a settings-transport child.
-  ctx.provide('themeStudio', Object.freeze({ catalog }))
+  ctx.provide('themeStudio', Object.freeze({ catalog: registry }))
 
   let started = false
   const startOnce = (
@@ -138,7 +175,7 @@ export function apply(ctx: ClientContext): void {
   ): boolean => {
     if (started) return false
     started = true
-    start(child, host, catalog)
+    start(child, host, registry)
     return true
   }
   const releaseWhenStopped = (owns: boolean): (() => void) => {

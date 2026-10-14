@@ -37,6 +37,19 @@ const CARDS: ThemeStudioCard[] = [
   },
 ]
 
+const IMPORTED_CARD: ThemeStudioCard = {
+  id: 'user.ocean',
+  nameKey: 'user.ocean.name',
+  descriptionKey: 'user.ocean.description',
+  name: 'Ocean',
+  description: 'Cool blue palette.',
+  imported: true,
+  preview: {
+    light: { background: '#f4f8fb', surface: '#ffffff', foreground: '#1b2a3a', accent: '#2b6cb0' },
+    dark: { background: '#101820', surface: '#1a2430', foreground: '#e6edf3', accent: '#63a4d8' },
+  },
+}
+
 function createRowState(cards: readonly ThemeStudioCard[]) {
   let state: ThemeStudioRowState = {
     activeThemeId: null,
@@ -44,8 +57,9 @@ function createRowState(cards: readonly ThemeStudioCard[]) {
     previewing: false,
     settingsStatus: 'ready',
     saveError: false,
+    droppedImports: 0,
     revision: 0,
-    cards,
+    cards: [...cards],
   }
   const listeners = new Set<() => void>()
   return {
@@ -57,18 +71,26 @@ function createRowState(cards: readonly ThemeStudioCard[]) {
     actions: {
       sync: (snapshot: Omit<ThemeStudioRowState, 'cards'>) => {
         if (snapshot.revision <= state.revision) return
-        state = { ...state, ...snapshot, cards }
+        state = { ...state, ...snapshot, cards: state.cards }
+        for (const listener of [...listeners]) listener()
+      },
+      setCards: (next: readonly ThemeStudioCard[]) => {
+        state = { ...state, cards: [...next] }
         for (const listener of [...listeners]) listener()
       },
     },
   }
 }
 
-function mount() {
-  const store = createRowState(CARDS)
+function mount(cards: readonly ThemeStudioCard[] = CARDS) {
+  const store = createRowState(cards)
   const previewTheme = vi.fn()
   const activateTheme = vi.fn()
   const cancelPreview = vi.fn()
+  const inspectThemeFile = vi.fn(() => ({ ok: false as const, error: { code: 'not-json' as const } }))
+  const saveImportedTheme = vi.fn((source: Record<string, unknown>) => source['id'] as string)
+  const removeImportedTheme = vi.fn()
+  const exportTheme = vi.fn()
   const props: ThemeStudioRowComponentProps = {
     useSessions: (() => undefined) as never,
     useWorkspaces: (() => undefined) as never,
@@ -78,9 +100,13 @@ function mount() {
     previewTheme,
     activateTheme,
     cancelPreview,
+    inspectThemeFile,
+    saveImportedTheme,
+    removeImportedTheme,
+    exportTheme,
   }
   render(<ThemeStudioRow {...props} />)
-  return { store, previewTheme, activateTheme, cancelPreview }
+  return { store, previewTheme, activateTheme, cancelPreview, inspectThemeFile, saveImportedTheme, removeImportedTheme, exportTheme }
 }
 
 function selector(name = 'Default') {
@@ -179,6 +205,7 @@ describe('ThemeStudioRow', () => {
         previewing: true,
         settingsStatus: 'ready',
         saveError: false,
+        droppedImports: 0,
         revision: 1,
       })
     })
@@ -201,10 +228,132 @@ describe('ThemeStudioRow', () => {
         previewing: false,
         settingsStatus: 'ready',
         saveError: true,
+        droppedImports: 0,
         revision: 2,
       })
     })
     expect(screen.getByRole('alert').textContent).toContain('could not be saved')
     expect(selector('Graphite')).toBeDefined()
+  })
+
+  it('pins Import and Manage actions in the menu footer', () => {
+    mount()
+    fireEvent.click(selector())
+    expect(option('Import theme…')).toBeDefined()
+    expect(option('Manage themes…')).toBeDefined()
+  })
+
+  it('groups imported themes under an Imported label and shows the verbatim name', () => {
+    mount([...CARDS, IMPORTED_CARD])
+    fireEvent.click(selector())
+    expect(screen.getByText('Imported')).toBeDefined()
+    const item = option('Ocean')
+    fireEvent.mouseEnter(within(item).getByText('Ocean'))
+    // Option ids carry the theme id even when the label is a plain string.
+    expect(item.getAttribute('aria-selected')).toBe('false')
+  })
+
+  it('disables import and manage while settings are unavailable', () => {
+    const b = mount()
+    act(() => {
+      b.store.actions.sync({
+        activeThemeId: null,
+        previewThemeId: null,
+        previewing: false,
+        settingsStatus: 'unavailable',
+        saveError: false,
+        droppedImports: 0,
+        revision: 3,
+      })
+    })
+    fireEvent.click(selector())
+    expect(option('Import theme…').getAttribute('disabled')).not.toBeNull()
+    expect(option('Manage themes…').getAttribute('disabled')).not.toBeNull()
+  })
+
+  it('confirms a valid file before saving it', async () => {
+    const b = mount()
+    const source = { version: 1, id: 'user.ocean', name: 'Ocean', palette: { light: {}, dark: {} } }
+    b.inspectThemeFile.mockReturnValue({
+      ok: true,
+      file: { version: 1, id: 'user.ocean', name: 'Ocean' },
+      source,
+      collision: null,
+      summary: { failed: 0, unknown: 0 },
+    } as never)
+    fireEvent.click(selector())
+    const input = document.querySelector('input[type="file"]')!
+    fireEvent.change(input, { target: { files: [new File(['{}'], 'ocean.dsh-theme.json', { type: 'application/json' })] } })
+    await screen.findByRole('dialog')
+    expect(screen.getByRole('dialog').textContent).toContain('Ocean')
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Import' }))
+    expect(b.saveImportedTheme).toHaveBeenCalledWith(source, 'append')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('shows the parse error when the file is rejected', async () => {
+    const b = mount()
+    fireEvent.click(selector())
+    const input = document.querySelector('input[type="file"]')!
+    fireEvent.change(input, { target: { files: [new File(['{'], 'bad.json')] } })
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.textContent).toContain('Cannot import theme')
+    expect(b.saveImportedTheme).not.toHaveBeenCalled()
+  })
+
+  it('offers overwrite or rename when the id already belongs to an imported theme', async () => {
+    const b = mount([...CARDS, IMPORTED_CARD])
+    const source = { version: 1, id: 'user.ocean', name: 'Ocean 2' }
+    b.inspectThemeFile.mockReturnValue({
+      ok: true,
+      file: { version: 1, id: 'user.ocean', name: 'Ocean 2' },
+      source,
+      collision: 'imported',
+      summary: { failed: 0, unknown: 0 },
+    } as never)
+    fireEvent.click(selector())
+    const input = document.querySelector('input[type="file"]')!
+    fireEvent.change(input, { target: { files: [new File(['{}'], 'ocean.json')] } })
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.textContent).toContain('user.ocean')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Overwrite it' }))
+    expect(b.saveImportedTheme).toHaveBeenCalledWith(source, 'replace')
+  })
+
+  it('lets the duplicate dialog keep both themes under a new id', async () => {
+    const b = mount([...CARDS, IMPORTED_CARD])
+    const source = { version: 1, id: 'user.ocean', name: 'Ocean 2' }
+    b.inspectThemeFile.mockReturnValue({
+      ok: true,
+      file: { version: 1, id: 'user.ocean', name: 'Ocean 2' },
+      source,
+      collision: 'imported',
+      summary: { failed: 0, unknown: 0 },
+    } as never)
+    fireEvent.click(selector())
+    const input = document.querySelector('input[type="file"]')!
+    fireEvent.change(input, { target: { files: [new File(['{}'], 'ocean.json')] } })
+    const dialog = await screen.findByRole('dialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Keep both (new id)' }))
+    expect(b.saveImportedTheme).toHaveBeenCalledWith(source, 'rename')
+  })
+
+  it('lists builtin and imported themes in the manage dialog with export and remove', () => {
+    const b = mount([...CARDS, IMPORTED_CARD])
+    fireEvent.click(selector())
+    fireEvent.click(option('Manage themes…'))
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.textContent).toContain('Builtin')
+    expect(dialog.textContent).toContain('Ocean')
+    const oceanRow = within(dialog).getByText('user.ocean').parentElement!
+    fireEvent.click(within(oceanRow).getByRole('button', { name: 'Export' }))
+    expect(b.exportTheme).toHaveBeenCalledWith('user.ocean')
+    fireEvent.click(within(oceanRow).getByRole('button', { name: 'Remove' }))
+    expect(b.removeImportedTheme).toHaveBeenCalledWith('user.ocean')
+    // Builtin rows export but never offer Remove.
+    const nordicRow = within(dialog).getByText('dsh-theme-studio.nordic').parentElement!
+    expect(within(nordicRow).queryByRole('button', { name: 'Remove' })).toBeNull()
+    fireEvent.click(within(nordicRow).getByRole('button', { name: 'Export' }))
+    expect(b.exportTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
   })
 })

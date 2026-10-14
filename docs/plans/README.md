@@ -14,5 +14,6 @@ English: [README.en.md](./README.en.md)
 | [DSH 0.2 兼容提升](./completed/2026-09-30-dsh-02-compatibility.md) |
 | [Stage 2/3 校验与公开 catalog](./completed/2026-10-02-stage-2-3-validation-and-catalog.md) |
 | [完整文档体系与历史补齐](./completed/2026-10-02-documentation-reconstruction.md) |
+| [dsh-theme.json 公共格式与主题导入导出](./completed/2026-10-14-theme-file-import-export.md) |
 
 [返回文档地图](../README.md)

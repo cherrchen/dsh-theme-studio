@@ -2,7 +2,7 @@
 
 ## Background
 
-Current，2026-10-02。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，计划中的 schema 与 Theme Creator Agent 不属于已实现组件。
+Current，2026-10-14 更新导入导出与复合 catalog。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，计划中的主题编辑器与 Theme Creator Agent 不属于已实现组件。
 
 ## Goals and Non-goals
 
@@ -16,7 +16,7 @@ flowchart TD
   Profile --> Client[Client apply]
   Host --> Settings[settings register / configure]
   Settings --> Transport[settingsScope / configForms]
-  Client --> Catalog[BuiltinPresetRegistry]
+  Client --> Catalog[ThemeStudioRegistry]
   Client --> Service[ctx.themeStudio.catalog]
   Catalog --> Service
   Catalog --> Runtime[ThemeStudioRuntime]
@@ -27,6 +27,8 @@ flowchart TD
   Store --> Row[settings.general.item Themes]
   Row --> Runtime
   Catalog --> Contrast[纯 sRGB 对比度校验]
+  Row --> FileIO[theme-file / theme-import / download]
+  FileIO --> Runtime
 ```
 
 ## Components
@@ -38,13 +40,15 @@ flowchart TD
 | `compat/settings-client.ts` | 两种 transport 的最小结构契约 | 独立 RPC 协议 |
 | `compat/menu-icons.tsx` | ui-primitives 下拉箭头图标探测与本地回退 | 版本字符串分支 |
 | `client/index.ts` | provider、字典、槽位、runtime/store 组装与启停 | durable authority |
-| `client/presets.ts`、`chrome-tokens.ts` | 八套明暗配色与派生语义 token | 修改官方 stylesheets |
-| `client/catalog.ts` | 防御性复制、冻结、按序发现、报告 | 注册/编辑第三方主题 |
+| `client/presets.ts`、`chrome-tokens.ts` | 八套明暗配色、源 palette 保留与派生语义 token | 修改官方 stylesheets |
+| `client/catalog.ts` | `BuiltinPresetRegistry` 冻结静态分区；`ThemeStudioRegistry` 复合 imported 分区、快照、订阅与回写源 | 注册/编辑第三方主题 |
+| `client/theme-file.ts` | `dsh-theme.json` v1 解析/校验/编译/序列化、存储条目解析、id 冲突生成 | Host 持久化、对比度计算 |
+| `client/theme-import.ts`、`download.ts` | 导入决策/持久化/预览编排、Blob 下载 | 文件系统访问、UI 组件 |
 | `client/adapter.ts` | per-scheme map → per-token light/dark 值对 | 对比度认证、公共文件 schema |
 | `client/font-boundary.ts` | 安装 overlay 前去掉官方字体变量 | 字体设置 UI、字号和字体列表写入 |
-| `client/runtime.ts` | active/preview、Host adoption、状态与监听器 | CSS 呈现 |
-| `client/store.ts` | 单向同步 runtime snapshot 与静态 cards | 第二持久设置源 |
-| `ThemeStudioRow.tsx`、CSS、`locales.ts` | 设置行、Menu 下拉选择器与色块、可访问性与文案 | 直接操纵 body 主题状态 |
+| `client/runtime.ts` | active/preview、Host adoption、双字段写队列、imported 分区同步、状态与监听器 | CSS 呈现 |
+| `client/store.ts` | 单向同步 runtime snapshot 与 catalog 投影的 cards | 第二持久设置源 |
+| `ThemeStudioRow.tsx`、CSS、`locales.ts` | 设置行、Menu 下拉选择器与色块、导入/重复/管理对话框、可访问性与文案 | 直接操纵 body 主题状态 |
 | `contrast.ts`、`contrast-colors.ts` | 规则报告、sRGB 色值解析、混色、alpha 与亮度 | DOM/computed style 审核 |
 | `compat/dsh-version.ts`、开发脚本 | 清单、纯分类、安装树静态检查与矩阵 | 生产 Host 的 Node 探测 |
 
@@ -56,7 +60,7 @@ flowchart TD
 
 ### 从配色到呈现
 
-内置 Palette 含 13 个人工字段。`tokens()` 将其映射为基本 token 并与 `deriveChrome()` 合并，随后 preset 工厂冻结配色与 preview。catalog 构造时再做防御性复制，确保传入列表后续变更不影响 runtime。adapter 确认两种模式 token 键相同且值为字符串，转成 `ThemeTokenOverrides`。
+内置 Palette 含 13 个人工字段。`tokens()` 将其映射为基本 token 并与 `deriveChrome()` 合并，随后 preset 工厂冻结配色、preview 与源 `palette`（导出 `dsh-theme.json` 的真源）。catalog 构造时再做防御性复制，确保传入列表后续变更不影响 runtime。adapter 确认两种模式 token 键相同且值为字符串，转成 `ThemeTokenOverrides`。导入主题经 `compileThemeFile` 走同一 `deriveChrome` 路径：13 字段 palette 展开后叠加 `overrides` 稀疏 token。
 
 ```text
 Official Light / Dark / System
@@ -72,11 +76,13 @@ ThemeSnapshot → ThemePresenter → DOM
 
 ### 从 UI 到持久设置
 
-Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`。槽位注入组件时绑定 actions 并立即同步当前快照。下拉交互调用 runtime facade：选项悬停走 previewTheme，菜单关闭走 cancelPreview，选中走 activateTheme/restoreDefault。Apply 乐观更新 active 层并异步调用 Host.set。Host 写入串行，尚未发出的更早 id 让位给最新选择。进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
+Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`；registry 的 imported 分区替换同样触发 store 的 `setCards` 投影。槽位注入组件时绑定 actions 并立即同步当前快照。下拉交互调用 runtime facade：选项悬停走 previewTheme，菜单关闭走 cancelPreview，选中走 activateTheme/restoreDefault。Apply 乐观更新 active 层并异步调用 Host.set。写入队列按 `{field, value}` 串行：`activeThemeId` 与 `importedThemes` 各自合并未发出的值且互不阻塞；进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
+
+导入数据流：隐藏 file input 读文件 → `inspectThemeFile` 校验并附对比度摘要 → Modal 确认（重复 id 时先经三选对话框）→ `saveImportedTheme` 以 `requestedImportedSources()` 为合并基准写入 `importedThemes` → Host 采纳后 imported 分区替换 → `previewWhenImported` 对更新过的 id 触发 transient preview。导出走 `sourceOf` 原样回写（imported）或 `themeFileForPreset` 重建（builtin，id 改写为 `user.` 前缀）。删除激活的导入主题不写 `activeThemeId`——由 adoption 期的 unknown-id 修复回落 Default。
 
 ### catalog 与校验
 
-Client `apply` 首先创建唯一 catalog，调用 `ctx.provide('themeStudio', Object.freeze({ catalog }))`。设置通道 child 启动的 runtime 使用同一实例。`validate` 每次按当前冻结 preset 计算新报告，报告和 checks 都不可变；没有变化流或缓存失效协议。校验既不写设置也不安装 overlay。
+Client `apply` 首先创建唯一 `ThemeStudioRegistry`，调用 `ctx.provide('themeStudio', Object.freeze({ catalog }))`。设置通道 child 启动的 runtime 使用同一实例并作为 `imports` sink：每份 ready Host snapshot 把 `importedThemes` 解析为 imported 分区并原子替换，再结算 `activeThemeId`——导入 id 因此不会走 unknown-id 修复路径。`validate` 每次按当前冻结 preset 计算新报告，报告和 checks 都不可变；registry 提供 `revision`/`subscribe` 供 UI 投影，但报告本身没有变化流或缓存失效协议。校验既不写设置也不安装 overlay。
 
 ## Lifecycle
 
@@ -94,7 +100,7 @@ Client `apply` 首先创建唯一 catalog，调用 `ctx.provide('themeStudio', O
 
 ## Error Handling
 
-未知持久 id 会移除两层、恢复默认、发起设置修复；未知显式 activate/preview id 抛错。adapter 拒绝不完整键对与非字符串。disposed runtime 的写方法抛错，dispose 幂等。对比度不支持的语法返回 unknown、保留 reason，不能因解析失败跳过该 check。重复 catalog id 在构造时抛错。
+未知持久 id 会移除两层、恢复默认、发起设置修复；未知显式 activate/preview id 抛错。adapter 拒绝不完整键对与非字符串。disposed runtime 的写方法抛错，dispose 幂等。对比度不支持的语法返回 unknown、保留 reason，不能因解析失败跳过该 check。重复 builtin id 在构造时抛错；导入文件携带结构化错误码（`not-json`/`too-large`/`invalid-id`/`reserved-id`/`builtin-id`/`unsupported-version`/`invalid-color`/`invalid-override-name` 等）整文件拒绝，重复导入 id 由对话框交给用户选择覆盖或自动改名。
 
 Host.set 返回 `false` 或 Promise rejected 时，runtime 按 accepted snapshot 回收敛，Themes 行显示 `status.saveFailed`。renderer/style 载入错误仍由宿主报错。构建 helper 注入的静态 CSS 标签幂等保留，不应把 runtime 的 overlay 清理描述成所有 CSS 标签也被卸载。排查见 [troubleshooting](../troubleshooting/README.md)。
 

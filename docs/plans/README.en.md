@@ -14,5 +14,6 @@ The roadmap owns progress and release state; completed plans preserve scope, imp
 | [DSH 0.2 compatibility promotion](./completed/2026-09-30-dsh-02-compatibility.md) |
 | [Stage 2/3 validation and public catalog](./completed/2026-10-02-stage-2-3-validation-and-catalog.md) |
 | [Complete documentation system and historical reconstruction](./completed/2026-10-02-documentation-reconstruction.md) |
+| [Public dsh-theme.json format and theme import/export](./completed/2026-10-14-theme-file-import-export.md) |
 
 [Documentation map](../README.en.md)

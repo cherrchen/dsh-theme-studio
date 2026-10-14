@@ -3,15 +3,17 @@
 import type { ThemeSettingsHost } from '../compat/settings-client.ts'
 import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
 import {
-  ACTIVE_SOURCE, ACTIVE_THEME_ID_FIELD, PREVIEW_SOURCE, THEME_STUDIO_SETTINGS_NAMESPACE,
-  type ThemeStudioSettings,
+  ACTIVE_SOURCE, ACTIVE_THEME_ID_FIELD, IMPORTED_THEMES_FIELD, PREVIEW_SOURCE,
+  THEME_STUDIO_SETTINGS_NAMESPACE, type ThemeStudioSettings,
 } from '../constants.ts'
 import { presetToOverrides } from './adapter.ts'
 import { withoutOfficialFontTokens } from './font-boundary.ts'
+import { parseStoredThemeFiles, type StoredThemeEntry } from './theme-file.ts'
 import type { BuiltinThemePreset, ThemeCatalog } from './types.ts'
 
 export {
-  ACTIVE_SOURCE, ACTIVE_THEME_ID_FIELD, PREVIEW_SOURCE, THEME_STUDIO_SETTINGS_NAMESPACE,
+  ACTIVE_SOURCE, ACTIVE_THEME_ID_FIELD, IMPORTED_THEMES_FIELD, PREVIEW_SOURCE,
+  THEME_STUDIO_SETTINGS_NAMESPACE,
 }
 
 /** Structural ThemeRuntime face consumed by this plugin. */
@@ -37,8 +39,22 @@ export interface ThemeStudioSnapshot {
   settingsStatus: 'loading' | 'ready' | 'unavailable'
   /** The latest save was rejected and the visible theme was restored from the accepted snapshot. */
   saveError: boolean
+  /** Stored theme-file entries skipped as unreadable in the latest adoption. */
+  droppedImports: number
   /** Monotonic change counter. */
   revision: number
+}
+
+/** Mutable imported-theme section the runtime feeds from durable settings. */
+export interface ImportedThemeSink {
+  /**
+   * Replace the imported section; a no-op when unchanged.
+   * @param entries - compiled presets paired with their stored sources.
+   * @returns true when the visible set changed.
+   */
+  setImported(entries: readonly StoredThemeEntry[]): boolean
+  /** Whether an id currently resolves to an imported theme. */
+  isImported(id: string): boolean
 }
 
 /** Construction inputs. The runtime shares the public service's catalog. */
@@ -49,6 +65,8 @@ export interface ThemeStudioRuntimeOptions {
   host: ThemeSettingsHost<ThemeStudioSettings> | undefined
   /** Theme lookup used by activate/preview. */
   catalog: ThemeCatalog
+  /** Imported-theme section updated from each accepted snapshot. */
+  imports?: ImportedThemeSink
 }
 
 function normalizeId(value: unknown): string | null {
@@ -65,6 +83,7 @@ export class ThemeStudioRuntime {
   private readonly theme: ThemeOverrideSurface
   private readonly host: ThemeSettingsHost<ThemeStudioSettings> | undefined
   private readonly catalog: ThemeCatalog
+  private readonly imports: ImportedThemeSink | undefined
   private readonly listeners = new Set<() => void>()
   private readonly unsubscribeHost: (() => void) | undefined
   private activeDisposer: (() => void) | undefined
@@ -75,9 +94,13 @@ export class ThemeStudioRuntime {
   private latestRejected = false
   /** One Host `set` is in flight. A newer choice waits and is sent after it settles. */
   private drainingWrites = false
-  /** Latest id not yet sent. Older unsent ids are replaced. */
-  private hasQueuedWrite = false
-  private queuedId: string | null = null
+  /** Latest value per field not yet sent. Older unsent values per field are replaced. */
+  private writeBacklog = new Map<string, unknown>()
+  /**
+   * Newest imported-themes array this runtime asked the Host to store. Read-back
+   * base for follow-up edits before the accepted snapshot echoes the write.
+   */
+  private importedRequested: readonly Record<string, unknown>[] | undefined
   /** Last id adopted from a ready Host snapshot. Optimistic choices do not update it. */
   private acceptedThemeId: string | null = null
   /** Unknown raw value whose repair write already failed. A later different value may retry. */
@@ -88,16 +111,18 @@ export class ThemeStudioRuntime {
   private previewing = false
   private settingsStatus: ThemeStudioSnapshot['settingsStatus']
   private saveError = false
+  private droppedImports = 0
   private revision = 0
   private snapshot: ThemeStudioSnapshot
 
   /**
-   * @param options - theme overlay surface, optional settings scope, catalog.
+   * @param options - theme overlay surface, optional settings scope, catalog, imports sink.
    */
   constructor(options: ThemeStudioRuntimeOptions) {
     this.theme = options.theme
     this.host = options.host
     this.catalog = options.catalog
+    this.imports = options.imports
     this.settingsStatus = options.host === undefined ? 'unavailable' : 'loading'
     this.snapshot = this.buildSnapshot()
     if (this.host !== undefined) {
@@ -211,12 +236,33 @@ export class ThemeStudioRuntime {
     void this.persist(null)
   }
 
+  /**
+   * Persist the imported theme-file list. The Host accepted snapshot stays the
+   * durable authority; the catalog only changes when the write is adopted.
+   * @param sources - stored theme-file objects in menu order.
+   */
+  saveImportedThemes(sources: readonly Record<string, unknown>[]): void {
+    this.assertOpen()
+    if (this.host === undefined) return
+    this.importedRequested = [...sources]
+    this.queueWrite(IMPORTED_THEMES_FIELD, this.importedRequested)
+  }
+
+  /**
+   * Imported list as last requested, while a write is pending or until the
+   * next accepted snapshot makes the registry authoritative again.
+   * @returns the requested array, or `undefined` when nothing is in flight.
+   */
+  requestedImportedSources(): readonly Record<string, unknown>[] | undefined {
+    return this.importedRequested
+  }
+
   /** Drop overlays, listeners, and pending persist work. */
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
     this.pendingWrites = 0
-    this.hasQueuedWrite = false
+    this.writeBacklog.clear()
     this.unsubscribeHost?.()
     this.disposePreviewLayer()
     this.clearActiveLayer()
@@ -252,7 +298,39 @@ export class ThemeStudioRuntime {
     }
     this.settingsStatus = 'ready'
     this.saveError = false
+    this.importedRequested = undefined
+    this.syncImports(section.value)
     this.applyDurable(section.value?.activeThemeId)
+  }
+
+  /**
+   * Feed the durable `importedThemes` field into the catalog before resolving
+   * `activeThemeId`, so imported ids never take the unknown-id repair path.
+   * A changed imported section also reinstalls the active layer and drops a
+   * preview whose theme vanished.
+   */
+  private syncImports(value: ThemeStudioSettings | undefined): void {
+    const { entries, dropped } = parseStoredThemeFiles(value?.importedThemes)
+    const changed = this.imports?.setImported(entries) === true
+    this.droppedImports = dropped
+    if (!changed) return
+    if (
+      this.previewing && this.previewThemeId !== null
+      && this.catalog.get(this.previewThemeId) === undefined
+    ) {
+      this.disposePreviewLayer()
+      this.previewThemeId = null
+      this.previewing = false
+      this.ensureActiveLayer()
+    }
+    if (
+      this.activeThemeId !== null
+      && this.imports?.isImported(this.activeThemeId) === true
+      && !(this.previewing && this.previewThemeId === null)
+    ) {
+      const preset = this.catalog.get(this.activeThemeId)
+      if (preset !== undefined) this.installActive(preset)
+    }
   }
 
   private applyDurable(raw: unknown): void {
@@ -278,6 +356,9 @@ export class ThemeStudioRuntime {
       if (
         this.snapshot.settingsStatus !== this.settingsStatus
         || this.snapshot.saveError !== this.saveError
+        || this.snapshot.droppedImports !== this.droppedImports
+        || this.snapshot.previewing !== this.previewing
+        || this.snapshot.previewThemeId !== this.previewThemeId
       ) this.publish()
       return
     }
@@ -301,23 +382,27 @@ export class ThemeStudioRuntime {
   private repairUnknown(raw: unknown): void {
     if (this.disposed || this.host === undefined || this.repairBlockedRaw === raw) return
     this.repairBlockedRaw = raw
-    void this.persist(null)
+    this.queueWrite(ACTIVE_THEME_ID_FIELD, null)
   }
 
   private persist(id: string | null): void {
+    this.queueWrite(ACTIVE_THEME_ID_FIELD, id)
+  }
+
+  private queueWrite(field: string, value: unknown): void {
     if (this.disposed || this.host === undefined) return
     this.pendingWrites += 1
-    this.queuedId = id
-    this.hasQueuedWrite = true
+    this.writeBacklog.set(field, value)
     if (this.drainingWrites) return
     this.drainingWrites = true
     void this.drainWrites()
   }
 
   /**
-   * Send queued ids one at a time. Overlapping Apply calls must not race:
-   * a newer success can settle first, then an older `set` updates the Host
-   * snapshot last and `finishPersist` would treat that stale snapshot as authority.
+   * Send queued field writes one batch at a time. Overlapping writes must not
+   * race: a newer success can settle first, then an older `set` updates the
+   * Host snapshot last and `finishPersist` would treat that stale snapshot as
+   * authority. Each field keeps only its newest queued value.
    */
   private async drainWrites(): Promise<void> {
     const host = this.host
@@ -326,25 +411,26 @@ export class ThemeStudioRuntime {
       return
     }
     try {
-      while (this.hasQueuedWrite && !this.disposed) {
-        const id = this.queuedId
+      while (this.writeBacklog.size > 0 && !this.disposed) {
+        const batch = [...this.writeBacklog]
+        this.writeBacklog.clear()
         const covered = this.pendingWrites
-        this.hasQueuedWrite = false
         let rejected = false
-        try {
-          const result = await host.set(ACTIVE_THEME_ID_FIELD, id)
-          rejected = result === false
-        } catch {
-          rejected = true
+        for (const [field, value] of batch) {
+          try {
+            rejected = (await host.set(field, value)) === false || rejected
+          } catch {
+            rejected = true
+          }
+          if (this.disposed) return
         }
-        if (this.disposed) return
-        if (!this.hasQueuedWrite) this.latestRejected = rejected
+        if (this.writeBacklog.size === 0) this.latestRejected = rejected
         this.pendingWrites -= covered
-        if (this.pendingWrites === 0 && !this.hasQueuedWrite) this.finishPersist()
+        if (this.pendingWrites === 0 && this.writeBacklog.size === 0) this.finishPersist()
       }
     } finally {
       this.drainingWrites = false
-      if (!this.disposed && this.hasQueuedWrite) {
+      if (!this.disposed && this.writeBacklog.size > 0) {
         this.drainingWrites = true
         void this.drainWrites()
       }
@@ -373,7 +459,9 @@ export class ThemeStudioRuntime {
       return
     }
     this.settingsStatus = 'ready'
-    if (this.durableMatches(section.value?.activeThemeId, this.activeThemeId)) {
+    this.importedRequested = undefined
+    this.syncImports(section.value)
+    if (!rejected && this.durableMatches(section.value?.activeThemeId, this.activeThemeId)) {
       this.acceptedThemeId = this.activeThemeId
       if (normalizeId(section.value?.activeThemeId) === null) this.repairBlockedRaw = undefined
       if (this.saveError) {
@@ -392,10 +480,8 @@ export class ThemeStudioRuntime {
   }
 
   private failAndRevert(): void {
-    if (this.activeThemeId !== this.acceptedThemeId) {
-      this.saveError = true
-      this.revertToAccepted()
-    }
+    this.saveError = true
+    if (this.activeThemeId !== this.acceptedThemeId) this.revertToAccepted()
     this.publish()
   }
 
@@ -425,10 +511,12 @@ export class ThemeStudioRuntime {
   }
 
   private installActive(preset: BuiltinThemePreset): void {
+    this.clearActiveLayer()
     this.activeDisposer = this.theme.overrideTokens(ACTIVE_SOURCE, this.tokenOverrides(preset))
   }
 
   private installPreview(preset: BuiltinThemePreset): void {
+    this.disposePreviewLayer()
     this.previewDisposer = this.theme.overrideTokens(PREVIEW_SOURCE, this.tokenOverrides(preset))
   }
 
@@ -463,6 +551,7 @@ export class ThemeStudioRuntime {
       previewing: this.previewing,
       settingsStatus: this.settingsStatus,
       saveError: this.saveError,
+      droppedImports: this.droppedImports,
       revision: this.revision,
     })
   }

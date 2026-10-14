@@ -34,7 +34,7 @@ describe('token audit command', () => {
 
   it('fails when a required mapping is deleted even though the contract and upstream still name it', () => {
     const dir = auditFixture()
-    const file = join(dir, 'src/client/presets.ts')
+    const file = join(dir, 'src/client/chrome-tokens.ts')
     const source = readFileSync(file, 'utf8')
     const mapping = "    '--dsw-alias-bg-base': palette.bgBase,"
     expect(source).toContain(mapping)

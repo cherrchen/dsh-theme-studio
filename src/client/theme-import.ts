@@ -1,0 +1,162 @@
+/**
+ * Theme-file import/export orchestration shared by the Client wiring and
+ * tests: inspection (parse + contrast summary + collision), persistence of
+ * the imported list, preview-after-accept, and download.
+ */
+
+import type { ThemeStudioRegistry } from './catalog.ts'
+import { validateThemeContrast } from './contrast.ts'
+import { downloadTextFile } from './download.ts'
+import type { ThemeStudioRuntime } from './runtime.ts'
+import {
+  compileThemeFile, parseThemeFile, serializeThemeFile, themeFileForPreset, themeFileName,
+  uniqueThemeId, type DshThemeFile, type ThemeFileError,
+} from './theme-file.ts'
+
+/** Aggregate contrast outcome shown on the import confirmation dialog. */
+export interface ImportContrastSummary {
+  readonly failed: number
+  readonly unknown: number
+}
+
+/** Inspection of one file: parse, compile, collision, and contrast counts. */
+export type ThemeFileInspection =
+  | {
+    readonly ok: true
+    readonly file: DshThemeFile
+    /** Verbatim object to store in settings. */
+    readonly source: Record<string, unknown>
+    /** `imported` when an imported theme already owns the id. */
+    readonly collision: 'imported' | null
+    readonly summary: ImportContrastSummary
+  }
+  | { readonly ok: false; readonly error: ThemeFileError }
+
+/**
+ * Read one theme file without touching settings or overlays. A builtin id
+ * collision is impossible: file ids cannot use the `dsh-theme-studio.` prefix.
+ * @param text - file contents.
+ * @param registry - catalog consulted for collisions and diagnostics.
+ * @returns inspection result for the confirmation flow.
+ */
+export function inspectThemeFile(text: string, registry: ThemeStudioRegistry): ThemeFileInspection {
+  const parsed = parseThemeFile(text)
+  if (!parsed.ok) return { ok: false, error: parsed.error }
+  const preset = compileThemeFile(parsed.file)
+  const report = validateThemeContrast(preset)
+  const summary: ImportContrastSummary = {
+    failed: report.checks.filter(check => check.status === 'failed').length,
+    unknown: report.checks.filter(check => check.status === 'unknown').length,
+  }
+  return {
+    ok: true,
+    file: parsed.file,
+    source: parsed.source,
+    collision: registry.isImported(parsed.file.id) ? 'imported' : null,
+    summary,
+  }
+}
+
+/** How one confirmed import lands in the durable list. */
+export type ImportResolution = 'append' | 'replace' | 'rename'
+
+/**
+ * Persist an imported theme file. `replace` overwrites the same-id entry in
+ * place; `rename` stores the file under the first free `id-N` suffix.
+ * @param runtime - owner of the settings write.
+ * @param registry - catalog holding the current imported list.
+ * @param source - the file object to store.
+ * @param mode - collision resolution.
+ * @returns the id the theme lands under.
+ */
+export function saveImportedTheme(
+  runtime: ThemeStudioRuntime,
+  registry: ThemeStudioRegistry,
+  source: Record<string, unknown>,
+  mode: ImportResolution,
+): string {
+  // Merge on the newest requested list when a write is still in flight; the
+  // registry only reflects accepted snapshots.
+  const stored = [...(
+    runtime.requestedImportedSources() ?? registry.importedEntries().map(entry => entry.source)
+  )]
+  let finalId = source['id'] as string
+  let next: Record<string, unknown>[]
+  if (mode === 'replace' && stored.some(entry => entry['id'] === finalId)) {
+    next = stored.map(entry => entry['id'] === finalId ? source : entry)
+  } else {
+    if (mode === 'rename') {
+      const existing = new Set([
+        ...registry.list().map(preset => preset.id),
+        ...stored.map(entry => entry['id'] as string),
+      ])
+      finalId = uniqueThemeId(finalId, existing)
+      source = { ...source, id: finalId }
+    }
+    next = [...stored, source]
+  }
+  runtime.saveImportedThemes(next)
+  return finalId
+}
+
+/**
+ * Persist the imported list without one theme.
+ * @param runtime - owner of the settings write.
+ * @param registry - catalog holding the current imported list.
+ * @param id - imported theme id to drop.
+ */
+export function removeImportedTheme(
+  runtime: ThemeStudioRuntime,
+  registry: ThemeStudioRegistry,
+  id: string,
+): void {
+  const stored = runtime.requestedImportedSources() ?? registry.importedEntries().map(entry => entry.source)
+  runtime.saveImportedThemes(stored.filter(source => source['id'] !== id))
+}
+
+/**
+ * Preview a theme as soon as the durable write lands in the catalog. The
+ * listener self-removes on first success or after a short grace, so a
+ * rejected write leaks nothing.
+ * @param registry - catalog notified on imported-section changes.
+ * @param runtime - owner of the preview layer.
+ * @param id - the id the import landed under.
+ */
+export function previewWhenImported(
+  registry: ThemeStudioRegistry,
+  runtime: ThemeStudioRuntime,
+  id: string,
+): void {
+  if (registry.get(id) !== undefined) {
+    runtime.previewTheme(id)
+    return
+  }
+  let off: (() => void) | undefined
+  const stop = (): void => {
+    off?.()
+    off = undefined
+  }
+  off = registry.subscribe(() => {
+    if (registry.get(id) === undefined) return
+    stop()
+    try {
+      runtime.previewTheme(id)
+    } catch { /* disposed runtime */ }
+  })
+  setTimeout(stop, 5000)
+}
+
+/**
+ * Download one theme as a `dsh-theme.json` file. Imported themes round-trip
+ * their stored source; builtin presets export their palette under a `user.` id.
+ * @param registry - catalog consulted for the theme.
+ * @param id - theme id to export.
+ * @returns false when the id is unknown.
+ */
+export function exportThemeById(registry: ThemeStudioRegistry, id: string): boolean {
+  const preset = registry.get(id)
+  if (preset === undefined) return false
+  const source = registry.sourceOf(id) ?? themeFileForPreset(preset)
+  downloadTextFile(themeFileName(String(source['id'] ?? id)), serializeThemeFile(source))
+  return true
+}

@@ -14,5 +14,6 @@ Long-lived choices recorded as ADRs with context, decisions, alternatives, and c
 | [Scope of contrast diagnostics](./ADR-0006-contrast-diagnostics-scope.md) |
 | [Readonly Client theme catalog](./ADR-0007-readonly-client-theme-catalog.md) |
 | [Standalone builds and tagged releases](./ADR-0008-standalone-build-and-tagged-releases.md) |
+| [Imported themes join the public catalog dynamically](./ADR-0009-dynamic-imported-theme-catalog.md) |
 
 [Documentation map](../README.en.md)

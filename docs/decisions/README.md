@@ -14,5 +14,6 @@ English: [README.en.md](./README.en.md)
 | [对比度诊断范围](./ADR-0006-contrast-diagnostics-scope.md) |
 | [只读 Client 主题目录](./ADR-0007-readonly-client-theme-catalog.md) |
 | [独立构建与 tag 发布](./ADR-0008-standalone-build-and-tagged-releases.md) |
+| [动态导入主题进入公共 catalog](./ADR-0009-dynamic-imported-theme-catalog.md) |
 
 [返回文档地图](../README.md)
