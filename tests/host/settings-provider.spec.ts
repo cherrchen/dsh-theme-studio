@@ -73,7 +73,10 @@ suite('Theme Studio host settings on the installed provider', () => {
     expect(JSON.stringify(described), 'the described schema carries the plugin field').toContain('activeThemeId')
 
     await provider.update(THEME_STUDIO_SETTINGS_NAMESPACE, { activeThemeId: 'dsh-theme-studio.nordic' })
-    expect(provider.get(THEME_STUDIO_SETTINGS_NAMESPACE)).toEqual({ activeThemeId: 'dsh-theme-studio.nordic' })
+    // get() resolves the section through the registered schema, which fills
+    // the importedThemes default; persist() stores the accepted patch as-is.
+    expect(provider.get(THEME_STUDIO_SETTINGS_NAMESPACE))
+      .toEqual({ activeThemeId: 'dsh-theme-studio.nordic', importedThemes: [] })
     expect(provider.doc[THEME_STUDIO_SETTINGS_NAMESPACE]).toEqual({ activeThemeId: 'dsh-theme-studio.nordic' })
     await expect(provider.update(THEME_STUDIO_SETTINGS_NAMESPACE, { activeThemeId: 1 })).rejects.toThrow()
 
