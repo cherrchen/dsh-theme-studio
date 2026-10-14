@@ -21,7 +21,7 @@
 
 Host 暴露 `Config`，如果 schema 支持 volatile 则将 `activeThemeId` 与 `importedThemes` 都标为 live field；`settings.configure({ auto: false }, ownerFiber)` 关闭自动配置 UI，因为 Themes row 已自定义。Client 使用 `configForms.get('theme-studio')`。legacy register 与 configure 同时存在时优先 register，依据结构选择，不在业务逻辑里比较版本。
 
-共同 handle 接口为 getSnapshot、subscribe 和返回 Promise 的 set。set 的 resolved 值可以是 void 或 boolean，runtime 只等待 settlement。实际版本划分与证据见[兼容矩阵](../development/dsh-compatibility.md)。
+共同 handle 接口为 getSnapshot、subscribe 和返回 Promise 的 set。set 的 resolved 值可以是 void 或 boolean，runtime 等待 settlement 后核对 accepted snapshot 中的 active id 与完整导入列表；旧通道拒绝后即使返回 void，也不能视为成功。实际版本划分与证据见[兼容矩阵](../development/dsh-compatibility.md)。
 
 ## Client injection and slots
 

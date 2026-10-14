@@ -521,6 +521,57 @@ describe('ThemeStudioRuntime imported themes', () => {
     expect(host.scope.getSnapshot().value?.importedThemes).toHaveLength(2)
   })
 
+  it.each(['append', 'replace', 'remove'] as const)(
+    'reports a void-returning rejected %s and keeps the accepted imported list', async (mode) => {
+      const original = themeSource(OCEAN, 'Ocean v1')
+      const host = durableHost({ activeThemeId: OCEAN, importedThemes: [original] })
+      const { runtime, registry, overlay } = composite(host)
+      host.set.mockImplementation(() => Promise.resolve())
+      const requested = mode === 'append' ? [original, themeSource(MOSS)]
+        : mode === 'replace' ? [themeSource(OCEAN, 'Ocean v2')] : []
+      runtime.saveImportedThemes(requested)
+      await Promise.resolve()
+      expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: OCEAN, saveError: true })
+      expect(registry.sourceOf(OCEAN)).toEqual(original)
+      expect(registry.isImported(MOSS)).toBe(false)
+      expect(runtime.requestedImportedSources()).toBeUndefined()
+      expect(overlay.has(ACTIVE_SOURCE)).toBe(true)
+      host.set.mockImplementation((field: string, next: unknown) => {
+        host.publish({ value: { ...host.scope.getSnapshot().value!, [field]: next } })
+        return Promise.resolve()
+      })
+      runtime.saveImportedThemes(requested)
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(runtime.getSnapshot().saveError).toBe(false)
+    },
+  )
+
+  it('keeps import reconciliation pending until a ready accepted snapshot arrives', async () => {
+    const { runtime, host, registry } = composite()
+    const requested = [themeSource(OCEAN)]
+    host.set.mockImplementation(() => {
+      host.publish({ status: 'loading' })
+      return Promise.resolve()
+    })
+    runtime.saveImportedThemes(requested)
+    await Promise.resolve()
+    expect(runtime.requestedImportedSources()).toEqual(requested)
+    host.publish({ status: 'ready', value: { activeThemeId: null, importedThemes: [] } })
+    expect(runtime.getSnapshot().saveError).toBe(true)
+    expect(registry.isImported(OCEAN)).toBe(false)
+  })
+
+  it('does not queue import edits before the accepted settings snapshot is ready', () => {
+    const host = durableHost()
+    const { runtime } = composite(host)
+    runtime.saveImportedThemes([themeSource(OCEAN)])
+    expect(host.set).not.toHaveBeenCalled()
+    expect(runtime.requestedImportedSources()).toBeUndefined()
+    host.publish({ status: 'ready', value: { activeThemeId: null, importedThemes: [themeSource(MOSS)] } })
+    expect(host.scope.getSnapshot().value?.importedThemes).toEqual([themeSource(MOSS)])
+  })
+
   it('removes the active imported theme and falls back to Default on the next snapshot', async () => {
     const host = durableHost({ activeThemeId: OCEAN, importedThemes: [themeSource(OCEAN)] })
     const { runtime, overlay, registry } = composite(host)

@@ -74,7 +74,8 @@ Color values are limited to the subset the official resolver supports (source of
 ## File and import constraints
 
 - One theme per file; 128KB size cap; a parse or validation failure rejects the whole file — no partial import.
-- Ids colliding with the builtin `dsh-theme-studio.` namespace cannot pass validation; an id already used by an imported theme opens a dialog choosing between overwrite and an automatic `id-N` rename.
+- Ids colliding with the builtin `dsh-theme-studio.` namespace cannot pass validation; an id already used by an imported theme opens a dialog choosing between overwrite and an automatic `id-N` rename. The base id is shortened as needed before adding the numeric suffix to keep the result within 64 characters, checking each candidate for collisions.
+- Import and Manage are enabled only while settings are ready; confirmation, overwrite and keep-both actions follow the same rule so an unloaded catalog cannot replace the durable list.
 - Stored source objects live in `theme-studio.importedThemes` (see [settings contract](./settings-and-package-contract.md)); the Host schema is deliberately loose while the Client parses strictly, and unreadable entries are skipped and counted in `droppedImports`.
 - Downloads are named `<id>.dsh-theme.json`; imported themes round-trip their stored file verbatim, and builtin exports rewrite the id to `user.<short>` so the file can be imported back.
 

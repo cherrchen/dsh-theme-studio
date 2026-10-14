@@ -32,7 +32,7 @@ getSnapshot 返回冻结对象；引用在下次 publish 前稳定。subscribe �
 | `restoreDefault()` | 删除，activeThemeId=null | 删除，结束预览 | 写 null |
 | `dispose()` | 删除 | 删除 | 不发起新写入，取消监听和本地后续 adoption |
 
-另有 `saveImportedThemes(sources)`：把导入主题文件对象列表整体排入 `importedThemes` 字段写队列（无 Host 时为 no-op）；`requestedImportedSources()` 返回最近一次请求的列表，供 UI 在写入在途时以此为合并基准，避免连续导入互相覆盖。以上修改调用 assertOpen；dispose 本身幂等。未知显式 id 抛错，不把拼写错误当默认。若 constructor host 为 undefined，仍可在直接实例上使用临时/本地动作，但持久操作不写 Host。实际 Client 组装没有 transport 时只提供 catalog，不挂载 Themes row。
+另有 `saveImportedThemes(sources)`：把导入主题文件对象列表整体排入 `importedThemes` 字段写队列（无 Host 或 settings 尚未 ready 时为 no-op）；`requestedImportedSources()` 返回最近一次请求的列表，供 UI 在写入在途时以此为合并基准，避免连续导入互相覆盖。以上修改调用 assertOpen；dispose 本身幂等。未知显式 id 抛错，不把拼写错误当默认。若 constructor host 为 undefined，仍可在直接实例上使用临时/本地动作，但持久操作不写 Host。实际 Client 组装没有 transport 时只提供 catalog，不挂载 Themes row。
 
 ## 两层 source
 
@@ -44,7 +44,7 @@ Default 预览通过暂时移除 active 层呈现官方主题，不创建一套�
 
 Host 快照不是 ready 时只更新 settingsStatus。ready 后先把 `importedThemes` 逐条解析进 catalog 的 imported 分区（`setImported` 原子替换，无法解析的条目计入 `droppedImports`），再 normalize activeThemeId：null/undefined/非有效字符串视作默认；若 raw 是不在目录的字符串，清两层、清状态、publish，并尝试 set(activeThemeId, null)。repairingUnknown 阻止同一未结束修复被重复发起。imported 分区变化时：消失的预览主题丢弃预览层并恢复 active 层；仍存在的激活导入主题按新 preset 重装 active 层（预览 Default 期间不重装）；分区未变时不触碰任何层。正在预览 Default 时 active 层本就被摘除，同步不会把它装回来。
 
-当新 durable id 不同于本地 id 时，取消预览并安装 accepted id；相同 id 且不在预览时补齐 active 层。Apply 先乐观更新并清除上一轮 `saveError`，然后调用 Host.set。写入队列按 `{field, value}` 组织：同一时刻只有一个 `set` 在途，同一字段更晚的写入替换尚未发出的值，并等这次在途写入结束后再发给 Host。因此两次 Apply 重叠时，较新的成功结果不会被较早的 `set` 后落盘盖掉；`activeThemeId` 与 `importedThemes` 互不阻塞。进行中的写入大于零时，Host 回声不会把界面收回更早的值。队列全部结算后，才读取 accepted snapshot：与乐观 id 一致则记下该 id 并清除错误；不一致、最新一次 `set` 返回 `false`、或 Promise rejected，则把颜色层和卡片恢复到 accepted snapshot，并把 `saveError` 设为 true。Themes 行用 `status.saveFailed` 提示，用户可再次应用。adopt 时清空 `importedRequested` 合并基准——registry 重新成为权威。
+当新 durable id 不同于本地 id 时，取消预览并安装 accepted id；相同 id 且不在预览时补齐 active 层。Apply 先乐观更新并清除上一轮 `saveError`，然后调用 Host.set。写入队列按 `{field, value}` 组织：同一时刻只有一个 `set` 在途，同一字段更晚的写入替换尚未发出的值，并等这次在途写入结束后再发给 Host。因此两次 Apply 重叠时，较新的成功结果不会被较早的 `set` 后落盘盖掉；`activeThemeId` 与 `importedThemes` 互不阻塞。进行中的写入大于零时，Host 回声不会把界面收回更早的值。队列全部结算后，才读取 accepted snapshot：与乐观 id 和最近请求的完整导入列表都一致则记下该 id 并清除错误；任一字段不一致、最新一次 `set` 返回 `false`、或 Promise rejected，则把颜色层和卡片恢复到 accepted snapshot，并把 `saveError` 设为 true。Themes 行用 `status.saveFailed` 提示，用户可再次应用。只有核对 ready accepted snapshot 后才清空 `importedRequested` 合并基准，registry 随之重新成为权威；结算时 snapshot 尚在 loading，则保留请求列表直到 ready 后核对。旧 transport 即使拒绝后 resolve void，也会因导入列表不一致显示保存失败。自动导入预览订阅 runtime 的结算通知，并核对 accepted catalog 的源文件与请求相同；覆盖导入不会提前预览旧 preset，失败会结束监听。
 
 `dispose` 之后，已发出的 settlement 不再安装 overlay，也不会再发出排队中的 `set`。没有 Host 的直接 runtime 仍只保留本地层，不把这当成保存失败。未知 id 修复只对同一个 raw 值自动尝试一次；失败时显示保存错误，再次选择 Default 或具体主题可以重试。
 

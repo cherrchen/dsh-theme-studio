@@ -243,7 +243,7 @@ export class ThemeStudioRuntime {
    */
   saveImportedThemes(sources: readonly Record<string, unknown>[]): void {
     this.assertOpen()
-    if (this.host === undefined) return
+    if (this.host === undefined || this.settingsStatus !== 'ready') return
     this.importedRequested = [...sources]
     this.queueWrite(IMPORTED_THEMES_FIELD, this.importedRequested)
   }
@@ -294,6 +294,10 @@ export class ThemeStudioRuntime {
         this.settingsStatus = section.status
         this.publish()
       }
+      return
+    }
+    if (this.importedRequested !== undefined) {
+      this.finishPersist()
       return
     }
     this.settingsStatus = 'ready'
@@ -459,19 +463,25 @@ export class ThemeStudioRuntime {
       return
     }
     this.settingsStatus = 'ready'
+    const importsMatch = this.importedRequested === undefined
+      || JSON.stringify(section.value?.importedThemes ?? []) === JSON.stringify(this.importedRequested)
     this.importedRequested = undefined
     this.syncImports(section.value)
-    if (!rejected && this.durableMatches(section.value?.activeThemeId, this.activeThemeId)) {
+    if (!rejected && importsMatch && this.durableMatches(section.value?.activeThemeId, this.activeThemeId)) {
       this.acceptedThemeId = this.activeThemeId
       if (normalizeId(section.value?.activeThemeId) === null) this.repairBlockedRaw = undefined
-      if (this.saveError) {
-        this.saveError = false
-        this.publish()
-      }
+      this.saveError = false
+      // Import completion must notify observers even if the active id stayed
+      // unchanged. Auto-preview runs after the accepted layers are reconciled.
+      this.publish()
       return
     }
+    const revision = this.revision
     this.saveError = true
     this.applyDurable(section.value?.activeThemeId)
+    // Repeated rejections still settle a distinct import attempt and must
+    // notify auto-preview listeners even when the error/id stayed unchanged.
+    if (this.revision === revision) this.publish()
   }
 
   private durableMatches(raw: unknown, local: string | null): boolean {

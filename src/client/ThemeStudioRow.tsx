@@ -99,6 +99,7 @@ export function ThemeStudioRow({
   const previewCard = cards.find(card => card.id === previewThemeId)
   const previewName = previewing ? cardName(previewCard ?? cards.find(card => card.id === null), t) : ''
   const settingsUnavailable = settingsStatus === 'unavailable'
+  const settingsReady = settingsStatus === 'ready'
 
   const menuItems: MenuEntry[] = []
   let importedHeader = false
@@ -123,6 +124,7 @@ export function ThemeStudioRow({
 
   const closeDialog = (): void => { setDialog(null) }
   const confirmImport = (inspection: ImportOk, mode: ImportResolution): void => {
+    if (!settingsReady) return
     saveImportedTheme(inspection.source, mode)
     closeDialog()
   }
@@ -158,7 +160,7 @@ export function ThemeStudioRow({
         onChange={(event) => {
           const file = event.target.files?.[0]
           event.target.value = ''
-          if (file !== undefined) void pickFile(file)
+          if (settingsReady && file !== undefined) void pickFile(file)
         }}
       />
       <Menu
@@ -170,14 +172,14 @@ export function ThemeStudioRow({
         items={menuItems}
         selectedId={activeThemeId ?? DEFAULT_ITEM_ID}
         onSelect={(id) => {
-          if (id === ACTION_IMPORT) fileInput.current?.click()
-          else if (id === ACTION_MANAGE) setDialog({ kind: 'manage' })
+          if (id === ACTION_IMPORT) { if (settingsReady) fileInput.current?.click() }
+          else if (id === ACTION_MANAGE) { if (settingsReady) setDialog({ kind: 'manage' }) }
           else activateTheme(id === DEFAULT_ITEM_ID ? null : id)
           setOpen(false)
         }}
         footer={[
-          { id: ACTION_IMPORT, label: t('action.import'), disabled: settingsUnavailable },
-          { id: ACTION_MANAGE, label: t('action.manage'), disabled: settingsUnavailable },
+          { id: ACTION_IMPORT, label: t('action.import'), disabled: !settingsReady },
+          { id: ACTION_MANAGE, label: t('action.manage'), disabled: !settingsReady },
         ]}
         align="end"
         portal
@@ -225,7 +227,7 @@ export function ThemeStudioRow({
         footer={dialog?.kind === 'confirm' ? (
           <>
             <Button onClick={closeDialog}>{t('action.cancel')}</Button>
-            <Button variant="primary" data-modal-autofocus onClick={() => { confirmImport(dialog.inspection, 'append') }}>
+            <Button variant="primary" disabled={!settingsReady} data-modal-autofocus onClick={() => { confirmImport(dialog.inspection, 'append') }}>
               {t('action.confirmImport')}
             </Button>
           </>
@@ -256,10 +258,10 @@ export function ThemeStudioRow({
         footer={dialog?.kind === 'duplicate' ? (
           <>
             <Button onClick={closeDialog}>{t('action.cancel')}</Button>
-            <Button onClick={() => { confirmImport(dialog.inspection, 'rename') }}>
+            <Button disabled={!settingsReady} onClick={() => { confirmImport(dialog.inspection, 'rename') }}>
               {t('import.duplicate.rename')}
             </Button>
-            <Button variant="primary" data-modal-autofocus onClick={() => { confirmImport(dialog.inspection, 'replace') }}>
+            <Button variant="primary" disabled={!settingsReady} data-modal-autofocus onClick={() => { confirmImport(dialog.inspection, 'replace') }}>
               {t('import.duplicate.replace')}
             </Button>
           </>
@@ -291,7 +293,7 @@ export function ThemeStudioRow({
             ))}
             <p className={css.manageGroup}>{t('manage.imported')}</p>
             {manageCards.filter(card => card.imported === true).map(card => (
-              <ManageRow key={card.id} card={card} t={t} onExport={exportTheme} onRemove={removeImportedTheme} />
+              <ManageRow key={card.id} card={card} t={t} onExport={exportTheme} onRemove={removeImportedTheme} removeDisabled={!settingsReady} />
             ))}
             {cards.some(card => card.imported === true) ? null : (
               <p className={css.modalText}>{t('manage.empty')}</p>
@@ -314,11 +316,12 @@ function Mosaic({ preview, onMouseEnter }: { preview: ThemePreview; onMouseEnter
   )
 }
 
-function ManageRow({ card, t, onExport, onRemove }: {
+function ManageRow({ card, t, onExport, onRemove, removeDisabled = false }: {
   card: ThemeStudioCard
   t: (key: ThemeStudioKey) => string
   onExport: (id: string) => void
   onRemove?: (id: string) => void
+  removeDisabled?: boolean
 }) {
   const id = card.id as string
   return (
@@ -328,7 +331,7 @@ function ManageRow({ card, t, onExport, onRemove }: {
       <span className={css.manageId}>{id}</span>
       <Button size="sm" onClick={() => { onExport(id) }}>{t('action.export')}</Button>
       {onRemove === undefined ? null : (
-        <Button size="sm" className={css.removeButton} onClick={() => { onRemove(id) }}>{t('action.remove')}</Button>
+        <Button size="sm" disabled={removeDisabled} className={css.removeButton} onClick={() => { onRemove(id) }}>{t('action.remove')}</Button>
       )}
     </div>
   )

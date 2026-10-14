@@ -253,14 +253,14 @@ describe('ThemeStudioRow', () => {
     expect(item.getAttribute('aria-selected')).toBe('false')
   })
 
-  it('disables import and manage while settings are unavailable', () => {
+  it.each(['loading', 'unavailable'] as const)('disables import and manage while settings are %s', (settingsStatus) => {
     const b = mount()
     act(() => {
       b.store.actions.sync({
         activeThemeId: null,
         previewThemeId: null,
         previewing: false,
-        settingsStatus: 'unavailable',
+        settingsStatus,
         saveError: false,
         droppedImports: 0,
         revision: 3,
@@ -289,6 +289,34 @@ describe('ThemeStudioRow', () => {
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Import' }))
     expect(b.saveImportedTheme).toHaveBeenCalledWith(source, 'append')
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it.each([null, 'imported'] as const)('blocks open import dialog writes while settings reload, collision=%s', async (collision) => {
+    const b = mount([...CARDS, IMPORTED_CARD])
+    b.inspectThemeFile.mockReturnValue({
+      ok: true, file: { version: 1, id: 'user.ocean', name: 'Ocean' },
+      source: { id: 'user.ocean' }, collision, summary: { failed: 0, unknown: 0 },
+    } as never)
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
+      target: { files: [new File(['{}'], 'ocean.json')] },
+    })
+    const dialog = await screen.findByRole('dialog')
+    act(() => {
+      b.store.actions.sync({ ...b.store.getSnapshot(), settingsStatus: 'loading', revision: 1 })
+    })
+    const names = collision === null ? ['Import'] : ['Overwrite it', 'Keep both (new id)']
+    for (const name of names) {
+      const button = within(dialog).getByRole('button', { name })
+      expect(button.getAttribute('disabled')).not.toBeNull()
+      fireEvent.click(button)
+    }
+    expect(b.saveImportedTheme).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog')).toBe(dialog)
+    act(() => {
+      b.store.actions.sync({ ...b.store.getSnapshot(), settingsStatus: 'ready', revision: 2 })
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: names[0]! }))
+    expect(b.saveImportedTheme).toHaveBeenCalledOnce()
   })
 
   it('shows the parse error when the file is rejected', async () => {

@@ -364,12 +364,13 @@ export function themeFileName(id: string): string {
  * First collision-free id derived from `base` against existing ids.
  * @param base - preferred id.
  * @param existing - ids already in use.
- * @returns `base` itself, or `base-2`, `base-3`, …
+ * @returns `base` itself, or `base-2`, `base-3`, …, shortening the base to fit 64 characters.
  */
 export function uniqueThemeId(base: string, existing: ReadonlySet<string>): string {
   if (!existing.has(base)) return base
   for (let n = 2; ; n += 1) {
-    const candidate = `${base}-${n}`
+    const suffix = `-${n}`
+    const candidate = `${base.slice(0, 64 - suffix.length)}${suffix}`
     if (!existing.has(candidate)) return candidate
   }
 }

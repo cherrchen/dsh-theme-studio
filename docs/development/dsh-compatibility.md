@@ -123,3 +123,12 @@ Themes 行改为与官方语言行同款的下拉选择器：selector 按钮（`
 证据：2026-10-13 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上 `node scripts/run-dsh-matrix.mjs 0.1.5-rc.2` 全部步骤通过，含最老类型面的 typecheck 与 smoke-compose 真实 CLI tarball 安装；开发基线门禁（compat:check、lint、typecheck、test、docs:check、build、verify-package）同步通过。同日在 `DSH_BROWSER_E2E=1` 下 `node scripts/run-dsh-matrix.mjs 0.1.6-alpha.2` 全步骤通过（含真实 Chromium 旅程：悬停预览、Esc 恢复、应用与 Host 重启恢复），并在开发基线 0.2.1-alpha.2 上单独通过 `scripts/smoke-client.mjs`。仍未覆盖逐版本逐像素的视觉比对与本地 chevron 回退的截图。
 
 矩阵工具同步修复：重定向树（非 frozen）删除 lockfile 后全新解析，非 DSH dev 依赖可能新于 pnpm 默认 release-age 截止线，每个 `pnpm run`/`exec` 的前置 supply-chain verify 会误伤。脚本现给该隔离树补写 `minimumReleaseAge: 0`，源码 checkout 与 frozen 基线的策略不变。
+
+
+## 主题导入导出 Review 修复复验（2026-10-14）
+
+针对 [PR #9](https://github.com/cherrchen/dsh-theme-studio/pull/9) 在 `1cb8a96` 上的 Review 修复，在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上执行了 `pnpm verify:all`，并用可写临时 npm 缓存重跑全部十二个既有支持版本的 `pnpm compat:matrix`。全部通过，逐命令结果与各版本测试摘要见 [Review 修复矩阵](./dsh-compatibility-review-results-2026-10-14.json)。支持清单与最新开发基线没有变化。
+
+回归用例覆盖旧 transport resolve void 但未接受的导入、覆盖与删除及重试，结算时 loading 后再 ready 的核对，设置加载或重新加载期间的导入确认保护，覆盖主题接受后的真实 preview token、并发导入与重复拒绝时的监听清理，以及 62–64 字符 id 的重命名和目录采纳。开发基线为 226 passed、1 个条件性 legacy-provider skip；每个隔离版本另执行 lint、typecheck、build、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 与 CLI profile smoke。
+
+这次没有设置 `DSH_BROWSER_E2E=1`，不声称验证真实浏览器 file picker 或导入主题的磁盘持久化旅程；本机矩阵也不替代 Linux/Windows 的 PR CI 证据。runtime 与文件规则仍分别以 [runtime 参考](../reference/theme-runtime.md)和[文件格式](../reference/theme-file-format.md)为准。

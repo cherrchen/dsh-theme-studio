@@ -187,6 +187,15 @@ describe('dsh-theme.json v1 parser', () => {
     expect(uniqueThemeId('user.ocean', new Set(['user.ocean', 'user.ocean-2']))).toBe('user.ocean-3')
   })
 
+  it.each([62, 63, 64])('keeps a renamed %i-character id valid', (length) => {
+    const base = 'a'.repeat(length)
+    const existing = new Set([base, ...Array.from({ length: 8 }, (_, i) => `${base.slice(0, 62)}-${i + 2}`)])
+    const id = uniqueThemeId(base, existing)
+    expect(id.length).toBeLessThanOrEqual(64)
+    expect(existing.has(id)).toBe(false)
+    expect(validateThemeFileData(validFile({ id })).ok).toBe(true)
+  })
+
   it('parses a stored list and counts unreadable entries without throwing', () => {
     const stored = parseStoredThemeFiles([validFile(), { id: 'X' }, 'junk', validFile({ id: 'user.moss', name: 'Moss' })])
     expect(stored.dropped).toBe(2)

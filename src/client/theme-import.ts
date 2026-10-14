@@ -115,10 +115,10 @@ export function removeImportedTheme(
 }
 
 /**
- * Preview a theme as soon as the durable write lands in the catalog. The
- * listener self-removes on first success or after a short grace, so a
- * rejected write leaks nothing.
- * @param registry - catalog notified on imported-section changes.
+ * Preview a theme after its durable write lands in the catalog.
+ * Wait for settlement and match the requested source, including replacements
+ * whose id already exists. The listener self-removes on success or failure.
+ * @param registry - catalog holding the accepted imported sources.
  * @param runtime - owner of the preview layer.
  * @param id - the id the import landed under.
  */
@@ -127,23 +127,28 @@ export function previewWhenImported(
   runtime: ThemeStudioRuntime,
   id: string,
 ): void {
-  if (registry.get(id) !== undefined) {
-    runtime.previewTheme(id)
-    return
-  }
+  const requested = runtime.requestedImportedSources()?.find(source => source['id'] === id)
+  const signature = requested === undefined ? undefined : JSON.stringify(requested)
   let off: (() => void) | undefined
+  let stopped = false
   const stop = (): void => {
+    stopped = true
     off?.()
     off = undefined
   }
-  off = registry.subscribe(() => {
-    if (registry.get(id) === undefined) return
+  const check = (): void => {
+    if (stopped || runtime.requestedImportedSources() !== undefined) return
+    const snapshot = runtime.getSnapshot()
+    if (snapshot.settingsStatus !== 'ready' && !snapshot.saveError) return
     stop()
+    if (snapshot.settingsStatus !== 'ready' || snapshot.saveError || registry.get(id) === undefined) return
+    if (signature !== undefined && JSON.stringify(registry.sourceOf(id)) !== signature) return
     try {
       runtime.previewTheme(id)
     } catch { /* disposed runtime */ }
-  })
-  setTimeout(stop, 5000)
+  }
+  off = runtime.subscribe(check)
+  check()
 }
 
 /**

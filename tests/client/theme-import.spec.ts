@@ -3,9 +3,10 @@ import { stubSettingsScope } from '../harness.ts'
 import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
 import type { ThemeStudioSettings } from '../../src/constants.ts'
 import { ThemeStudioRegistry } from '../../src/client/catalog.ts'
-import { ThemeStudioRuntime } from '../../src/client/runtime.ts'
+import { PREVIEW_SOURCE, ThemeStudioRuntime } from '../../src/client/runtime.ts'
+import { parseStoredThemeFiles } from '../../src/client/theme-file.ts'
 import {
-  inspectThemeFile, removeImportedTheme, saveImportedTheme,
+  inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
 } from '../../src/client/theme-import.ts'
 
 const LIGHT = {
@@ -26,10 +27,13 @@ function sourceOf(id: string, name = id): Record<string, unknown> {
 }
 
 function fakeTheme() {
+  const layers = new Map<string, ThemeTokenOverrides>()
   return {
+    layers,
     theme: {
-      overrideTokens(_source: string, _tokens: ThemeTokenOverrides) {
-        return () => {}
+      overrideTokens(source: string, tokens: ThemeTokenOverrides) {
+        layers.set(source, tokens)
+        return () => { if (layers.get(source) === tokens) layers.delete(source) }
       },
     },
   }
@@ -52,13 +56,14 @@ function durableHost(value: ThemeStudioSettings | undefined = { activeThemeId: n
 
 function make(host = durableHost()) {
   const registry = new ThemeStudioRegistry()
+  const overlay = fakeTheme()
   const runtime = new ThemeStudioRuntime({
-    theme: fakeTheme().theme,
+    theme: overlay.theme,
     host: host.scope,
     catalog: registry,
     imports: registry,
   })
-  return { registry, runtime, host }
+  return { registry, runtime, host, overlay }
 }
 
 describe('inspectThemeFile', () => {
@@ -157,6 +162,16 @@ describe('saveImportedTheme / removeImportedTheme', () => {
     })
   })
 
+  it('persists and adopts both themes when a colliding id uses all 64 characters', async () => {
+    const originalId = 'a'.repeat(64)
+    const { runtime, registry, host } = make(durableHost({ activeThemeId: null, importedThemes: [sourceOf(originalId)] }))
+    const renamed = saveImportedTheme(runtime, registry, sourceOf(originalId), 'rename')
+    await Promise.resolve()
+    expect(registry.importedEntries().map(entry => entry.preset.id)).toEqual([originalId, renamed])
+    expect(runtime.getSnapshot().droppedImports).toBe(0)
+    expect(host.scope.getSnapshot().value?.importedThemes).toHaveLength(2)
+  })
+
   it('drops one imported theme from the durable list', async () => {
     const { registry, runtime } = make(durableHost({
       activeThemeId: null,
@@ -165,5 +180,87 @@ describe('saveImportedTheme / removeImportedTheme', () => {
     removeImportedTheme(runtime, registry, 'user.ocean')
     await Promise.resolve()
     expect(registry.importedEntries().map(entry => entry.preset.id)).toEqual(['user.moss'])
+  })
+})
+
+describe('previewWhenImported', () => {
+  it.each([false, true])('previews accepted replacement colors with active=%s', async (active) => {
+    const host = durableHost({ activeThemeId: active ? 'user.ocean' : null, importedThemes: [sourceOf('user.ocean')] })
+    const { runtime, registry, overlay } = make(host)
+    const preview = vi.spyOn(runtime, 'previewTheme')
+    const replacement = sourceOf('user.ocean', 'Ocean v2')
+    replacement['palette'] = { light: { ...LIGHT, brand: '#ff0000' }, dark: { ...DARK } }
+    let release!: () => void
+    host.set.mockImplementation((field: string, value: unknown) => new Promise<void>(resolve => {
+      release = () => {
+        host.publish({ value: { ...host.scope.getSnapshot().value!, [field]: value } })
+        resolve()
+      }
+    }))
+    const id = saveImportedTheme(runtime, registry, replacement, 'replace')
+    previewWhenImported(registry, runtime, id)
+    expect(preview).not.toHaveBeenCalled()
+    release()
+    await Promise.resolve()
+    expect(preview).toHaveBeenCalledOnce()
+    expect(overlay.layers.get(PREVIEW_SOURCE)?.['--dsw-alias-brand-primary']?.light).toBe('#ff0000')
+    expect(runtime.getSnapshot()).toMatchObject({ previewing: true, previewThemeId: id })
+    runtime.dispose()
+  })
+
+  it('previews each accepted concurrent import once and leaves the newest preview on top', async () => {
+    const { runtime, registry } = make()
+    const preview = vi.spyOn(runtime, 'previewTheme')
+    const first = saveImportedTheme(runtime, registry, sourceOf('user.ocean'), 'append')
+    previewWhenImported(registry, runtime, first)
+    const second = saveImportedTheme(runtime, registry, sourceOf('user.moss'), 'append')
+    previewWhenImported(registry, runtime, second)
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(preview.mock.calls).toEqual([['user.ocean'], ['user.moss']])
+    expect(runtime.getSnapshot()).toMatchObject({ previewing: true, previewThemeId: second })
+    runtime.dispose()
+  })
+
+  it('does not preview the old source when a replacement is rejected', async () => {
+    const { runtime, registry, host } = make(durableHost({ activeThemeId: null, importedThemes: [sourceOf('user.ocean')] }))
+    const preview = vi.spyOn(runtime, 'previewTheme')
+    host.set.mockImplementation(() => Promise.resolve())
+    saveImportedTheme(runtime, registry, sourceOf('user.ocean', 'Ocean v2'), 'replace')
+    previewWhenImported(registry, runtime, 'user.ocean')
+    await Promise.resolve()
+    expect(preview).not.toHaveBeenCalled()
+    expect(runtime.getSnapshot().saveError).toBe(true)
+    runtime.dispose()
+  })
+
+  it('ends preview listeners after repeated rejected replacements', async () => {
+    const { runtime, registry, host } = make(durableHost({ activeThemeId: null, importedThemes: [sourceOf('user.ocean')] }))
+    host.set.mockImplementation(() => Promise.resolve())
+    const off = vi.fn()
+    const subscribe = runtime.subscribe.bind(runtime)
+    vi.spyOn(runtime, 'subscribe').mockImplementation(listener => {
+      const unsubscribe = subscribe(listener)
+      return () => { unsubscribe(); off() }
+    })
+    for (let n = 0; n < 2; n += 1) {
+      saveImportedTheme(runtime, registry, sourceOf('user.ocean', 'Ocean v2'), 'replace')
+      previewWhenImported(registry, runtime, 'user.ocean')
+      await Promise.resolve()
+    }
+    expect(off).toHaveBeenCalledTimes(2)
+    runtime.dispose()
+  })
+
+  it('previews an accepted append even when an unrelated registry revision arrives first', async () => {
+    const { runtime, registry } = make()
+    const preview = vi.spyOn(runtime, 'previewTheme')
+    saveImportedTheme(runtime, registry, sourceOf('user.ocean'), 'append')
+    previewWhenImported(registry, runtime, 'user.ocean')
+    registry.setImported(parseStoredThemeFiles([sourceOf('user.moss')]).entries)
+    expect(preview).not.toHaveBeenCalled()
+    await Promise.resolve()
+    expect(preview).toHaveBeenCalledWith('user.ocean')
+    runtime.dispose()
   })
 })

@@ -74,7 +74,8 @@ Current，v1。本文是主题文件格式的唯一真源；解析器实现见 [
 ## 文件与导入约束
 
 - 单文件单主题；大小上限 128KB；解析或校验失败整个文件被拒绝，不会导入半个主题。
-- 与内置 `dsh-theme-studio.` 命名空间冲突的 id 无法通过格式校验；与已导入主题撞 id 时由 UI 弹窗选择覆盖更新或自动生成 `id-N`。
+- 与内置 `dsh-theme-studio.` 命名空间冲突的 id 无法通过格式校验；与已导入主题撞 id 时由 UI 弹窗选择覆盖更新或自动生成 `id-N`；添加数字后缀前按需截短原 id，保证结果不超过 64 字符，并逐个检查冲突。
+- 导入与管理入口仅在 settings ready 时启用；确认导入、覆盖与保留两份同样受此限制，避免基于未加载的目录替换持久列表。
 - 存储的原始文件对象位于 `theme-studio.importedThemes`（见[设置契约](./settings-and-package-contract.md)），Host schema 只做宽松结构校验；严格解析在 Client，无法读取的条目被跳过并计入 `droppedImports`。
 - 导出的文件名是 `<id>.dsh-theme.json`；导入主题原样回写其存储文件，内置主题导出时 id 改写为 `user.<短名>` 以便回导。
 

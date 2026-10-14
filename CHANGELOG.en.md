@@ -16,6 +16,11 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 - The `theme-studio` settings namespace gains an `importedThemes` field persisting imported theme source files; the Host schema stays loose while the Client parses strictly, so unreadable entries are skipped without breaking the rest of the settings.
 
+### Fixed
+
+- Rejected imports, replacements and removals report a save failure and preserve the accepted theme list on older settings transports; imports and removals are disabled until settings are ready.
+- Replacement imports preview the new colors after acceptance; automatic duplicate-id renames stay within the 64-character limit.
+
 ## [0.1.4] - 2026-10-11
 
 ### Added
