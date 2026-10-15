@@ -1,9 +1,13 @@
 /**
  * Themes preference row registered into the General section item slot:
  * title, description, and a language-row-style selector. The trigger pill
- * opens a Menu whose rows preview on hover; moving the pointer off a theme
- * row — onto separators, group labels, or the footer actions — restores the
- * applied theme, as does closing the menu; selecting an option applies it.
+ * opens a Menu whose rows preview on hover. Hover is tracked at the row
+ * level by event delegation: a theme row is any `role="menuitem"` carrying
+ * a `[data-ts-theme]` marker, so padding and the icon/label gap count as
+ * hovering the row, matching the visual highlight. Moving the pointer onto
+ * another row previews it; landing anywhere else — separators, group
+ * labels, footer actions, or outside the list — restores the applied theme,
+ * as does closing the menu; selecting an option applies it.
  * The menu footer carries theme-file management: import, export, and remove.
  */
 import { useEffect, useRef, useState } from 'react'
@@ -98,6 +102,44 @@ export function ThemeStudioRow({
   // closes the whole Settings surface before Menu's own onClose runs) must
   // not leak the transient preview.
   useEffect(() => () => { cancelPreview() }, [cancelPreview])
+  // Row-level hover tracking. Handlers cannot sit on the menuitem element
+  // (the Menu primitive owns it), so a delegated listener resolves the row
+  // under the pointer: theme rows carry a data-ts-theme marker, everything
+  // else restores the applied theme once a theme row was hovered.
+  const hoveredRow = useRef<Element | null>(null)
+  useEffect(() => {
+    const rowAt = (target: EventTarget | null): { row: Element; id: string | null } | undefined => {
+      if (!(target instanceof Element)) return undefined
+      const item = target.closest('[role="menuitem"]')
+      if (item === null) return undefined
+      const marker = item.querySelector('[data-ts-theme]')
+      if (marker === null) return undefined
+      const id = marker.getAttribute('data-ts-theme')
+      if (id === null || id === '') return undefined
+      return { row: item, id: id === DEFAULT_ITEM_ID ? null : id }
+    }
+    const onOver = (event: MouseEvent): void => {
+      const hit = rowAt(event.target)
+      if (hit === undefined ? hoveredRow.current === null : hit.row === hoveredRow.current) return
+      hoveredRow.current = hit?.row ?? null
+      if (hit === undefined) cancelPreview()
+      else previewTheme(hit.id)
+    }
+    const onOut = (event: MouseEvent): void => {
+      // Leaving the document dispatches no mouseover; clear the hover then.
+      if (hoveredRow.current !== null && event.relatedTarget === null) {
+        hoveredRow.current = null
+        cancelPreview()
+      }
+    }
+    document.addEventListener('mouseover', onOver)
+    document.addEventListener('mouseout', onOut)
+    return () => {
+      document.removeEventListener('mouseover', onOver)
+      document.removeEventListener('mouseout', onOut)
+      hoveredRow.current = null
+    }
+  }, [previewTheme, cancelPreview])
   const activeCard = cards.find(card => card.id === activeThemeId)
   const activeName = activeCard === undefined ? t('default.name') : cardName(activeCard, t)
   const previewCard = cards.find(card => card.id === previewThemeId)
@@ -117,9 +159,9 @@ export function ThemeStudioRow({
     }
     menuItems.push({
       id: card.id ?? DEFAULT_ITEM_ID,
-      icon: <Mosaic preview={card.preview.light} onMouseEnter={() => { previewTheme(card.id) }} onMouseLeave={cancelPreview} />,
+      icon: <Mosaic preview={card.preview.light} />,
       label: (
-        <span className={css.itemLabel} onMouseEnter={() => { previewTheme(card.id) }} onMouseLeave={cancelPreview}>
+        <span className={css.itemLabel} data-ts-theme={card.id ?? DEFAULT_ITEM_ID}>
           {cardName(card, t)}
         </span>
       ),
@@ -205,8 +247,8 @@ export function ThemeStudioRow({
           setOpen(false)
         }}
         footer={[
-          { id: ACTION_IMPORT, label: <span className={css.itemLabel} onMouseEnter={cancelPreview}>{t('action.import')}</span>, disabled: !settingsReady },
-          { id: ACTION_MANAGE, label: <span className={css.itemLabel} onMouseEnter={cancelPreview}>{t('action.manage')}</span>, disabled: !settingsReady },
+          { id: ACTION_IMPORT, label: <span className={css.itemLabel}>{t('action.import')}</span>, disabled: !settingsReady },
+          { id: ACTION_MANAGE, label: <span className={css.itemLabel}>{t('action.manage')}</span>, disabled: !settingsReady },
         ]}
         align="end"
         portal
@@ -337,9 +379,9 @@ export function ThemeStudioRow({
   )
 }
 
-function Mosaic({ preview, onMouseEnter, onMouseLeave }: { preview: ThemePreview; onMouseEnter?: () => void; onMouseLeave?: () => void }) {
+function Mosaic({ preview }: { preview: ThemePreview }) {
   return (
-    <div className={css.mosaic} aria-hidden="true" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+    <div className={css.mosaic} aria-hidden="true">
       <span style={{ background: preview.background }} />
       <span style={{ background: preview.surface }} />
       <span style={{ background: preview.foreground }} />

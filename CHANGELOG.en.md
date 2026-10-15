@@ -26,6 +26,7 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - Overlong imported theme names ellipsize in the selector pill and the manage dialog (with the full name as a tooltip) instead of stretching the settings row.
 - A theme file that fails to read (for example, an I/O error mid-read) now shows the import error dialog instead of an unhandled Promise rejection.
 - The import confirmation and manage dialogs now show a theme file's `description` field, matching the file-format reference; long descriptions ellipsize with the full text as a tooltip.
+- Theme-menu hover preview is now tracked per whole row: resting the pointer on a row's padding or the icon/text gap no longer restores the applied theme; moving onto separators, group labels, footer actions, or outside the menu still does.
 
 ## [0.1.4] - 2026-10-11
 
