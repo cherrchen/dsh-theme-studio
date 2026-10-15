@@ -20,6 +20,7 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 - Rejected imports, replacements and removals report a save failure and preserve the accepted theme list on older settings transports; imports and removals are disabled until settings are ready.
 - Replacement imports preview the new colors after acceptance; automatic duplicate-id renames stay within the 64-character limit.
+- In the Themes menu, moving the pointer off a theme row or hovering "Import theme…"/"Manage themes…" restores the applied theme instead of keeping the last hovered preview; selecting either action by keyboard cancels the preview too.
 
 ## [0.1.4] - 2026-10-11
 

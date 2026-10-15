@@ -181,6 +181,34 @@ describe('ThemeStudioRow', () => {
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
+  it('restores the applied theme when the pointer leaves a theme row', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    const label = within(option('Nordic')).getByText('Nordic')
+    fireEvent.mouseEnter(label)
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+    fireEvent.mouseLeave(label)
+    expect(b.cancelPreview).toHaveBeenCalledOnce()
+  })
+
+  it.each(['Import theme…', 'Manage themes…'])('restores the applied theme when the pointer reaches %s', (name) => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.mouseEnter(within(option('Nordic')).getByText('Nordic'))
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+    fireEvent.mouseEnter(within(option(name)).getByText(name))
+    expect(b.cancelPreview).toHaveBeenCalled()
+  })
+
+  it('cancels a live preview when a footer action is selected', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.mouseEnter(within(option('Nordic')).getByText('Nordic'))
+    fireEvent.click(option('Manage themes…'))
+    expect(b.cancelPreview).toHaveBeenCalled()
+    expect(screen.getByRole('dialog')).toBeDefined()
+  })
+
   it('applies the clicked theme and closes the menu', () => {
     const b = mount()
     fireEvent.click(selector())

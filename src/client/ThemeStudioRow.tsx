@@ -1,9 +1,10 @@
 /**
  * Themes preference row registered into the General section item slot:
  * title, description, and a language-row-style selector. The trigger pill
- * opens a Menu whose rows preview on hover; closing the menu restores the
- * applied theme; selecting an option applies it. The menu footer carries
- * theme-file management: import, export, and remove.
+ * opens a Menu whose rows preview on hover; moving the pointer off a theme
+ * row — onto separators, group labels, or the footer actions — restores the
+ * applied theme, as does closing the menu; selecting an option applies it.
+ * The menu footer carries theme-file management: import, export, and remove.
  */
 import { useEffect, useRef, useState } from 'react'
 import { Button, Menu, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
@@ -113,9 +114,9 @@ export function ThemeStudioRow({
     }
     menuItems.push({
       id: card.id ?? DEFAULT_ITEM_ID,
-      icon: <Mosaic preview={card.preview.light} onMouseEnter={() => { previewTheme(card.id) }} />,
+      icon: <Mosaic preview={card.preview.light} onMouseEnter={() => { previewTheme(card.id) }} onMouseLeave={cancelPreview} />,
       label: (
-        <span className={css.itemLabel} onMouseEnter={() => { previewTheme(card.id) }}>
+        <span className={css.itemLabel} onMouseEnter={() => { previewTheme(card.id) }} onMouseLeave={cancelPreview}>
           {cardName(card, t)}
         </span>
       ),
@@ -172,14 +173,21 @@ export function ThemeStudioRow({
         items={menuItems}
         selectedId={activeThemeId ?? DEFAULT_ITEM_ID}
         onSelect={(id) => {
-          if (id === ACTION_IMPORT) { if (settingsReady) fileInput.current?.click() }
-          else if (id === ACTION_MANAGE) { if (settingsReady) setDialog({ kind: 'manage' }) }
+          if (id === ACTION_IMPORT || id === ACTION_MANAGE) {
+            // Action rows close the menu through setOpen, bypassing Menu's
+            // onClose; drop a still-active preview like the other close paths.
+            cancelPreview()
+            if (settingsReady) {
+              if (id === ACTION_IMPORT) fileInput.current?.click()
+              else setDialog({ kind: 'manage' })
+            }
+          }
           else activateTheme(id === DEFAULT_ITEM_ID ? null : id)
           setOpen(false)
         }}
         footer={[
-          { id: ACTION_IMPORT, label: t('action.import'), disabled: !settingsReady },
-          { id: ACTION_MANAGE, label: t('action.manage'), disabled: !settingsReady },
+          { id: ACTION_IMPORT, label: <span className={css.itemLabel} onMouseEnter={cancelPreview}>{t('action.import')}</span>, disabled: !settingsReady },
+          { id: ACTION_MANAGE, label: <span className={css.itemLabel} onMouseEnter={cancelPreview}>{t('action.manage')}</span>, disabled: !settingsReady },
         ]}
         align="end"
         portal
@@ -305,9 +313,9 @@ export function ThemeStudioRow({
   )
 }
 
-function Mosaic({ preview, onMouseEnter }: { preview: ThemePreview; onMouseEnter?: () => void }) {
+function Mosaic({ preview, onMouseEnter, onMouseLeave }: { preview: ThemePreview; onMouseEnter?: () => void; onMouseLeave?: () => void }) {
   return (
-    <div className={css.mosaic} aria-hidden="true" onMouseEnter={onMouseEnter}>
+    <div className={css.mosaic} aria-hidden="true" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       <span style={{ background: preview.background }} />
       <span style={{ background: preview.surface }} />
       <span style={{ background: preview.foreground }} />
