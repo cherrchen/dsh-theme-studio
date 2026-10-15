@@ -10,8 +10,8 @@ import { attachThemeStudioSettings, type SettingsServiceFace } from './compat/se
 import { ThemeStudioSettingsSchema } from './settings.ts'
 
 export {
-  ACTIVE_THEME_ID_FIELD, DEFAULT_THEME_STUDIO_SETTINGS, THEME_STUDIO_SETTINGS_NAMESPACE,
-  Config, ThemeStudioSettingsSchema, type ThemeStudioSettings,
+  ACTIVE_THEME_ID_FIELD, DEFAULT_THEME_STUDIO_SETTINGS, IMPORTED_THEMES_FIELD,
+  THEME_STUDIO_SETTINGS_NAMESPACE, Config, ThemeStudioSettingsSchema, type ThemeStudioSettings,
 } from './settings.ts'
 export { ACTIVE_SOURCE, PREVIEW_SOURCE } from './constants.ts'
 

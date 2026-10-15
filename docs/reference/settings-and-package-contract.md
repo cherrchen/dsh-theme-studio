@@ -5,11 +5,13 @@
 | 身份 | 字段/值 | 所有者 |
 | --- | --- | --- |
 | `ui-theme.preference` | system / light / dark | 官方 Appearance |
-| `theme-studio.activeThemeId` | null 或 namespaced builtin id | Theme Studio |
+| `theme-studio.activeThemeId` | null 或主题 id（builtin 或 imported） | Theme Studio |
+| `theme-studio.importedThemes` | 导入的 `dsh-theme.json` 源对象数组，默认 `[]` | Theme Studio |
 | `THEME_STUDIO_SETTINGS_NAMESPACE` | theme-studio | Host namespace / profile entry id |
 | `ACTIVE_THEME_ID_FIELD` | activeThemeId | 常量与 schema |
+| `IMPORTED_THEMES_FIELD` | importedThemes | 常量与 schema |
 
-Host schema 是 string/null union，默认 null，不把当前 builtin id 清单固化进 schema。由 runtime 在读取 ready snapshot 后识别未知 id。`DEFAULT_THEME_STUDIO_SETTINGS` 与 `Config` 从主入口导出；旧 namespace schema 与 Config 用新建 field 避免 volatile 改写共享对象。
+`activeThemeId` 的 Host schema 是 string/null union，默认 null，不把主题 id 清单固化进 schema；由 runtime 在读取 ready snapshot 后识别未知 id。`importedThemes` 的 Host schema 是宽松 `array`，默认 `[]`——严格逐文件校验在 Client 进行（见[文件格式](./theme-file-format.md)），无法解析的条目被跳过并在 UI 计入 `droppedImports`，不会让整个 namespace 快照失败；这使旧版本读新格式条目降级为跳过而不是丢数据。导入主题的原文件对象原样存储，导出可逐字回写。`DEFAULT_THEME_STUDIO_SETTINGS` 与 `Config` 从主入口导出；旧 namespace schema 与 Config 用新建 field 避免 volatile 改写共享对象。
 
 ### 旧 Host / Client
 
@@ -17,9 +19,9 @@ Host schema 是 string/null union，默认 null，不把当前 builtin id 清单
 
 ### 新 Host / Client
 
-Host 暴露 `Config`，如果 schema 支持 volatile 则将 activeThemeId 标为 live field；`settings.configure({ auto: false }, ownerFiber)` 关闭自动配置 UI，因为 Themes row 已自定义。Client 使用 `configForms.get('theme-studio')`。legacy register 与 configure 同时存在时优先 register，依据结构选择，不在业务逻辑里比较版本。
+Host 暴露 `Config`，如果 schema 支持 volatile 则将 `activeThemeId` 与 `importedThemes` 都标为 live field；`settings.configure({ auto: false }, ownerFiber)` 关闭自动配置 UI，因为 Themes row 已自定义。Client 使用 `configForms.get('theme-studio')`。legacy register 与 configure 同时存在时优先 register，依据结构选择，不在业务逻辑里比较版本。
 
-共同 handle 接口为 getSnapshot、subscribe 和返回 Promise 的 set。set 的 resolved 值可以是 void 或 boolean，runtime 只等待 settlement。实际版本划分与证据见[兼容矩阵](../development/dsh-compatibility.md)。
+共同 handle 接口为 getSnapshot、subscribe 和返回 Promise 的 set。set 的 resolved 值可以是 void 或 boolean，runtime 等待 settlement 后核对 accepted snapshot 中的 active id 与完整导入列表；旧通道拒绝后即使返回 void，也不能视为成功。实际版本划分与证据见[兼容矩阵](../development/dsh-compatibility.md)。
 
 ## Client injection and slots
 
@@ -38,8 +40,10 @@ Client 必需服务是 `theme`、`slots`、`locale`、`connection`、`remote`。
 | Export | Runtime | 声明 | 内容 |
 | --- | --- | --- | --- |
 | `.` | lib/index.js | lib/types/index.d.ts | Host name/apply、Config/schema、settings 与 source 常量 |
-| `./client` | lib/client.js | lib/types/client/index.d.ts | browser apply、runtime、adapter、catalog、presets、store、对比度与公开类型 |
+| `./client` | lib/client.js | lib/types/client/index.d.ts | browser apply、runtime、adapter、catalog、presets、store、对比度、theme-file/theme-import 辅助函数与公开类型 |
 | `./package.json` | package.json | 不适用 | 包 metadata |
+
+公共 JSON Schema 位于包内 `schemas/dsh-theme.schema.json`（随 `files` 清单发布），供编辑器 `$schema` 引用与一致性测试使用；不注册到 exports，以文件路径取用。
 
 没有 `./invariant` export：官方 ThemeRuntime 负责 overlay consistency，settings 服务负责 persistence。本包不得复制一个宿主 invariant provider。历史移除见 `d08aac9`。
 

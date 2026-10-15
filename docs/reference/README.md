@@ -7,6 +7,7 @@ English: [README.en.md](./README.en.md)
 | 文档 |
 | --- |
 | [公开 catalog API](./theme-catalog.md) |
+| [`dsh-theme.json` 文件格式](./theme-file-format.md) |
 | [Overlay runtime 与快照](./theme-runtime.md) |
 | [内置主题与 token 目录](./theme-tokens.md) |
 | [对比度算法、范围与结果](./theme-contrast.md) |

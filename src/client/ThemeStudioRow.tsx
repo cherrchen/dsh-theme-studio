@@ -1,28 +1,52 @@
 /**
  * Themes preference row registered into the General section item slot:
  * title, description, and a language-row-style selector. The trigger pill
- * opens a Menu whose rows preview on hover; closing the menu restores the
- * applied theme; selecting an option applies it.
+ * opens a Menu whose rows preview on hover. Hover is tracked at the row
+ * level by event delegation: a theme row is any `role="menuitem"` carrying
+ * a `[data-ts-theme]` marker, so padding and the icon/label gap count as
+ * hovering the row, matching the visual highlight. Moving the pointer onto
+ * another row previews it; landing anywhere else — separators, group
+ * labels, footer actions, or outside the list — restores the applied theme,
+ * as does closing the menu; selecting an option applies it.
+ * The menu footer carries theme-file management: import, export, and remove.
  */
-import { useEffect, useState } from 'react'
-import { Menu } from '@deepseek-ai/dsh-client-ui-primitives'
+import { useEffect, useRef, useState } from 'react'
+import { Button, Menu, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
+import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import { ChevronDownIcon } from '../compat/menu-icons.tsx'
 import { DEFAULT_PREVIEW } from './presets.ts'
+import { THEME_FILE_MAX_LENGTH } from './theme-file.ts'
+import type { ImportResolution, ThemeFileInspection } from './theme-import.ts'
+import type { ThemeFileError } from './theme-file.ts'
+import type { ThemeStudioCard } from './store.ts'
 import type { ThemePreview } from './types.ts'
 import type { createThemeStudioRowStore } from './store.ts'
 import { formatLocale, type ThemeStudioKey } from './locales.ts'
 import css from './ThemeStudioRow.module.css'
 
-/** Injected business face: overlay writes. Copy rides the locale seat. */
+/** Injected business face: overlay writes and theme-file management. */
 export interface ThemeStudioRowInjected {
   /** Start a transient preview; `null` previews Default. */
   previewTheme: (id: string | null) => void
-  /** Persist a builtin theme, or Default when `id` is `null`. */
+  /** Persist a theme, or Default when `id` is `null`. */
   activateTheme: (id: string | null) => void
   /** Drop the transient preview. */
   cancelPreview: () => void
+  /** Parse and inspect one theme file's text without persisting anything. */
+  inspectThemeFile: (text: string) => ThemeFileInspection
+  /** Whether an imported theme or an in-flight write already owns the id. */
+  importIdTaken: (id: string) => boolean
+  /**
+   * Persist one imported theme file.
+   * @returns the id the theme lands under.
+   */
+  saveImportedTheme: (source: Record<string, unknown>, mode: ImportResolution) => string
+  /** Drop one imported theme from the durable list. */
+  removeImportedTheme: (id: string) => void
+  /** Download one theme as a `dsh-theme.json` file. */
+  exportTheme: (id: string) => void
 }
 
 /** Full component props: runtime share + store share + locale seat + injected face. */
@@ -43,6 +67,17 @@ export const NAME_KEYS: Record<string, ThemeStudioKey> = {
 
 /** MenuItem ids are strings; the Default card carries a `null` theme id. */
 const DEFAULT_ITEM_ID = 'default'
+/* Menu action ids contain a colon, which theme-file ids cannot carry. */
+const ACTION_IMPORT = 'theme-studio:import'
+const ACTION_MANAGE = 'theme-studio:manage'
+
+type ImportOk = Extract<ThemeFileInspection, { ok: true }>
+
+type DialogState =
+  | { kind: 'error'; error: ThemeFileError }
+  | { kind: 'confirm'; inspection: ImportOk }
+  | { kind: 'duplicate'; inspection: ImportOk }
+  | { kind: 'manage' }
 
 /**
  * Render the Themes row.
@@ -51,6 +86,7 @@ const DEFAULT_ITEM_ID = 'default'
  */
 export function ThemeStudioRow({
   t, useStore, previewTheme, activateTheme, cancelPreview,
+  inspectThemeFile, importIdTaken, saveImportedTheme, removeImportedTheme, exportTheme,
 }: ThemeStudioRowComponentProps) {
   const cards = useStore(s => s.cards)
   const activeThemeId = useStore(s => s.activeThemeId)
@@ -58,14 +94,114 @@ export function ThemeStudioRow({
   const previewing = useStore(s => s.previewing)
   const settingsStatus = useStore(s => s.settingsStatus)
   const saveError = useStore(s => s.saveError)
-  const previewName = previewLabel(t, previewing, previewThemeId)
+  const droppedImports = useStore(s => s.droppedImports)
   const [open, setOpen] = useState(false)
+  const [dialog, setDialog] = useState<DialogState | null>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
   // A host that unmounts the row while the menu is open (e.g. an Escape that
   // closes the whole Settings surface before Menu's own onClose runs) must
   // not leak the transient preview.
   useEffect(() => () => { cancelPreview() }, [cancelPreview])
+  // Row-level hover tracking. Handlers cannot sit on the menuitem element
+  // (the Menu primitive owns it), so a delegated listener resolves the row
+  // under the pointer: theme rows carry a data-ts-theme marker, everything
+  // else restores the applied theme once a theme row was hovered.
+  const hoveredRow = useRef<Element | null>(null)
+  useEffect(() => {
+    const rowAt = (target: EventTarget | null): { row: Element; id: string | null } | undefined => {
+      if (!(target instanceof Element)) return undefined
+      const item = target.closest('[role="menuitem"]')
+      if (item === null) return undefined
+      const marker = item.querySelector('[data-ts-theme]')
+      if (marker === null) return undefined
+      const id = marker.getAttribute('data-ts-theme')
+      if (id === null || id === '') return undefined
+      return { row: item, id: id === DEFAULT_ITEM_ID ? null : id }
+    }
+    const onOver = (event: MouseEvent): void => {
+      const hit = rowAt(event.target)
+      if (hit === undefined ? hoveredRow.current === null : hit.row === hoveredRow.current) return
+      hoveredRow.current = hit?.row ?? null
+      if (hit === undefined) cancelPreview()
+      else previewTheme(hit.id)
+    }
+    const onOut = (event: MouseEvent): void => {
+      // Leaving the document dispatches no mouseover; clear the hover then.
+      if (hoveredRow.current !== null && event.relatedTarget === null) {
+        hoveredRow.current = null
+        cancelPreview()
+      }
+    }
+    document.addEventListener('mouseover', onOver)
+    document.addEventListener('mouseout', onOut)
+    return () => {
+      document.removeEventListener('mouseover', onOver)
+      document.removeEventListener('mouseout', onOut)
+      hoveredRow.current = null
+    }
+  }, [previewTheme, cancelPreview])
   const activeCard = cards.find(card => card.id === activeThemeId)
-  const activeKey = (activeCard?.nameKey ?? 'default.name') as ThemeStudioKey
+  const activeName = activeCard === undefined ? t('default.name') : cardName(activeCard, t)
+  const previewCard = cards.find(card => card.id === previewThemeId)
+  const previewName = previewing ? cardName(previewCard ?? cards.find(card => card.id === null), t) : ''
+  const settingsUnavailable = settingsStatus === 'unavailable'
+  const settingsReady = settingsStatus === 'ready'
+
+  const menuItems: MenuEntry[] = []
+  let importedHeader = false
+  for (const card of cards) {
+    if (card.imported === true && !importedHeader) {
+      importedHeader = true
+      menuItems.push(
+        { type: 'separator', id: 'theme-studio:sep-imported' },
+        { type: 'label', id: 'theme-studio:lbl-imported', text: t('group.imported') },
+      )
+    }
+    menuItems.push({
+      id: card.id ?? DEFAULT_ITEM_ID,
+      icon: <Mosaic preview={card.preview.light} />,
+      label: (
+        <span className={css.itemLabel} data-ts-theme={card.id ?? DEFAULT_ITEM_ID}>
+          {cardName(card, t)}
+        </span>
+      ),
+    })
+  }
+
+  const closeDialog = (): void => { setDialog(null) }
+  const confirmImport = (inspection: ImportOk, mode: ImportResolution): void => {
+    if (!settingsReady) return
+    // The catalog or a pending write may have claimed the id since the file
+    // was picked; re-resolve instead of appending a durable duplicate.
+    if (mode === 'append' && importIdTaken(inspection.file.id)) {
+      setDialog({ kind: 'duplicate', inspection })
+      return
+    }
+    saveImportedTheme(inspection.source, mode)
+    closeDialog()
+  }
+  const pickFile = async (file: File): Promise<void> => {
+    if (file.size > THEME_FILE_MAX_LENGTH) {
+      setDialog({ kind: 'error', error: { code: 'too-large', detail: `${file.size} bytes` } })
+      return
+    }
+    let text: string
+    try {
+      text = await file.text()
+    } catch (error) {
+      setDialog({
+        kind: 'error',
+        error: { code: 'read-failed', detail: error instanceof Error ? error.message : String(error) },
+      })
+      return
+    }
+    const inspection = inspectThemeFile(text)
+    if (!inspection.ok) setDialog({ kind: 'error', error: inspection.error })
+    else if (inspection.collision === 'imported') setDialog({ kind: 'duplicate', inspection })
+    else setDialog({ kind: 'confirm', inspection })
+  }
+
+  const manageCards = cards.filter(card => card.id !== null)
 
   return (
     <div className={css.row}>
@@ -73,29 +209,47 @@ export function ThemeStudioRow({
         <div className={css.title}>{t('title')}</div>
         <p className={css.description}>{t('description')}</p>
         {settingsStatus === 'loading' ? <p className={css.status}>{t('status.loading')}</p> : null}
-        {settingsStatus === 'unavailable' ? <p className={css.status}>{t('status.unavailable')}</p> : null}
+        {settingsUnavailable ? <p className={css.status}>{t('status.unavailable')}</p> : null}
         {saveError ? <p className={css.alert} role="alert">{t('status.saveFailed')}</p> : null}
       </div>
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".json,application/json"
+        className={css.fileInput}
+        aria-hidden="true"
+        tabIndex={-1}
+        onChange={(event) => {
+          const file = event.target.files?.[0]
+          event.target.value = ''
+          if (settingsReady && file !== undefined) void pickFile(file)
+        }}
+      />
       <Menu
         open={open}
         onClose={() => {
           cancelPreview()
           setOpen(false)
         }}
-        items={cards.map(card => ({
-          id: card.id ?? DEFAULT_ITEM_ID,
-          icon: <Mosaic preview={card.preview.light} onMouseEnter={() => { previewTheme(card.id) }} />,
-          label: (
-            <span className={css.itemLabel} onMouseEnter={() => { previewTheme(card.id) }}>
-              {t(card.nameKey as ThemeStudioKey)}
-            </span>
-          ),
-        }))}
+        items={menuItems}
         selectedId={activeThemeId ?? DEFAULT_ITEM_ID}
         onSelect={(id) => {
-          activateTheme(id === DEFAULT_ITEM_ID ? null : id)
+          if (id === ACTION_IMPORT || id === ACTION_MANAGE) {
+            // Action rows close the menu through setOpen, bypassing Menu's
+            // onClose; drop a still-active preview like the other close paths.
+            cancelPreview()
+            if (settingsReady) {
+              if (id === ACTION_IMPORT) fileInput.current?.click()
+              else setDialog({ kind: 'manage' })
+            }
+          }
+          else activateTheme(id === DEFAULT_ITEM_ID ? null : id)
           setOpen(false)
         }}
+        footer={[
+          { id: ACTION_IMPORT, label: <span className={css.itemLabel}>{t('action.import')}</span>, disabled: !settingsReady },
+          { id: ACTION_MANAGE, label: <span className={css.itemLabel}>{t('action.manage')}</span>, disabled: !settingsReady },
+        ]}
         align="end"
         portal
         closeOnPointerLeave
@@ -113,7 +267,7 @@ export function ThemeStudioRow({
             }}
           >
             <Mosaic preview={activeCard?.preview.light ?? DEFAULT_PREVIEW.light} />
-            {t(activeKey)}
+            <span className={css.selectorName} title={activeName}>{activeName}</span>
             <ChevronDownIcon className={css.chevron} />
           </button>
         )}
@@ -121,13 +275,113 @@ export function ThemeStudioRow({
       <div className={css.live} role="status" aria-live="polite">
         {previewing ? formatLocale(t('previewing'), { name: previewName }) : ''}
       </div>
+
+      <Modal
+        open={dialog?.kind === 'error'}
+        onClose={closeDialog}
+        title={t('import.error.title')}
+        closeLabel={t('action.close')}
+        footer={<Button onClick={closeDialog} data-modal-autofocus>{t('action.close')}</Button>}
+      >
+        {dialog?.kind === 'error' ? (
+          <p className={css.modalText}>{importErrorMessage(t, dialog.error)}</p>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={dialog?.kind === 'confirm'}
+        onClose={closeDialog}
+        title={t('import.confirm.title')}
+        closeLabel={t('action.close')}
+        footer={dialog?.kind === 'confirm' ? (
+          <>
+            <Button onClick={closeDialog}>{t('action.cancel')}</Button>
+            <Button variant="primary" disabled={!settingsReady} data-modal-autofocus onClick={() => { confirmImport(dialog.inspection, 'append') }}>
+              {t('action.confirmImport')}
+            </Button>
+          </>
+        ) : null}
+      >
+        {dialog?.kind === 'confirm' ? (
+          <>
+            <p className={css.modalText}>
+              {formatLocale(t('import.confirm.body'), { name: dialog.inspection.file.name, id: dialog.inspection.file.id })}
+            </p>
+            {dialog.inspection.file.description === undefined ? null : (
+              <p className={`${css.modalText} ${css.modalDesc}`} title={dialog.inspection.file.description}>
+                {dialog.inspection.file.description}
+              </p>
+            )}
+            <p className={dialog.inspection.summary.failed + dialog.inspection.summary.unknown === 0 ? css.modalText : css.modalWarn}>
+              {dialog.inspection.summary.failed + dialog.inspection.summary.unknown === 0
+                ? t('import.contrast.pass')
+                : formatLocale(t('import.contrast.warn'), {
+                  failed: dialog.inspection.summary.failed,
+                  unknown: dialog.inspection.summary.unknown,
+                })}
+            </p>
+          </>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={dialog?.kind === 'duplicate'}
+        onClose={closeDialog}
+        title={t('import.duplicate.title')}
+        closeLabel={t('action.close')}
+        footer={dialog?.kind === 'duplicate' ? (
+          <>
+            <Button onClick={closeDialog}>{t('action.cancel')}</Button>
+            <Button disabled={!settingsReady} onClick={() => { confirmImport(dialog.inspection, 'rename') }}>
+              {t('import.duplicate.rename')}
+            </Button>
+            <Button variant="primary" disabled={!settingsReady} data-modal-autofocus onClick={() => { confirmImport(dialog.inspection, 'replace') }}>
+              {t('import.duplicate.replace')}
+            </Button>
+          </>
+        ) : null}
+      >
+        {dialog?.kind === 'duplicate' ? (
+          <p className={css.modalText}>
+            {formatLocale(t('import.duplicate.body'), { id: dialog.inspection.file.id })}
+          </p>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={dialog?.kind === 'manage'}
+        onClose={closeDialog}
+        title={t('manage.title')}
+        closeLabel={t('action.close')}
+        contentClassName={css.manageBody ?? ''}
+        footer={<Button onClick={closeDialog}>{t('action.close')}</Button>}
+      >
+        {dialog?.kind === 'manage' ? (
+          <>
+            {droppedImports > 0 ? (
+              <p className={css.modalWarn}>{formatLocale(t('manage.dropped'), { count: droppedImports })}</p>
+            ) : null}
+            <p className={css.manageGroup}>{t('manage.builtin')}</p>
+            {manageCards.filter(card => card.imported !== true).map(card => (
+              <ManageRow key={card.id} card={card} t={t} onExport={exportTheme} />
+            ))}
+            <p className={css.manageGroup}>{t('manage.imported')}</p>
+            {manageCards.filter(card => card.imported === true).map(card => (
+              <ManageRow key={card.id} card={card} t={t} onExport={exportTheme} onRemove={removeImportedTheme} removeDisabled={!settingsReady} />
+            ))}
+            {cards.some(card => card.imported === true) ? null : (
+              <p className={css.modalText}>{t('manage.empty')}</p>
+            )}
+          </>
+        ) : null}
+      </Modal>
     </div>
   )
 }
 
-function Mosaic({ preview, onMouseEnter }: { preview: ThemePreview; onMouseEnter?: () => void }) {
+function Mosaic({ preview }: { preview: ThemePreview }) {
   return (
-    <div className={css.mosaic} aria-hidden="true" onMouseEnter={onMouseEnter}>
+    <div className={css.mosaic} aria-hidden="true">
       <span style={{ background: preview.background }} />
       <span style={{ background: preview.surface }} />
       <span style={{ background: preview.foreground }} />
@@ -136,12 +390,43 @@ function Mosaic({ preview, onMouseEnter }: { preview: ThemePreview; onMouseEnter
   )
 }
 
-function previewLabel(
+function ManageRow({ card, t, onExport, onRemove, removeDisabled = false }: {
+  card: ThemeStudioCard
+  t: (key: ThemeStudioKey) => string
+  onExport: (id: string) => void
+  onRemove?: (id: string) => void
+  removeDisabled?: boolean
+}) {
+  const id = card.id as string
+  const name = cardName(card, t)
+  return (
+    <div className={css.manageRow}>
+      <Mosaic preview={card.preview.light} />
+      <span className={css.manageName} title={name}>{name}</span>
+      <span className={css.manageId} title={id}>{id}</span>
+      {card.description === undefined ? null : (
+        <span className={css.manageDesc} title={card.description}>{card.description}</span>
+      )}
+      <Button size="sm" onClick={() => { onExport(id) }}>{t('action.export')}</Button>
+      {onRemove === undefined ? null : (
+        <Button size="sm" disabled={removeDisabled} className={css.removeButton} onClick={() => { onRemove(id) }}>{t('action.remove')}</Button>
+      )}
+    </div>
+  )
+}
+
+function cardName(
+  card: Pick<ThemeStudioCard, 'name' | 'nameKey'> | undefined,
   t: (key: ThemeStudioKey) => string,
-  previewing: boolean,
-  previewThemeId: string | null,
 ): string {
-  if (!previewing) return ''
-  if (previewThemeId === null) return t('default.name')
-  return t(NAME_KEYS[previewThemeId] ?? 'default.name')
+  if (card === undefined) return t('default.name')
+  return card.name ?? t(card.nameKey as ThemeStudioKey)
+}
+
+function importErrorMessage(
+  t: (key: ThemeStudioKey) => string,
+  error: ThemeFileError,
+): string {
+  const key = `import.error.${error.code}` as ThemeStudioKey
+  return formatLocale(t(key), { path: error.path ?? '', detail: error.detail ?? '' })
 }

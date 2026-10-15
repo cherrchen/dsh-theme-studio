@@ -36,7 +36,7 @@ git hash-object README.md README.en.md README.zh.md
 
 使用 [.agent/templates/adr.md](../../.agent/templates/adr.md)、[design.md](../../.agent/templates/design.md)、[plan.md](../../.agent/templates/plan.md)。ADR 编号唯一；有多个合理选择且长期影响时才记录，不为每个 helper 都造决策。旧选择被取代要写替代关系，不覆盖历史。
 
-长期路线图维护 progress/release state，完成的具体批次在 plans/completed。后续 schema/import/export/Creator 仍未实施，不因为文档补齐移成 completed。具体任务完成后从 active 移到 completed，更新 plansREADME入链，不能两边保留同名计划。
+长期路线图维护 progress/release state，完成的具体批次在 plans/completed。尚未实施的方向（如主题编辑器、Creator）不因为其他批次完成而移成 completed。具体任务完成后从 active 移到 completed，更新 plansREADME入链，不能两边保留同名计划。
 
 ## 检查范围
 

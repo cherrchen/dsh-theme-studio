@@ -2,7 +2,7 @@
 
 ## Status and Scope
 
-Current，Stage 3，首次实现于 `509b88e`（2026-10-02），尚未包含在 `v0.1.3` tag 中。catalog 仅在 Client Cordis 上提供；headless Host 不提供浏览器服务。类型真源为 [types.ts](../../src/client/types.ts)，组装真源为 [client/index.ts](../../src/client/index.ts)。
+Current，Stage 3，首次实现于 `509b88e`（2026-10-02），尚未包含在 `v0.1.4` tag 中。catalog 仅在 Client Cordis 上提供；headless Host 不提供浏览器服务。类型真源为 [types.ts](../../src/client/types.ts)，组装真源为 [client/index.ts](../../src/client/index.ts)。导入主题复合目录（ADR-0009）同样尚未随 tag 发布。
 
 ## 消费者接入
 
@@ -45,21 +45,21 @@ export function apply(ctx: Context): void {
 | `ThemeStudioService` | readonly `catalog` | 只读服务 facade，运行时被冻结 |
 | `ThemeCatalog` | `get(id)`、`list()` | overlay runtime 使用的最小发现面 |
 | `ThemeStudioCatalog` | 继承 ThemeCatalog，增加 `validate(id)` | 公开发现与默认规则诊断 |
-| `BuiltinThemePreset` | readonly `id/name/description?/tokens/preview` | 可 JSON 序列化的数据，不是公共文件格式 |
+| `BuiltinThemePreset` | readonly `id/name/description?/palette/tokens/preview` | 可 JSON 序列化的数据，不是公共文件格式 |
 | `ThemePreview` | readonly `background/surface/foreground/accent` | 每种模式的四色装饰样本 |
 | `ThemeContrastReport` | readonly `themeId/passed/checks` | 两种模式逐配对结果，详见[对比度参考](./theme-contrast.md) |
 
-`tokens.light/dark` 为 `Readonly<Record<string, string>>`，`preview.light/dark` 为 ThemePreview。id 为命名空间 id，不是官方 `light/dark/system` 或默认 `null`。
+`palette.light/dark` 是 13 字段 `ChromePalette` 源数据（导出 `dsh-theme.json` 与 token 派生共用），`tokens.light/dark` 为 `Readonly<Record<string, string>>` 编译结果，`preview.light/dark` 为 ThemePreview。id 为命名空间 id，不是官方 `light/dark/system` 或默认 `null`。
 
 ## 方法契约
 
 ### `list(): readonly BuiltinThemePreset[]`
 
-同步返回 Settings 行选项顺序的内置主题列表。对于同一个 catalog 实例，重复调用返回同一个数组引用。数组、preset、tokens 容器、两个 palette、preview 容器与样本均冻结。Default 不在列表中；UI 自行添加 id 为 null 的默认选项。
+同步返回 Settings 行选项顺序的冻结快照：builtin 在前，imported 在后（按存储顺序）。同一 catalog 实例在 imported 分区不变时重复调用返回同一数组引用；分区被替换后返回新的冻结数组。数组、preset、tokens 容器、preview 容器与样本均冻结。Default 不在列表中；UI 自行添加 id 为 null 的默认选项。
 
 ### `get(id: string): BuiltinThemePreset | undefined`
 
-按精确 id 查找。存在时返回与 list 中相同的 preset 对象；未知 id、`default/light/dark/system` 均返回 undefined。不会 fallback 成别的主题，也不写 Host 设置。
+按精确 id 查找，builtin 分区优先于 imported 分区——内置 id 永远不会被导入条目覆盖。存在时返回与 list 中相同的 preset 对象；未知 id、`default/light/dark/system` 均返回 undefined。不会 fallback 成别的主题，也不写 Host 设置。
 
 ### `validate(id: string): ThemeContrastReport | undefined`
 
@@ -69,16 +69,18 @@ export function apply(ctx: Context): void {
 
 ## 生命周期与不可变性
 
-provider 在 Client apply 中先于 settings child 创建。即使没有 settingsScope/configForms，catalog 仍可发现；没有这些 transport 时 Themes UI 不启动。settings child 卸载只清理 runtime/UI，不移除父 fiber 的 catalog。同一 Client apply 内，新旧 settings runtime 共用同一 catalog。
+provider 在 Client apply 中先于 settings child 创建，实际实例是 `ThemeStudioRegistry`。即使没有 settingsScope/configForms，catalog 仍可发现——此时只有 builtin 分区；没有这些 transport 时 Themes UI 不启动。settings child 的 runtime 把 Host accepted snapshot 的 `importedThemes` 编译为 imported 分区并原子替换；settings child 卸载只清理 runtime/UI，不移除父 fiber 的 catalog。同一 Client apply 内，新旧 settings runtime 共用同一 catalog。
 
-Client plugin 重载会创建新 catalog。卸载前取得的 frozen 数据不会失效，也不会变成可写对象；但 consumer 应让 Cordis 管理当前 provider，而不是把旧 provider 当成永久 live registry。
+imported 分区替换是一次原子操作：一份 Host snapshot 产生一次 `list()` 快照更换与一次 `revision` 递增。与 builtin 撞 id 的存储条目被丢弃；同 id 的后写条目在分区内部覆盖前者。`registry.subscribe(listener)` 与 `revision` 供 UI 投影主题卡片；`sourceOf(id)` 返回导入主题的原始文件对象供导出回写（builtin 返回 `undefined`），`isImported(id)` 区分分区，`importedEntries()` 返回带 source 的当前导入列表。这些方法不在 `ThemeStudioCatalog` 公共类型上，只对同包内部的 runtime/UI 可见。
 
-`BuiltinPresetRegistry(presets?)` 也作为类导出，默认使用 BUILTIN_PRESETS；构造时复制并冻结输入，重复 id 抛错。它能供测试或本地数据使用，但不会把自建实例注册进全局 Theme Studio UI。
+Client plugin 重载会创建新 catalog。卸载前取得的 frozen 数据不会失效，也不会变成可写对象；但 consumer 应让 Cordis 管理当前 provider，而不是把旧 `list()` 数组当成永久 live registry——需要最新视图时重新调用 `list()`。
+
+`BuiltinPresetRegistry(presets?)` 仍作为类导出（构造时复制并冻结输入，重复 id 抛错）；`ThemeStudioRegistry(presets?)` 是实际服务实现，默认使用 BUILTIN_PRESETS。自建实例不会注册进全局 Theme Studio UI。
 
 ## 非承诺接口
 
-服务不提供 register/unregister、activate、preview、restoreDefault、import/export、Host RPC、locale 切换或动态目录更新。英文 `name/description` 是 catalog 元数据；Settings UI 通过 locale namespace 呈现中英文案。不要把 catalog 与官方 `ctx.theme.register` 的主题 registry 混为一谈。
+服务类型不提供 register/unregister、activate、preview、restoreDefault、Host RPC 或 locale 切换。`dsh-theme.json` 的导入/导出由 Themes 行 UI 与 `/client` 导出的 `theme-file`/`theme-import` 辅助函数承担（见[文件格式](./theme-file-format.md)），不走 catalog 方法；builtin 的 `name/description` 走 locale namespace，导入主题的 `name`/`description` 按文件原文呈现。不要把 catalog 与官方 `ctx.theme.register` 的主题 registry 混为一谈。
 
 ## 验证与相关决策
 
-`catalog.spec.ts` 覆盖稳定 list/get、深层冻结、复制隔离、重复 id 与未知 id。`apply.client.spec.ts` 在真实 Cordis Context 中覆盖 provider/consumer 注入、settings 缺失、transport 变更、卸载与重新提供。十版兼容证据见[矩阵](../development/dsh-compatibility.md)，选择原因见 [ADR-0007](../decisions/ADR-0007-readonly-client-theme-catalog.md)。
+`catalog.spec.ts` 覆盖稳定 list/get、深层冻结、复制隔离、重复 id、未知 id、imported 分区替换、revision 与订阅。`apply.client.spec.ts` 在真实 Cordis Context 中覆盖 provider/consumer 注入、settings 缺失、transport 变更、卸载与重新提供，以及导入主题进入公共目录。十版兼容证据见[矩阵](../development/dsh-compatibility.md)；选择原因见 [ADR-0007](../decisions/ADR-0007-readonly-client-theme-catalog.md)（原始静态决策）与 [ADR-0009](../decisions/ADR-0009-dynamic-imported-theme-catalog.md)（导入分区修订）。

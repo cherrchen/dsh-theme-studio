@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { stubSettingsScope } from '../harness.ts'
 import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
 import type { ThemeStudioSettings } from '../../src/constants.ts'
-import { BuiltinPresetRegistry } from '../../src/client/catalog.ts'
+import { BuiltinPresetRegistry, ThemeStudioRegistry } from '../../src/client/catalog.ts'
 import { BUILTIN_PRESETS } from '../../src/client/presets.ts'
 import { isOfficialFontToken } from '../../src/client/font-boundary.ts'
 import {
-  ACTIVE_SOURCE, PREVIEW_SOURCE, ThemeStudioRuntime,
+  ACTIVE_SOURCE, IMPORTED_THEMES_FIELD, PREVIEW_SOURCE, ThemeStudioRuntime,
 } from '../../src/client/runtime.ts'
 
 const GRAPHITE = 'dsh-theme-studio.graphite'
@@ -42,10 +42,10 @@ function durableHost(value: ThemeStudioSettings | undefined = undefined) {
   if (value !== undefined) {
     host.publish({ status: 'ready', value, revision: 1, writable: true })
   }
-  host.set.mockImplementation((_field: string, next: unknown) => {
+  host.set.mockImplementation((field: string, next: unknown) => {
     host.publish({
       status: 'ready',
-      value: { activeThemeId: next as string | null },
+      value: { ...(host.scope.getSnapshot().value ?? { activeThemeId: null, importedThemes: [] }), [field]: next },
       revision: (host.scope.getSnapshot().revision ?? 0) + 1,
       writable: true,
     })
@@ -435,5 +435,287 @@ describe('ThemeStudioRuntime', () => {
     expect(overlay.has(ACTIVE_SOURCE)).toBe(false)
     expect(overlay.has(PREVIEW_SOURCE)).toBe(false)
     expect(overlay.layers.size).toBe(0)
+  })
+})
+
+const OCEAN = 'user.ocean'
+const MOSS = 'user.moss'
+
+const OCEAN_PALETTE = {
+  light: {
+    bgBase: '#f4f8fb', bgLayer1: '#ffffff', bgLayer2: '#eef3f7', bgOverlay: '#ffffff',
+    borderL1: '#d7e0e8', borderL2: '#c3d0da', brand: '#2b6cb0',
+    labelPrimary: '#1b2a3a', labelSecondary: '#51606f',
+    error: '#b3282d', success: '#22793d', warn: '#975a16', sidebar: '#eef3f7',
+  },
+  dark: {
+    bgBase: '#101820', bgLayer1: '#1a2430', bgLayer2: '#223040', bgOverlay: '#101820',
+    borderL1: '#2c3c4e', borderL2: '#3a4d63', brand: '#63a4d8',
+    labelPrimary: '#e6edf3', labelSecondary: '#9fb0bf',
+    error: '#f0838a', success: '#6cc596', warn: '#e0b56a', sidebar: '#1a2430',
+  },
+}
+
+function themeSource(id: string, name = id): Record<string, unknown> {
+  return { version: 1, id, name, palette: { light: { ...OCEAN_PALETTE.light }, dark: { ...OCEAN_PALETTE.dark } } }
+}
+
+function composite(host = durableHost({ activeThemeId: null, importedThemes: [] })) {
+  const overlay = fakeTheme()
+  const registry = new ThemeStudioRegistry()
+  const runtime = new ThemeStudioRuntime({
+    theme: overlay.theme,
+    host: host.scope,
+    catalog: registry,
+  })
+  return { runtime, overlay, host, registry }
+}
+
+describe('ThemeStudioRuntime imported themes', () => {
+  it('feeds stored imports into the catalog and restores an imported active id', () => {
+    const host = durableHost({ activeThemeId: OCEAN, importedThemes: [themeSource(OCEAN, 'Ocean')] })
+    const overlay = fakeTheme()
+    const registry = new ThemeStudioRegistry()
+    const runtime = new ThemeStudioRuntime({
+      theme: overlay.theme,
+      host: host.scope,
+      catalog: registry,
+    })
+    expect(registry.get(OCEAN)?.name).toBe('Ocean')
+    expect(runtime.getSnapshot().activeThemeId).toBe(OCEAN)
+    expect(overlay.layers.get(ACTIVE_SOURCE)?.tokens['--dsw-alias-brand-primary']?.light).toBe('#2b6cb0')
+  })
+
+  it('counts unreadable stored entries as droppedImports', () => {
+    const host = durableHost({
+      activeThemeId: null,
+      importedThemes: [themeSource(OCEAN), { id: 'Bad' }, 'junk'],
+    })
+    const { runtime, registry } = composite(host)
+    expect(runtime.getSnapshot().droppedImports).toBe(2)
+    expect(registry.importedEntries().map(entry => entry.preset.id)).toEqual([OCEAN])
+  })
+
+  it('activates an imported theme and persists its id', async () => {
+    const host = durableHost({ activeThemeId: null, importedThemes: [themeSource(OCEAN)] })
+    const { runtime, overlay } = composite(host)
+    runtime.activateTheme(OCEAN)
+    expect(overlay.has(ACTIVE_SOURCE)).toBe(true)
+    await Promise.resolve()
+    expect(host.set).toHaveBeenCalledWith('activeThemeId', OCEAN)
+  })
+
+  it('rejects activating an id absent from the catalog', () => {
+    const { runtime } = composite()
+    expect(() => runtime.activateTheme('user.missing')).toThrow(/not in the catalog/)
+  })
+
+  it('persists the imported list through the same write queue', async () => {
+    const { runtime, host } = composite()
+    runtime.saveImportedThemes([themeSource(OCEAN), themeSource(MOSS)])
+    await Promise.resolve()
+    expect(host.set).toHaveBeenCalledWith(IMPORTED_THEMES_FIELD, [themeSource(OCEAN), themeSource(MOSS)])
+    await Promise.resolve()
+    expect(host.scope.getSnapshot().value?.importedThemes).toHaveLength(2)
+  })
+
+  it.each(['append', 'replace', 'remove'] as const)(
+    'reports a void-returning rejected %s and keeps the accepted imported list', async (mode) => {
+      const original = themeSource(OCEAN, 'Ocean v1')
+      const host = durableHost({ activeThemeId: OCEAN, importedThemes: [original] })
+      const { runtime, registry, overlay } = composite(host)
+      host.set.mockImplementation(() => Promise.resolve())
+      const requested = mode === 'append' ? [original, themeSource(MOSS)]
+        : mode === 'replace' ? [themeSource(OCEAN, 'Ocean v2')] : []
+      runtime.saveImportedThemes(requested)
+      await Promise.resolve()
+      expect(runtime.getSnapshot()).toMatchObject({ activeThemeId: OCEAN, saveError: true })
+      expect(registry.sourceOf(OCEAN)).toEqual(original)
+      expect(registry.isImported(MOSS)).toBe(false)
+      expect(runtime.requestedImportedSources()).toBeUndefined()
+      expect(overlay.has(ACTIVE_SOURCE)).toBe(true)
+      host.set.mockImplementation((field: string, next: unknown) => {
+        host.publish({ value: { ...host.scope.getSnapshot().value!, [field]: next } })
+        return Promise.resolve()
+      })
+      runtime.saveImportedThemes(requested)
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(runtime.getSnapshot().saveError).toBe(false)
+    },
+  )
+
+  it('keeps import reconciliation pending until a ready accepted snapshot arrives', async () => {
+    const { runtime, host, registry } = composite()
+    const requested = [themeSource(OCEAN)]
+    host.set.mockImplementation(() => {
+      host.publish({ status: 'loading' })
+      return Promise.resolve()
+    })
+    runtime.saveImportedThemes(requested)
+    await Promise.resolve()
+    expect(runtime.requestedImportedSources()).toEqual(requested)
+    host.publish({ status: 'ready', value: { activeThemeId: null, importedThemes: [] } })
+    expect(runtime.getSnapshot().saveError).toBe(true)
+    expect(registry.isImported(OCEAN)).toBe(false)
+  })
+
+  it('does not queue import edits before the accepted settings snapshot is ready', () => {
+    const host = durableHost()
+    const { runtime } = composite(host)
+    runtime.saveImportedThemes([themeSource(OCEAN)])
+    expect(host.set).not.toHaveBeenCalled()
+    expect(runtime.requestedImportedSources()).toBeUndefined()
+    host.publish({ status: 'ready', value: { activeThemeId: null, importedThemes: [themeSource(MOSS)] } })
+    expect(host.scope.getSnapshot().value?.importedThemes).toEqual([themeSource(MOSS)])
+  })
+
+  it('removes the active imported theme and falls back to Default on the next snapshot', async () => {
+    const host = durableHost({ activeThemeId: OCEAN, importedThemes: [themeSource(OCEAN)] })
+    const { runtime, overlay, registry } = composite(host)
+    expect(registry.isImported(OCEAN)).toBe(true)
+    host.publish({
+      status: 'ready',
+      value: { activeThemeId: OCEAN, importedThemes: [] },
+      revision: 2,
+      writable: true,
+    })
+    expect(registry.isImported(OCEAN)).toBe(false)
+    expect(runtime.getSnapshot().activeThemeId).toBeNull()
+    expect(overlay.has(ACTIVE_SOURCE)).toBe(false)
+    await Promise.resolve()
+    // The unknown-id repair writes null back even though the snapshot still names the removed theme.
+    expect(host.set).toHaveBeenCalledWith('activeThemeId', null)
+  })
+
+  it('reinstalls the active layer when an imported theme is overwritten', () => {
+    const host = durableHost({ activeThemeId: OCEAN, importedThemes: [themeSource(OCEAN)] })
+    const { runtime, overlay } = composite(host)
+    const changed = themeSource(OCEAN)
+    ;(changed['palette'] as Record<string, unknown>)['light'] = { ...OCEAN_PALETTE.light, brand: '#ff0000' }
+    host.publish({
+      status: 'ready',
+      value: { activeThemeId: OCEAN, importedThemes: [changed] },
+      revision: 2,
+      writable: true,
+    })
+    expect(overlay.layers.get(ACTIVE_SOURCE)?.tokens['--dsw-alias-brand-primary']?.light).toBe('#ff0000')
+    expect(runtime.getSnapshot().activeThemeId).toBe(OCEAN)
+  })
+
+  it('restacks a surviving preview above the reinstalled active layer', () => {
+    const moss = themeSource(MOSS, 'Moss')
+    ;(moss['palette'] as Record<string, unknown>)['light'] = { ...OCEAN_PALETTE.light, brand: '#112233' }
+    const host = durableHost({
+      activeThemeId: OCEAN,
+      importedThemes: [themeSource(OCEAN), moss],
+    })
+    const { runtime, overlay } = composite(host)
+    runtime.previewTheme(MOSS)
+    expect(overlay.layers.get(PREVIEW_SOURCE)!.seq)
+      .toBeGreaterThan(overlay.layers.get(ACTIVE_SOURCE)!.seq)
+    // Any adopted importedThemes change reinstalls the imported active layer;
+    // without a restack it would cover the preview while the snapshot still
+    // reports it.
+    host.publish({
+      status: 'ready',
+      value: { activeThemeId: OCEAN, importedThemes: [themeSource(OCEAN, 'Ocean v2'), moss] },
+      revision: 2,
+      writable: true,
+    })
+    expect(runtime.getSnapshot()).toMatchObject({ previewing: true, previewThemeId: MOSS })
+    const active = overlay.layers.get(ACTIVE_SOURCE)!
+    const preview = overlay.layers.get(PREVIEW_SOURCE)!
+    // Highest-seq layer wins per token, so the composed brand is the
+    // previewed Moss value, not the active Ocean one.
+    expect(preview.seq).toBeGreaterThan(active.seq)
+    expect(preview.tokens['--dsw-alias-brand-primary']?.light).toBe('#112233')
+    expect(active.tokens['--dsw-alias-brand-primary']?.light).toBe('#2b6cb0')
+  })
+
+  it('refreshes the preview layer when the previewed theme is overwritten', () => {
+    const host = durableHost({
+      activeThemeId: OCEAN,
+      importedThemes: [themeSource(OCEAN), themeSource(MOSS)],
+    })
+    const { runtime, overlay } = composite(host)
+    runtime.previewTheme(MOSS)
+    const changed = themeSource(MOSS)
+    ;(changed['palette'] as Record<string, unknown>)['light'] = { ...OCEAN_PALETTE.light, brand: '#112233' }
+    host.publish({
+      status: 'ready',
+      value: { activeThemeId: OCEAN, importedThemes: [themeSource(OCEAN), changed] },
+      revision: 2,
+      writable: true,
+    })
+    expect(runtime.getSnapshot()).toMatchObject({ previewing: true, previewThemeId: MOSS })
+    expect(overlay.layers.get(PREVIEW_SOURCE)?.tokens['--dsw-alias-brand-primary']?.light).toBe('#112233')
+  })
+
+  it('drops a vanished preview theme without touching the active overlay', () => {
+    const host = durableHost({
+      activeThemeId: GRAPHITE,
+      importedThemes: [themeSource(OCEAN), themeSource(MOSS)],
+    })
+    const { runtime, overlay } = composite(host)
+    runtime.previewTheme(MOSS)
+    expect(overlay.has(PREVIEW_SOURCE)).toBe(true)
+    host.publish({
+      status: 'ready',
+      value: { activeThemeId: GRAPHITE, importedThemes: [themeSource(OCEAN)] },
+      revision: 2,
+      writable: true,
+    })
+    expect(overlay.has(PREVIEW_SOURCE)).toBe(false)
+    expect(overlay.layers.get(ACTIVE_SOURCE)?.tokens['--dsw-alias-brand-primary']?.light).toBe('#5b6570')
+    expect(runtime.getSnapshot()).toMatchObject({ previewing: false, activeThemeId: GRAPHITE })
+  })
+
+  it('leaves the hidden active layer alone while previewing Default during an import change', () => {
+    const host = durableHost({ activeThemeId: OCEAN, importedThemes: [themeSource(OCEAN)] })
+    const { runtime, overlay } = composite(host)
+    runtime.previewTheme(null)
+    expect(overlay.has(ACTIVE_SOURCE)).toBe(false)
+    const changed = themeSource(OCEAN)
+    host.publish({
+      status: 'ready',
+      value: { activeThemeId: OCEAN, importedThemes: [changed, themeSource(MOSS)] },
+      revision: 2,
+      writable: true,
+    })
+    expect(overlay.has(ACTIVE_SOURCE)).toBe(false)
+    runtime.cancelPreview()
+    expect(overlay.has(ACTIVE_SOURCE)).toBe(true)
+  })
+
+  it('does not run a repair write when the durable id stays known after import sync', async () => {
+    const host = durableHost({ activeThemeId: OCEAN, importedThemes: [themeSource(OCEAN)] })
+    composite(host)
+    await Promise.resolve()
+    expect(host.set).not.toHaveBeenCalledWith('activeThemeId', null)
+  })
+
+  it('ignores importedThemes writes when no settings host exists', () => {
+    const overlay = fakeTheme()
+    const registry = new ThemeStudioRegistry()
+    const runtime = new ThemeStudioRuntime({ theme: overlay.theme, host: undefined, catalog: registry })
+    runtime.saveImportedThemes([themeSource(OCEAN)])
+    expect(runtime.requestedImportedSources()).toBeUndefined()
+    expect(registry.isImported(OCEAN)).toBe(false)
+  })
+
+  it('leaves a catalog without the imported-section face untouched by import sync', () => {
+    const host = durableHost({
+      activeThemeId: null,
+      importedThemes: [themeSource(OCEAN), 'unreadable'],
+    })
+    const overlay = fakeTheme()
+    const catalog = new BuiltinPresetRegistry()
+    const runtime = new ThemeStudioRuntime({ theme: overlay.theme, host: host.scope, catalog })
+    // No sink is derived: the imported section stays inert while skipped
+    // entries are still counted.
+    expect(runtime.getSnapshot()).toMatchObject({ settingsStatus: 'ready', droppedImports: 1 })
+    expect(catalog.get(OCEAN)).toBeUndefined()
+    runtime.dispose()
   })
 })

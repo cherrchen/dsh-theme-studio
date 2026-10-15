@@ -1,5 +1,6 @@
 /** Public readonly catalog data. This is not a theme-file exchange schema. */
 import type { ThemeContrastReport } from './contrast.ts'
+import type { ChromePalette } from './chrome-tokens.ts'
 
 /** Four-color chip shown on a theme card. */
 export interface ThemePreview {
@@ -44,6 +45,11 @@ export interface BuiltinThemePreset {
   readonly name: string
   /** Optional English description. */
   readonly description?: string
+  /** Source 13-field palette per scheme; base for token derivation and file export. */
+  readonly palette: {
+    readonly light: ChromePalette
+    readonly dark: ChromePalette
+  }
   /** Light and dark palettes; every defined token must exist in both. */
   readonly tokens: {
     /** Values applied while the official light base palette is active. */

@@ -26,12 +26,13 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 | 完整文档体系 | Completed，本批次单独提交 | v0.1.4 | [文档补齐](../completed/2026-10-02-documentation-reconstruction.md)、[文档地图](../../README.md) |
 | DSH 0.2.1-alpha.1/alpha.2 与字体正交、保存失败提示 | Completed，本分支实现 | v0.1.4 | [兼容矩阵](../../development/dsh-compatibility.md) |
 | 元数据驱动的多版本矩阵、候选探测与发布复用 | Completed，本分支实现 | v0.1.4；远端跨平台结果由 PR CI 提供 | [兼容矩阵](../../development/dsh-compatibility.md) |
+| `dsh-theme.json` v1 与主题导入/导出、复合 catalog | Completed，本分支实现 | 未随 tag 发布（v0.1.4 之后） | [导入导出](../completed/2026-10-14-theme-file-import-export.md)、[文件格式](../../reference/theme-file-format.md) |
 
 “发布状态”以 tag 与远端产物为准：v0.1.4 于 2026-10-11 打 tag、发布 GitHub Release 并推上 npm（`@dsh-electron/dsh-theme-studio@0.1.4`），Stage 2/3、文档补齐与兼容/发布改进均纳入其中；每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
 
 ## Current State
 
-runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化，官方 Appearance 保留所有权。catalog 在 Client 父 fiber 提供，settings 子树可停止/重建。对比度默认报告可复现、全内置可计算，但有低于阈值的配对；报告与 UI 认证必须分开。
+runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化（`activeThemeId` + `importedThemes`），官方 Appearance 保留所有权。catalog 在 Client 父 fiber 提供为 builtin+imported 复合目录，settings 子树可停止/重建。主题文件导入/导出/删除走浏览器 file picker 与 Blob 下载，不扩大 portable 权限。对比度默认报告可复现、全内置可计算，但有低于阈值的配对；报告与 UI 认证必须分开。
 
 当前全部受支持 DSH 版本由[兼容契约](../../../src/compat/dsh-version.ts)决定。2026-10-10 起清单包含 0.2.1-alpha.1 与 0.2.1-alpha.2；证据见[兼容矩阵](../../development/dsh-compatibility.md)。没有把 Theme Creator 或公共主题文件放进这次兼容升级。
 
@@ -43,9 +44,7 @@ runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化，
 
 | 方向 | 开始前需解决的契约 | 验收要求 |
 | --- | --- | --- |
-| 公共 .dsh-theme.json schema | 版本、id 命名空间、支持 token/色值、元数据、失败策略、文件安全与迁移 | 正反例、明暗完整性、schema 版本兼容；与 builtin 目录分离 |
-| 导入导出与主题编辑 | 保存位置、ownership、重复 id、回滚与卸载、Host/Client 同步 | 重启、非法文件、取消、恢复与历史兼容，不扩大 portable 权限 |
-| 动态 catalog | 注册来源、撤销、稳定 snapshot 与 revision、active id 被移除的行为 | consumers 生命周期、事件与持久 id 一致性；必要时新增 ADR |
+| 主题编辑器 | `dsh-theme.json` 之上新增改名/改色 UI 的契约与持久化路径 | 不回退 palette+overrides 模型；编辑结果可导出回导 |
 | Theme Creator Agent | 模型工具契约、prompt、产物 schema、校验反馈与用户确认 | 模型产生主题经过格式与对比度检查；不可直接从当前 Model Experience 推断已有 |
 | 配色可读性改进 | 对标 palette 身份、具体语义配对、视觉影响与变更范围 | 用实际报告和真实 UI 决定修正，不默认把所有品牌色都当普通文本 |
 | 设置写入错误呈现 | 已在 0.2.1 兼容批次实现：accepted snapshot 回收敛，并显示可重试的保存失败 | 不再作为未实施项 |

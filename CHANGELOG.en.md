@@ -6,6 +6,32 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- Public `dsh-theme.json` v1 theme file format with a packaged JSON Schema (`schemas/dsh-theme.schema.json`): `palette` requires all 13 fields per scheme, optional sparse `overrides` layer over derived tokens; color values are limited to the contrast resolver's supported subset and an omitted `version` defaults to 1.
+- Import and manage actions in the Themes menu: imports persist through a confirmation dialog and preview automatically, duplicate ids let the user choose overwrite or an automatically generated id; the manage dialog exports and removes imported themes, and builtin themes export as re-importable `user.*` files.
+- The public `ctx.themeStudio.catalog` is now a builtin + imported composite (ADR-0009): `list()`/`get()`/`validate()` cover imported themes and `list()` returns a frozen snapshot at call time.
+
+### Changed
+
+- The `theme-studio` settings namespace gains an `importedThemes` field persisting imported theme source files; the Host schema stays loose while the Client parses strictly, so unreadable entries are skipped without breaking the rest of the settings.
+
+### Fixed
+
+- Rejected imports, replacements and removals report a save failure and preserve the accepted theme list on older settings transports; imports and removals are disabled until settings are ready.
+- Replacement imports preview the new colors after acceptance; automatic duplicate-id renames stay within the 64-character limit.
+- In the Themes menu, moving the pointer off a theme row or hovering "Import theme…"/"Manage themes…" restores the applied theme instead of keeping the last hovered preview; selecting either action by keyboard cancels the preview too.
+- Import edits merge onto the accepted raw array so entries the parser skipped survive appends, replacements, and removals instead of being silently deleted.
+- Import confirmation rechecks the id against the catalog and in-flight writes; a stale confirm returns to the duplicate dialog, and a late `append` collision falls back to a keep-both rename instead of persisting a duplicate id.
+- Overlong imported theme names ellipsize in the selector pill and the manage dialog (with the full name as a tooltip) instead of stretching the settings row.
+- A theme file that fails to read (for example, an I/O error mid-read) now shows the import error dialog instead of an unhandled Promise rejection.
+- The import confirmation and manage dialogs now show a theme file's `description` field, matching the file-format reference; long descriptions ellipsize with the full text as a tooltip.
+- Theme-menu hover preview is now tracked per whole row: resting the pointer on a row's padding or the icon/text gap no longer restores the applied theme; moving onto separators, group labels, footer actions, or outside the menu still does.
+- A theme file's `$schema` field is now restricted to strings per the published JSON Schema; non-string values (such as deeply nested objects) previously passed validation and were persisted, then overflowed the deep-freeze recursion with a RangeError — and the same stored entry failed catalog loading again on every restart.
+- A theme file's `version: null` is no longer treated as omitted; it is rejected as `unsupported-version`, matching the published JSON Schema.
+- Theme-file validation no longer recursively stringifies rejected values: a deeply nested array as `id`, `name`, `version`, or an override color is now rejected with the matching error code instead of throwing a RangeError.
+- While an imported theme is active and another theme is being previewed, an `importedThemes` change no longer lets the reinstalled active layer cover the preview: the surviving preview is restacked on top with refreshed tokens, so the screen matches the preview state.
+
 ## [0.1.4] - 2026-10-11
 
 ### Added

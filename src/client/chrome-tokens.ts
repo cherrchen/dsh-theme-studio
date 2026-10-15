@@ -234,3 +234,43 @@ const CHROME_NAME_PROBE: ChromePalette = {
 
 /** Every variable {@link deriveChrome} writes. Same set for light and dark. */
 export const CHROME_TOKEN_NAMES: readonly string[] = Object.freeze(Object.keys(deriveChrome(CHROME_NAME_PROBE)))
+
+/** Every {@link ChromePalette} field, in declaration order. */
+export const CHROME_PALETTE_KEYS: readonly (keyof ChromePalette)[] = Object.freeze(Object.keys(CHROME_NAME_PROBE) as (keyof ChromePalette)[])
+
+/**
+ * The 13 Stage 1 aliases backed directly by palette fields.
+ * @param palette - one scheme of a theme.
+ * @returns token names to palette colors for that scheme.
+ */
+export function baseAliasTokens(palette: ChromePalette): Readonly<Record<string, string>> {
+  return {
+    '--dsw-alias-bg-base': palette.bgBase,
+    '--dsw-alias-bg-layer-1': palette.bgLayer1,
+    '--dsw-alias-bg-layer-2': palette.bgLayer2,
+    '--dsw-alias-bg-overlay': palette.bgOverlay,
+    '--dsw-alias-border-l1': palette.borderL1,
+    '--dsw-alias-border-l2': palette.borderL2,
+    '--dsw-alias-brand-primary': palette.brand,
+    '--dsw-alias-label-primary': palette.labelPrimary,
+    '--dsw-alias-label-secondary': palette.labelSecondary,
+    '--dsw-alias-state-error-primary': palette.error,
+    '--dsw-alias-state-success-primary': palette.success,
+    '--dsw-alias-state-warn-primary': palette.warn,
+    '--dsw-specific-sidebar-fill': palette.sidebar,
+  }
+}
+
+/**
+ * Card mosaic colors derived from one scheme of a theme.
+ * @param palette - one scheme of a theme.
+ * @returns the four preview colors.
+ */
+export function palettePreview(palette: ChromePalette): { background: string; surface: string; foreground: string; accent: string } {
+  return {
+    background: palette.bgBase,
+    surface: palette.bgLayer1,
+    foreground: palette.labelPrimary,
+    accent: palette.brand,
+  }
+}

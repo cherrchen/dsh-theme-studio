@@ -15,12 +15,13 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 3. 将预览与持久选择分离，允许取消预览、应用预览和恢复默认。
 4. 在 Host 设置就绪、插件重启、设置服务停止/重供时正确恢复 UI 与覆盖层。
 5. 自动发现语义配对的对比度不足或无法计算，不用手工可读性判断代替报告。
-6. 提供只读 Client catalog，让其他插件发现当前内置主题与校验报告。
-7. 保持独立构建、公开声明、可打包发布与受测版本兼容契约。
+6. 提供只读 Client catalog，让其他插件发现当前主题（含导入主题）与校验报告。
+7. 提供公开的 `dsh-theme.json` 文件格式，支持导入、导出、管理与持久化用户主题。
+8. 保持独立构建、公开声明、可打包发布与受测版本兼容契约。
 
 ## Non-goals
 
-当前不提供公开主题文件 schema、导入导出、第三方主题注册、主题编辑器或 Theme Creator Agent。不新增模型工具、不改写系统提示、不替代官方 ThemePresenter。不为本包添加 Electron、preload、Desktop provider、Node 客户端能力或文件/网络授权。后续方向在[路线图](../plans/active/2026-10-02-theme-studio-roadmap.md)维护，未设定发布版本或交付日期。
+当前不提供第三方主题注册 API、主题编辑器、Theme Creator Agent、远程主题库或网络拉取。不新增模型工具、不改写系统提示、不替代官方 ThemePresenter。不为本包添加 Electron、preload、Desktop provider、Node 客户端能力或文件/网络授权——导入导出仅通过浏览器 file picker 与 Blob 下载完成。后续方向在[路线图](../plans/active/2026-10-02-theme-studio-roadmap.md)维护，未设定发布版本或交付日期。
 
 ## Functional Requirements
 
@@ -42,6 +43,12 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 | F14 | catalog `list/get/validate` 同步、只读，未知 id 返回 undefined | catalog 测试 |
 | F15 | catalog 可在设置 ready 前发现，设置通道变更不撤销服务 | provider/consumer 生命周期测试 |
 | F16 | 消费者随 Cordis provider 卸载停止、重供后重启 | 真实 Cordis 注入测试 |
+| F17 | `dsh-theme.json` v1 按 [文件格式](../reference/theme-file-format.md) 校验；色值限 resolver 子集；解析失败整文件拒绝 | `theme-file.spec.ts` 正反例与 JSON Schema 一致性 |
+| F18 | 菜单 footer 提供 Import/Manage；导入经确认对话框后写入 `importedThemes` 并自动预览 | `ThemeStudioRow.spec.tsx` 与 `theme-import.spec.ts` |
+| F19 | 重复导入 id 必须弹窗由用户选覆盖或自动生成新 id，不做静默选择 | `theme-import.spec.ts` 与 UI 测试 |
+| F20 | Manage 对话框对 builtin 仅导出，对导入主题提供导出与删除；删除激活主题回落 Default | UI 与 runtime 回落测试 |
+| F21 | 导出名 `<id>.dsh-theme.json`；导入主题原样回写，builtin 导出改写为 `user.<短名>` 可回导 | `theme-file.spec.ts` 往返用例 |
+| F22 | Host 无法解析的导入条目被跳过并计入 `droppedImports`，不影响其余条目与 activeThemeId | settings 与 runtime adoption 测试 |
 
 ## Non-functional Requirements
 

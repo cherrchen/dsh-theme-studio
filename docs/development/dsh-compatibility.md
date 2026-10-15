@@ -116,10 +116,19 @@ CLI 自身也需要统一依赖树：旧缓存中 `dsh-app-boot` / `dsh-plugin-m
 
 Themes 行改为与官方语言行同款的下拉选择器：selector 按钮（`aria-haspopup=menu`/`aria-expanded`）显示已应用主题，点击展开共享 `Menu`（items + `selectedId` + 尾随勾选，`align="end"`、`portal`、`closeOnPointerLeave`）；选项悬停预览，菜单关闭（指针离开、外部点击、Esc 或再次点击选择器）恢复，点击应用。`@deepseek-ai/dsh-client-ui-primitives` 是宿主模块表基线行，已加入全部受支持版本的 peer 清单、开发 pin、overrides、minimumReleaseAgeExclude、`OPTIONAL_CORE_PACKAGES` 与 client externals。
 
-逐版本导出审查：`Menu` 在全部受支持版本导出，surface、定位、键盘与外点关闭均由原生组件提供；`MenuItem.icon` 承载四色 Mosaic，label 用 `flex:1` span 把尾随勾选推到行尾。items API 没有行级 hover 钩子，预览只能挂在 icon 与 label 的内容元素上；0.1.5–0.1.6 的 `.list` min-width 为 218px（0.1.7 起 144px），行中部落在宿主 label 空白区时内联 span 收不到 mouseenter，`.itemLabel` 改为 block 并以负 margin + 等值 padding 把命中区撑到整行。Esc 关闭路径也分版本：0.1.6-alpha.2 实测 Escape 先关闭整个 Settings 对话框，`Menu` 的 `onClose` 不再运行；selector 再次点击同样绕过 `onClose`，触发器在收起前直接补 `cancelPreview`，行在 unmount 时再兜底一次，任何绕过 `onClose` 的关闭路径都不会泄漏预览；新版本仅菜单关闭。导出上的版本差异仍是触发器箭头：`IconChevronDownOutlineRegular` 自 0.1.7-alpha.1 起发布，0.1.5–0.1.6 只有 `IconChevronDownOutline14`。`src/compat/menu-icons.tsx` 对两个导出做结构探测并按此序绑定，都不存在时回退到同路径内联 SVG；0.1.5/0.1.6 的类型面不含新名，探测输入按未声明 namespace 处理，不做部分类型化断言。`--dsw-radius-*` 在 0.1.7-rc.2 前不存在，selector 与 Mosaic 的 `var()` 均带字面值兜底。
+逐版本导出审查：`Menu` 在全部受支持版本导出，surface、定位、键盘与外点关闭均由原生组件提供；`MenuItem.icon` 承载四色 Mosaic，label 用 `flex:1` span 把尾随勾选推到行尾。items API 没有行级 hover 钩子，悬停改为 document 级 `mouseover`/`mouseout` 委托：`role="menuitem"` 内含 `[data-ts-theme]` 标记的才是主题行，行内 padding 与图标间隙都算作悬停该行，不依赖随版本变化的行内命中区几何；0.1.5–0.1.6 的 `.list` min-width 为 218px（0.1.7 起 144px）。Esc 关闭路径也分版本：0.1.6-alpha.2 实测 Escape 先关闭整个 Settings 对话框，`Menu` 的 `onClose` 不再运行；selector 再次点击同样绕过 `onClose`，触发器在收起前直接补 `cancelPreview`，行在 unmount 时再兜底一次，任何绕过 `onClose` 的关闭路径都不会泄漏预览；新版本仅菜单关闭。导出上的版本差异仍是触发器箭头：`IconChevronDownOutlineRegular` 自 0.1.7-alpha.1 起发布，0.1.5–0.1.6 只有 `IconChevronDownOutline14`。`src/compat/menu-icons.tsx` 对两个导出做结构探测并按此序绑定，都不存在时回退到同路径内联 SVG；0.1.5/0.1.6 的类型面不含新名，探测输入按未声明 namespace 处理，不做部分类型化断言。`--dsw-radius-*` 在 0.1.7-rc.2 前不存在，selector 与 Mosaic 的 `var()` 均带字面值兜底。
 
 发布包 `lib/index.js` 裸导入 clsx、shiki、katex 等未声明的宿主侧包，vitest 无法加载真实产物；测试经 `resolve.alias` 使用 `tests/shims/ui-primitives.tsx`（含 Menu 契约替身：anchor + 打开时渲染 menuitem、外点/Esc 调 `onClose`），适配层分支由 `tests/client/menu-icons.spec.tsx` 的模块 mock 覆盖。
 
 证据：2026-10-13 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上 `node scripts/run-dsh-matrix.mjs 0.1.5-rc.2` 全部步骤通过，含最老类型面的 typecheck 与 smoke-compose 真实 CLI tarball 安装；开发基线门禁（compat:check、lint、typecheck、test、docs:check、build、verify-package）同步通过。同日在 `DSH_BROWSER_E2E=1` 下 `node scripts/run-dsh-matrix.mjs 0.1.6-alpha.2` 全步骤通过（含真实 Chromium 旅程：悬停预览、Esc 恢复、应用与 Host 重启恢复），并在开发基线 0.2.1-alpha.2 上单独通过 `scripts/smoke-client.mjs`。仍未覆盖逐版本逐像素的视觉比对与本地 chevron 回退的截图。
 
 矩阵工具同步修复：重定向树（非 frozen）删除 lockfile 后全新解析，非 DSH dev 依赖可能新于 pnpm 默认 release-age 截止线，每个 `pnpm run`/`exec` 的前置 supply-chain verify 会误伤。脚本现给该隔离树补写 `minimumReleaseAge: 0`，源码 checkout 与 frozen 基线的策略不变。
+
+
+## 主题导入导出 Review 修复复验（2026-10-14）
+
+针对 [PR #9](https://github.com/cherrchen/dsh-theme-studio/pull/9) 在 `1cb8a96` 上的 Review 修复，在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上执行了 `pnpm verify:all`，并用可写临时 npm 缓存重跑全部十二个既有支持版本的 `pnpm compat:matrix`。全部通过，逐命令结果与各版本测试摘要见 [Review 修复矩阵](./dsh-compatibility-review-results-2026-10-14.json)。支持清单与最新开发基线没有变化。
+
+回归用例覆盖旧 transport resolve void 但未接受的导入、覆盖与删除及重试，结算时 loading 后再 ready 的核对，设置加载或重新加载期间的导入确认保护，覆盖主题接受后的真实 preview token、并发导入与重复拒绝时的监听清理，以及 62–64 字符 id 的重命名和目录采纳。开发基线为 226 passed、1 个条件性 legacy-provider skip；每个隔离版本另执行 lint、typecheck、build、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 与 CLI profile smoke。
+
+这次没有设置 `DSH_BROWSER_E2E=1`，不声称验证真实浏览器 file picker 或导入主题的磁盘持久化旅程；本机矩阵也不替代 Linux/Windows 的 PR CI 证据。runtime 与文件规则仍分别以 [runtime 参考](../reference/theme-runtime.md)和[文件格式](../reference/theme-file-format.md)为准。

@@ -8,7 +8,7 @@
 
 ## What & Why
 
-DSH (DeepSeek Harness) natively offers only three appearance modes — light, dark, and follow-system; this plugin is an out-of-tree extension that modifies no upstream code and injects a "Themes" row into **Settings → General**, widening the color choices to "**8 built-in themes + a Default entry**".
+DSH (DeepSeek Harness) natively offers only three appearance modes — light, dark, and follow-system; this plugin is an out-of-tree extension that modifies no upstream code and injects a "Themes" row into **Settings → General**, widening the color choices to "**8 built-in themes + a Default entry**" with support for importing and exporting custom `dsh-theme.json` theme files.
 
 The official "Appearance" owns the mode, not the palette, while peer desktop tools have long shipped multiple themes; this plugin brings the same capability to DSH: the Themes row lands between the official "Appearance" and "Font size" rows, its selector mirrors the official Language row dropdown — hover to preview, click to apply.
 
@@ -164,6 +164,16 @@ The official "Appearance" keeps controlling light / dark / system mode: every bu
 
 Claude, Codex, Claude Cream, Graphite, OLED, Nordic, Paper, Warm — ids all under the `dsh-theme-studio.*` namespace; "Default" is not a catalog member. The four-color Mosaic in the selector and menu always uses the light sample and does not indicate the mode actually in effect. Full token and palette fields are documented in the [token reference](./docs/reference/theme-tokens.md).
 
+### Importing and managing themes
+
+The footer of the theme menu offers **Import theme** and **Manage themes**:
+
+- **Import**: picking a `.dsh-theme.json` file (v1 format — see the [file format reference](./docs/reference/theme-file-format.en.md)) opens a confirmation dialog; confirming persists the theme through the Host and previews it automatically. An id already used by an imported theme offers overwrite or an automatic rename; ids colliding with the builtin namespace are rejected.
+- **Export**: both builtin and imported themes download as `<id>.dsh-theme.json`; builtin exports rewrite the id under the `user.` prefix so the file can be imported back.
+- **Remove**: the manage dialog can delete imported themes; removing the active theme falls back to "Default".
+
+Imported themes persist in Host settings and join the public catalog — other plugins can discover them through `ctx.themeStudio.catalog` as well.
+
 ## Project structure
 
 ```text
@@ -182,7 +192,10 @@ Claude, Codex, Claude Cream, Graphite, OLED, Nordic, Paper, Warm — ids all und
 │       ├── ThemeStudioRow.tsx        主题行与 Menu 下拉选择器
 │       ├── runtime.ts                active / preview 两层 overrideTokens 的所有者
 │       ├── presets.ts                8 套内置主题的 token 覆盖与预览色板
-│       ├── catalog.ts                ctx.themeStudio.catalog：只读主题发现与校验
+│       ├── catalog.ts                ctx.themeStudio.catalog：builtin+imported 只读目录
+│       ├── theme-file.ts             dsh-theme.json v1 解析/校验/编译/序列化
+│       ├── theme-import.ts           导入决策、持久化与导出编排
+│       ├── download.ts               Blob 下载辅助
 │       ├── contrast.ts               对比度逐配对诊断（report 命令后端）
 │       ├── store.ts / adapter.ts     宿主快照的 runtime 投影与 settings transport
 │       └── locales.ts                中英双语词典
@@ -203,10 +216,10 @@ Issues and PRs are welcome:
 
 ## Known limitations
 
-- Only the 8 built-in themes: the public `.dsh-theme.json` schema, custom-theme import/export, and a theme editor are not implemented — see the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
+- A theme editor is not implemented: `dsh-theme.json` import/export is supported (see the [file format](./docs/reference/theme-file-format.en.md)), while rename/recolor UI and the Theme Creator remain on the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
 - The contrast check is a diagnostic, not a gate: some built-in palettes fall below threshold and are neither repaired automatically nor blocked from preview or apply; `pnpm contrast:report` is documented in the [token reference](./docs/reference/theme-tokens.md).
 - Preview is hover-driven: keyboard focus on menu items does not preview; press Enter to apply directly.
-- The read-only catalog `ctx.themeStudio.catalog` exists only on the Client, excludes "Default", and supports neither dynamic registration nor Host RPC — see the [catalog reference](./docs/reference/theme-catalog.md).
+- The read-only catalog `ctx.themeStudio.catalog` exists only on the Client, covers builtin and imported themes but not "Default"; it offers no register API or Host RPC, and the imported section follows the settings snapshot — see the [catalog reference](./docs/reference/theme-catalog.md).
 - When the Host refuses to save, the row reports the failure and restores the last accepted choice; when the settings channel is unavailable the catalog still works but the row explains that this connection does not save selections — see [missing Themes row](./docs/troubleshooting/themes-row-missing.md).
 - The four-color Mosaic uses a fixed light sample; cross-platform browser visual coverage is limited — verified bounds are listed in the [compatibility matrix](./docs/development/dsh-compatibility.md).
 
@@ -218,6 +231,7 @@ The project's long-lived documents live under [`docs/`](./docs/README.md):
 - [Requirements](./docs/requirements/theme-studio.md)
 - [Target architecture](./docs/architecture/theme-studio.md)
 - [Settings and package contract](./docs/reference/settings-and-package-contract.md)
+- [`dsh-theme.json` file format](./docs/reference/theme-file-format.en.md)
 - [DSH compatibility matrix](./docs/development/dsh-compatibility.md)
 - [Architecture decision records (ADR)](./docs/decisions/README.md)
 - [Plans](./docs/plans/README.md)

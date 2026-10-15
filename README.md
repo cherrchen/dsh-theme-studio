@@ -8,7 +8,7 @@
 
 ## 项目简介
 
-DSH（DeepSeek Harness）原生只提供浅色 / 深色 / 跟随系统三种外观模式；本插件是一个不修改上游任何代码的外部扩展，在「设置 → 通用」注入「主题」行，把可选配色扩为"**8 套内置主题 + 默认项**"。
+DSH（DeepSeek Harness）原生只提供浅色 / 深色 / 跟随系统三种外观模式；本插件是一个不修改上游任何代码的外部扩展，在「设置 → 通用」注入「主题」行，把可选配色扩为"**8 套内置主题 + 默认项**"，并支持导入/导出自定义的 `dsh-theme.json` 主题文件。
 
 官方「外观」管模式不管配色，同类桌面工具早已提供多套主题可选；本插件把同样的能力带给 DSH：主题行落在官方「外观」与「字号」之间，选择器沿用官方语言行同款下拉样式，悬停即预览、点击即应用。
 
@@ -164,6 +164,16 @@ dsh --profile web --dump-config | grep -A3 'theme-studio'
 
 Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均在 `dsh-theme-studio.*` 命名空间下；「默认」不是目录成员。选择器与菜单中的四色 Mosaic 固定使用浅色样本，不代表实际生效的模式。完整 token 与配色字段见[token 参考](./docs/reference/theme-tokens.md)。
 
+### 导入与管理主题
+
+主题菜单底部提供 **导入主题** 与 **管理主题**：
+
+- **导入**：选择 `.dsh-theme.json` 文件（v1 格式，见[文件格式参考](./docs/reference/theme-file-format.md)）后弹出确认对话框，确认后写入 Host 设置并自动预览；文件 id 与已有导入主题冲突时可选择覆盖或自动改名，与内置命名空间冲突会被拒绝。
+- **导出**：内置与导入主题都可导出为 `<id>.dsh-theme.json` 下载；内置主题导出时 id 改写为 `user.` 前缀，文件可直接回导。
+- **删除**：管理对话框可删除导入主题；删除当前激活的主题会回落到「默认」。
+
+导入的主题随 Host 设置持久化并进入公开 catalog，其他插件同样能通过 `ctx.themeStudio.catalog` 发现它们。
+
 ## 项目结构
 
 ```text
@@ -182,7 +192,10 @@ Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均
 │       ├── ThemeStudioRow.tsx        主题行与 Menu 下拉选择器
 │       ├── runtime.ts                active / preview 两层 overrideTokens 的所有者
 │       ├── presets.ts                8 套内置主题的 token 覆盖与预览色板
-│       ├── catalog.ts                ctx.themeStudio.catalog：只读主题发现与校验
+│       ├── catalog.ts                ctx.themeStudio.catalog：builtin+imported 只读目录
+│       ├── theme-file.ts             dsh-theme.json v1 解析/校验/编译/序列化
+│       ├── theme-import.ts           导入决策、持久化与导出编排
+│       ├── download.ts               Blob 下载辅助
 │       ├── contrast.ts               对比度逐配对诊断（report 命令后端）
 │       ├── store.ts / adapter.ts     宿主快照的 runtime 投影与 settings transport
 │       └── locales.ts                中英双语词典
@@ -203,10 +216,10 @@ Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均
 
 ## 已知限制
 
-- 仅 8 套内置主题：公共 `.dsh-theme.json` schema、自定义主题导入导出与主题编辑器尚未实现，规划见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
+- 主题编辑器尚未实现：`dsh-theme.json` 导入/导出已支持（见[文件格式](./docs/reference/theme-file-format.md)），改名/改色 UI 与 Theme Creator 仍属规划，见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
 - 对比度校验是诊断而非门禁：部分内置配色低于阈值，不自动修色也不阻止预览或应用；`pnpm contrast:report` 见[token 参考](./docs/reference/theme-tokens.md)。
 - 预览由悬停驱动：键盘聚焦菜单项不触发预览，可直接 Enter 应用。
-- 只读 catalog `ctx.themeStudio.catalog` 只在 Client 提供，不含「默认」项，不支持动态注册或 Host RPC，契约见 [catalog 参考](./docs/reference/theme-catalog.md)。
+- 只读 catalog `ctx.themeStudio.catalog` 只在 Client 提供，含内置与导入主题、不含「默认」项；不提供 register API 或 Host RPC，导入分区随设置快照更新，契约见 [catalog 参考](./docs/reference/theme-catalog.md)。
 - Host 拒绝保存时主题行提示失败并恢复上次已接受的选择；设置通道不可用时目录仍在但行会说明该连接不保存选择，排查见[主题行缺失](./docs/troubleshooting/themes-row-missing.md)。
 - 四色 Mosaic 固定浅色样本；跨平台浏览器视觉回归覆盖有限，已验证边界见[兼容矩阵](./docs/development/dsh-compatibility.md)。
 
@@ -218,6 +231,7 @@ Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均
 - [需求](./docs/requirements/theme-studio.md)
 - [目标架构](./docs/architecture/theme-studio.md)
 - [设置与包契约](./docs/reference/settings-and-package-contract.md)
+- [`dsh-theme.json` 文件格式](./docs/reference/theme-file-format.md)
 - [DSH 兼容矩阵](./docs/development/dsh-compatibility.md)
 - [决策记录（ADR）](./docs/decisions/README.md)
 - [计划](./docs/plans/README.md)

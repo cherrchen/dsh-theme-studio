@@ -67,16 +67,23 @@
   flex: none;
 }
 
+/* Imported names are unbounded (the format allows nearly the file limit);
+ * cap the pill label so a long verbatim name cannot stretch the row. */
+.selectorName {
+  min-width: 0;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Option label fills the row so the trailing check sits at the far edge;
- * the native Menu wraps the label itself on newer hosts. The block box is
- * stretched over the item's padding and icon gap so a hover anywhere on the
- * row reaches the preview handler; the text keeps its position. */
+ * the native Menu wraps the label itself on newer hosts. Hover is not bound
+ * to this box — delegated listeners track the whole menuitem row. */
 .itemLabel {
   display: block;
   flex: 1;
   min-width: 0;
-  margin: -10px -12px;
-  padding: 10px 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -105,4 +112,76 @@
   height: 1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
+}
+
+/* Hidden file picker driven by the menu footer's Import item. */
+.fileInput {
+  display: none;
+}
+
+/* Dialog body copy and the contrast/dropped diagnostics. */
+.modalText,
+.modalWarn {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.modalWarn {
+  color: var(--dsw-alias-state-warn-primary);
+}
+
+/* A file's description is unbounded; keep it to one line with the tooltip
+ * carrying the full text. */
+.modalDesc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Manage dialog: grouped theme rows with export/remove actions. */
+.manageBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 320px;
+}
+
+.manageGroup {
+  margin: 4px 0 2px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-caption);
+}
+
+.manageRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.manageName {
+  flex: none;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.manageId,
+.manageDesc {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.removeButton {
+  color: var(--dsw-alias-state-error-primary);
 }
