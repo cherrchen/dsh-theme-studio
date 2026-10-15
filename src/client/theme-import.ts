@@ -171,8 +171,12 @@ export function previewWhenImported(
     off = undefined
   }
   const check = (): void => {
-    if (stopped || runtime.requestedImportedSources() !== undefined) return
+    if (stopped) return
     const snapshot = runtime.getSnapshot()
+    // An unavailable settings scope can never adopt the write; stop waiting
+    // instead of leaving the listener registered until the next publish.
+    if (snapshot.settingsStatus === 'unavailable') { stop(); return }
+    if (runtime.requestedImportedSources() !== undefined) return
     if (snapshot.settingsStatus !== 'ready' && !snapshot.saveError) return
     stop()
     if (snapshot.settingsStatus !== 'ready' || snapshot.saveError || registry.get(id) === undefined) return
