@@ -109,22 +109,42 @@ try {
   const openSettings = page.getByRole('button', { name: /^设置$|^Settings$/u }).first()
   const accountMenu = page.getByRole('button', { name: /^账号菜单$|^Account menu$/u }).first()
   const settingsEntry = openSettings.or(accountMenu)
-  const openSettingsPanel = async () => {
-    if (await openSettings.isVisible()) {
-      await openSettings.click()
-      return
+  // First-run overlays mount asynchronously once their settings snapshot
+  // resolves, and mark the app root inert behind a mask. Dismiss whatever is
+  // currently up; a dialog without an advance button still counts as a modal,
+  // so the loop waits it out instead of racing the mask.
+  const firstRunAdvance = page.getByRole('button', { name: /^继续$|^Continue$|^稍后配置$|^Configure later$/u }).first()
+  const modalDialog = page.locator('[role="dialog"][aria-modal="true"]').first()
+  const dismissFirstRunDialogs = async () => {
+    for (let attempts = 0; attempts < 30; attempts += 1) {
+      if (await firstRunAdvance.isVisible().catch(() => false)) {
+        await firstRunAdvance.click().catch(() => {})
+        continue
+      }
+      if (!await modalDialog.isVisible().catch(() => false)) return
+      await page.waitForTimeout(400)
     }
-    await accountMenu.click()
-    await page.getByRole('menuitem', { name: /^设置$|^Settings$/u }).first().click()
+  }
+  const openSettingsPanel = async () => {
+    const deadline = Date.now() + 60000
+    for (;;) {
+      await dismissFirstRunDialogs()
+      try {
+        if (await openSettings.isVisible()) {
+          await openSettings.click({ timeout: 8000 })
+        } else {
+          await accountMenu.click({ timeout: 8000 })
+          await page.getByRole('menuitem', { name: /^设置$|^Settings$/u }).first().click({ timeout: 8000 })
+        }
+        return
+      } catch (error) {
+        // A first-run dialog mounted after the dismissal pass; loop and retry.
+        if (Date.now() >= deadline) throw error
+      }
+    }
   }
   await settingsEntry.waitFor({ timeout: 30000 })
   note('client shell is ready')
-  const continueButton = page.getByRole('button', { name: /^继续$|^Continue$/u }).first()
-  await continueButton.waitFor({ timeout: 5000 }).catch(() => {})
-  if (await continueButton.isVisible()) await continueButton.click()
-  const later = page.getByRole('button', { name: /^稍后配置$|^Configure later$/u }).first()
-  await later.waitFor({ timeout: 5000 }).catch(() => {})
-  if (await later.isVisible()) await later.click()
   await openSettingsPanel()
   note('opened Settings')
   const general = page.getByText(/通用|General/u).first()
