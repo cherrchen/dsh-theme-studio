@@ -338,6 +338,44 @@ describe('previewWhenImported', () => {
     runtime.dispose()
   })
 
+  it('stops the preview listener when the settings scope goes unavailable', async () => {
+    const { runtime, registry, host } = make(durableHost({ activeThemeId: null, importedThemes: [sourceOf('user.ocean')] }))
+    host.set.mockImplementation(() => {
+      host.publish({ status: 'unavailable' })
+      return Promise.resolve()
+    })
+    const off = vi.fn()
+    const subscribe = runtime.subscribe.bind(runtime)
+    vi.spyOn(runtime, 'subscribe').mockImplementation(listener => {
+      const unsubscribe = subscribe(listener)
+      return () => { unsubscribe(); off() }
+    })
+    const preview = vi.spyOn(runtime, 'previewTheme')
+    saveImportedTheme(runtime, registry, sourceOf('user.moss'), 'append')
+    previewWhenImported(registry, runtime, 'user.moss')
+    await vi.waitFor(() => { expect(off).toHaveBeenCalled() })
+    expect(preview).not.toHaveBeenCalled()
+    expect(runtime.getSnapshot().settingsStatus).toBe('unavailable')
+    runtime.dispose()
+  })
+
+  it('does not keep a listener when settings are already unavailable', () => {
+    const registry = new ThemeStudioRegistry()
+    const overlay = fakeTheme()
+    const runtime = new ThemeStudioRuntime({ theme: overlay.theme, host: undefined, catalog: registry })
+    const off = vi.fn()
+    const subscribe = runtime.subscribe.bind(runtime)
+    vi.spyOn(runtime, 'subscribe').mockImplementation(listener => {
+      const unsubscribe = subscribe(listener)
+      return () => { unsubscribe(); off() }
+    })
+    const preview = vi.spyOn(runtime, 'previewTheme')
+    previewWhenImported(registry, runtime, 'user.ocean')
+    expect(off).toHaveBeenCalledOnce()
+    expect(preview).not.toHaveBeenCalled()
+    runtime.dispose()
+  })
+
   it('previews an accepted append even when an unrelated registry revision arrives first', async () => {
     const { runtime, registry } = make()
     const preview = vi.spyOn(runtime, 'previewTheme')

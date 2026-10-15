@@ -126,4 +126,26 @@ describe('composite catalog', () => {
     expect(Object.isFrozen(preset.tokens.light)).toBe(true)
     expect(() => { (preset.tokens.light as Record<string, string>)['x'] = 'y' }).toThrow()
   })
+
+  it('stores imported sources as deeply frozen private copies', () => {
+    const registry = new ThemeStudioRegistry()
+    const entry = storedEntry('user.ocean', 'Ocean')
+    registry.setImported([entry])
+    const stored = registry.sourceOf('user.ocean')!
+    expect(stored).toEqual(entry.source)
+    // Mutating the caller's object afterwards cannot reach the catalog copy.
+    entry.source['name'] = 'mutated'
+    ;(entry.source['palette'] as Record<string, unknown>)['light'] = 'mutated'
+    expect(registry.sourceOf('user.ocean')).toEqual({
+      version: 1, id: 'user.ocean', name: 'Ocean',
+      palette: { light: { ...LIGHT }, dark: { ...DARK } },
+    })
+    // The stored copy is frozen all the way down, on every access path.
+    const palette = stored['palette'] as Record<string, unknown>
+    expect(Object.isFrozen(stored)).toBe(true)
+    expect(Object.isFrozen(palette)).toBe(true)
+    expect(Object.isFrozen(palette['light'])).toBe(true)
+    expect(() => { palette['light'] = {} }).toThrow()
+    expect(registry.importedEntries()[0]!.source).toBe(stored)
+  })
 })

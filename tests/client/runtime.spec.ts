@@ -654,4 +654,19 @@ describe('ThemeStudioRuntime imported themes', () => {
     expect(runtime.requestedImportedSources()).toBeUndefined()
     expect(registry.isImported(OCEAN)).toBe(false)
   })
+
+  it('leaves a catalog without the imported-section face untouched by import sync', () => {
+    const host = durableHost({
+      activeThemeId: null,
+      importedThemes: [themeSource(OCEAN), 'unreadable'],
+    })
+    const overlay = fakeTheme()
+    const catalog = new BuiltinPresetRegistry()
+    const runtime = new ThemeStudioRuntime({ theme: overlay.theme, host: host.scope, catalog })
+    // No sink is derived: the imported section stays inert while skipped
+    // entries are still counted.
+    expect(runtime.getSnapshot()).toMatchObject({ settingsStatus: 'ready', droppedImports: 1 })
+    expect(catalog.get(OCEAN)).toBeUndefined()
+    runtime.dispose()
+  })
 })

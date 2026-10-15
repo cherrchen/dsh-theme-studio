@@ -402,6 +402,36 @@ describe('ThemeStudioRow', () => {
     expect(b.saveImportedTheme).not.toHaveBeenCalled()
   })
 
+  it('shows the import error dialog when the file cannot be read', async () => {
+    const b = mount()
+    fireEvent.click(selector())
+    const file = new File(['{}'], 'ocean.dsh-theme.json')
+    file.text = () => Promise.reject(new Error('disk gone'))
+    fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [file] } })
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.textContent).toContain('The file could not be read: disk gone.')
+    expect(b.inspectThemeFile).not.toHaveBeenCalled()
+    expect(b.saveImportedTheme).not.toHaveBeenCalled()
+  })
+
+  it('shows the file description in the confirmation dialog', async () => {
+    const b = mount()
+    b.inspectThemeFile.mockReturnValue({
+      ok: true,
+      file: { version: 1, id: 'user.ocean', name: 'Ocean', description: 'Cool blue palette.' },
+      source: { id: 'user.ocean' },
+      collision: null,
+      summary: { failed: 0, unknown: 0 },
+    } as never)
+    fireEvent.click(selector())
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
+      target: { files: [new File(['{}'], 'ocean.json')] },
+    })
+    const dialog = await screen.findByRole('dialog')
+    const description = within(dialog).getByText('Cool blue palette.')
+    expect(description.getAttribute('title')).toBe('Cool blue palette.')
+  })
+
   it('offers overwrite or rename when the id already belongs to an imported theme', async () => {
     const b = mount([...CARDS, IMPORTED_CARD])
     const source = { version: 1, id: 'user.ocean', name: 'Ocean 2' }
@@ -456,5 +486,17 @@ describe('ThemeStudioRow', () => {
     expect(within(nordicRow).queryByRole('button', { name: 'Remove' })).toBeNull()
     fireEvent.click(within(nordicRow).getByRole('button', { name: 'Export' }))
     expect(b.exportTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+  })
+
+  it('shows the stored description on imported rows in the manage dialog', () => {
+    mount([...CARDS, IMPORTED_CARD])
+    fireEvent.click(selector())
+    fireEvent.click(option('Manage themes…'))
+    const dialog = screen.getByRole('dialog')
+    const description = within(dialog).getByText('Cool blue palette.')
+    expect(description.getAttribute('title')).toBe('Cool blue palette.')
+    // Rows without a description simply omit the element.
+    const nordicRow = within(dialog).getByText('dsh-theme-studio.nordic').parentElement!
+    expect(nordicRow.textContent).not.toContain('Cool blue palette.')
   })
 })
