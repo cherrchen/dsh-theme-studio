@@ -45,6 +45,24 @@ export class BuiltinPresetRegistry implements ThemeStudioCatalog {
   }
 }
 
+/**
+ * Deep-copy one stored file object into a fully frozen private copy. Stored
+ * sources arrive as mutable Host snapshot objects; the catalog owns a frozen
+ * copy so neither side can mutate the other through the shared reference.
+ */
+function freezeSource(source: Record<string, unknown>): Record<string, unknown> {
+  const clone = (value: unknown): unknown => {
+    if (Array.isArray(value)) return Object.freeze(value.map(clone))
+    if (typeof value === 'object' && value !== null) {
+      const out: Record<string, unknown> = {}
+      for (const [key, inner] of Object.entries(value as Record<string, unknown>)) out[key] = clone(inner)
+      return Object.freeze(out)
+    }
+    return value
+  }
+  return clone(source) as Record<string, unknown>
+}
+
 function freezePreset(preset: BuiltinThemePreset): BuiltinThemePreset {
   return Object.freeze({
     ...preset,
@@ -94,7 +112,8 @@ export class ThemeStudioRegistry implements ThemeStudioCatalog {
   /**
    * Replace the imported section from the durable snapshot. Entries whose ids
    * collide with a builtin are dropped; later duplicate ids overwrite in
-   * place. Returns true when the visible set actually changed.
+   * place. Each stored source is cloned and deep-frozen so the catalog owns
+   * immutable copies. Returns true when the visible set actually changed.
    * @param entries - compiled presets paired with their stored sources.
    */
   setImported(entries: readonly StoredThemeEntry[]): boolean {
@@ -108,7 +127,7 @@ export class ThemeStudioRegistry implements ThemeStudioCatalog {
     this.signature = signature
     this.importedPresets = Object.freeze([...byId.values()].map(entry => freezePreset(entry.preset)))
     this.importedMap = new Map(this.importedPresets.map(preset => [preset.id, preset]))
-    this.sources = new Map([...byId.values()].map(entry => [entry.preset.id, entry.source]))
+    this.sources = new Map([...byId.values()].map(entry => [entry.preset.id, freezeSource(entry.source)]))
     this.cachedList = Object.freeze([...this.builtin.list(), ...this.importedPresets])
     this.rev += 1
     for (const listener of [...this.listeners]) listener()
@@ -120,12 +139,12 @@ export class ThemeStudioRegistry implements ThemeStudioCatalog {
     return this.importedMap.has(id)
   }
 
-  /** The verbatim stored file object for an imported theme, if any. */
+  /** The frozen verbatim stored file object for an imported theme, if any. */
   sourceOf(id: string): Record<string, unknown> | undefined {
     return this.sources.get(id)
   }
 
-  /** Imported themes with their stored sources, in menu order. */
+  /** Imported themes with their frozen stored sources, in menu order. */
   importedEntries(): readonly StoredThemeEntry[] {
     return this.importedPresets.map(preset => ({ preset, source: this.sources.get(preset.id)! }))
   }
