@@ -59,6 +59,7 @@ export interface DshThemeFile {
 export type ThemeFileErrorCode =
   | 'not-json'
   | 'too-large'
+  | 'read-failed'
   | 'not-object'
   | 'unsupported-version'
   | 'invalid-id'

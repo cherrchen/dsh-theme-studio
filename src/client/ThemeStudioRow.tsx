@@ -143,7 +143,17 @@ export function ThemeStudioRow({
       setDialog({ kind: 'error', error: { code: 'too-large', detail: `${file.size} bytes` } })
       return
     }
-    const inspection = inspectThemeFile(await file.text())
+    let text: string
+    try {
+      text = await file.text()
+    } catch (error) {
+      setDialog({
+        kind: 'error',
+        error: { code: 'read-failed', detail: error instanceof Error ? error.message : String(error) },
+      })
+      return
+    }
+    const inspection = inspectThemeFile(text)
     if (!inspection.ok) setDialog({ kind: 'error', error: inspection.error })
     else if (inspection.collision === 'imported') setDialog({ kind: 'duplicate', inspection })
     else setDialog({ kind: 'confirm', inspection })
