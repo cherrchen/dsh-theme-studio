@@ -193,6 +193,38 @@ describe('ThemeStudioRow', () => {
     expect(b.cancelPreview).toHaveBeenCalledOnce()
   })
 
+  it('previews when the pointer rests on the row outside the label', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    // The whole menuitem row is the hover unit, not just the icon/text.
+    fireEvent.mouseOver(option('Nordic'))
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+  })
+
+  it('keeps the preview while the pointer moves from the label into row padding', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    const label = within(option('Nordic')).getByText('Nordic')
+    fireEvent.mouseEnter(label)
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+    fireEvent.mouseOut(label, { relatedTarget: option('Nordic') })
+    fireEvent.mouseOver(option('Nordic'))
+    expect(b.cancelPreview).not.toHaveBeenCalled()
+  })
+
+  it('restores the applied theme on separators and group labels between rows', () => {
+    const b = mount([...CARDS, IMPORTED_CARD])
+    fireEvent.click(selector())
+    fireEvent.mouseEnter(within(option('Ocean')).getByText('Ocean'))
+    expect(b.previewTheme).toHaveBeenCalledWith('user.ocean')
+    fireEvent.mouseOver(document.querySelector('[role="separator"]')!)
+    expect(b.cancelPreview).toHaveBeenCalledOnce()
+    fireEvent.mouseEnter(within(option('Nordic')).getByText('Nordic'))
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+    fireEvent.mouseOver(screen.getByText('Imported'))
+    expect(b.cancelPreview).toHaveBeenCalledTimes(2)
+  })
+
   it.each(['Import theme…', 'Manage themes…'])('restores the applied theme when the pointer reaches %s', (name) => {
     const b = mount()
     fireEvent.click(selector())
