@@ -42,7 +42,7 @@ Current，v1。本文是主题文件格式的唯一真源；解析器实现见 [
 | 字段 | 必填 | 规则 |
 | --- | --- | --- |
 | `$schema` | 否 | 编辑器提示字符串；非字符串值被拒绝（`invalid-metadata`），字符串值不参与解析 |
-| `version` | 否 | 省略视为 `1`；其他任何值拒绝（`unsupported-version`） |
+| `version` | 否 | 省略视为 `1`；显式 `null` 及其他任何值拒绝（`unsupported-version`） |
 | `id` | 是 | `^[a-z0-9][a-z0-9.-]{0,63}$`；不得使用 `dsh-theme-studio.` 前缀；`default`/`light`/`dark`/`system` 为保留名 |
 | `name` | 是 | 非空字符串，菜单中按原文显示；不是本地化对象 |
 | `description` | 否 | 字符串，显示在确认与管理界面 |

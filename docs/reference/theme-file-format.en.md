@@ -42,7 +42,7 @@ Current, v1. This document is the single source of truth for the theme file form
 | Field | Required | Rules |
 | --- | --- | --- |
 | `$schema` | no | Editor hint; non-string values are rejected (`invalid-metadata`), string values are not interpreted |
-| `version` | no | Omitted means `1`; any other value is rejected (`unsupported-version`) |
+| `version` | no | Omitted means `1`; an explicit `null` or any other value is rejected (`unsupported-version`) |
 | `id` | yes | `^[a-z0-9][a-z0-9.-]{0,63}$`; must not use the `dsh-theme-studio.` prefix; `default`/`light`/`dark`/`system` are reserved |
 | `name` | yes | Non-empty string shown verbatim in the menu; not a localization object |
 | `description` | no | String shown in the confirmation and management dialogs |

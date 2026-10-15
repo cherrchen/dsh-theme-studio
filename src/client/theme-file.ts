@@ -197,7 +197,7 @@ export function validateThemeFileData(data: unknown): ThemeFileParse {
   for (const key of Object.keys(data)) {
     if (!KNOWN_FIELDS.has(key)) return fail('unknown-field', key)
   }
-  const version = data['version'] ?? THEME_FILE_VERSION
+  const version = data['version'] === undefined ? THEME_FILE_VERSION : data['version']
   if (version !== THEME_FILE_VERSION) {
     return fail('unsupported-version', 'version', String(data['version']))
   }
