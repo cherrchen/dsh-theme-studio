@@ -3,7 +3,7 @@ import { stubSettingsScope } from '../harness.ts'
 import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
 import type { ThemeStudioSettings } from '../../src/constants.ts'
 import { ThemeStudioRegistry } from '../../src/client/catalog.ts'
-import { PREVIEW_SOURCE, ThemeStudioRuntime } from '../../src/client/runtime.ts'
+import { ACTIVE_SOURCE, PREVIEW_SOURCE, ThemeStudioRuntime } from '../../src/client/runtime.ts'
 import { parseStoredThemeFiles } from '../../src/client/theme-file.ts'
 import {
   importIdTaken, inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
@@ -261,7 +261,7 @@ describe('saveImportedTheme / removeImportedTheme', () => {
 })
 
 describe('previewWhenImported', () => {
-  it.each([false, true])('previews accepted replacement colors with active=%s', async (active) => {
+  it.each([false, true])('reconciles accepted replacement colors with active=%s', async (active) => {
     const host = durableHost({ activeThemeId: active ? 'user.ocean' : null, importedThemes: [sourceOf('user.ocean')] })
     const { runtime, registry, overlay } = make(host)
     const preview = vi.spyOn(runtime, 'previewTheme')
@@ -279,9 +279,18 @@ describe('previewWhenImported', () => {
     expect(preview).not.toHaveBeenCalled()
     release()
     await Promise.resolve()
-    expect(preview).toHaveBeenCalledOnce()
-    expect(overlay.layers.get(PREVIEW_SOURCE)?.['--dsw-alias-brand-primary']?.light).toBe('#ff0000')
-    expect(runtime.getSnapshot()).toMatchObject({ previewing: true, previewThemeId: id })
+    if (active) {
+      // Already applied: syncImports reinstalls the active layer, so no
+      // redundant preview announces the same theme.
+      expect(preview).not.toHaveBeenCalled()
+      expect(overlay.layers.get(PREVIEW_SOURCE)).toBeUndefined()
+      expect(overlay.layers.get(ACTIVE_SOURCE)?.['--dsw-alias-brand-primary']?.light).toBe('#ff0000')
+      expect(runtime.getSnapshot()).toMatchObject({ previewing: false, activeThemeId: id })
+    } else {
+      expect(preview).toHaveBeenCalledOnce()
+      expect(overlay.layers.get(PREVIEW_SOURCE)?.['--dsw-alias-brand-primary']?.light).toBe('#ff0000')
+      expect(runtime.getSnapshot()).toMatchObject({ previewing: true, previewThemeId: id })
+    }
     runtime.dispose()
   })
 

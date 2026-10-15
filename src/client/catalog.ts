@@ -122,7 +122,7 @@ export class ThemeStudioRegistry implements ThemeStudioCatalog {
       if (this.builtin.get(entry.preset.id) !== undefined) continue
       byId.set(entry.preset.id, entry)
     }
-    const signature = [...byId.values()].map(entry => `${entry.preset.id}=${JSON.stringify(entry.source)}`).join('')
+    const signature = [...byId.values()].map(entry => `${entry.preset.id}=${JSON.stringify(entry.source)}`).join('\u001b')
     if (signature === this.signature) return false
     this.signature = signature
     this.importedPresets = Object.freeze([...byId.values()].map(entry => freezePreset(entry.preset)))

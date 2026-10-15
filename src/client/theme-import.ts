@@ -181,6 +181,9 @@ export function previewWhenImported(
     stop()
     if (snapshot.settingsStatus !== 'ready' || snapshot.saveError || registry.get(id) === undefined) return
     if (signature !== undefined && JSON.stringify(registry.sourceOf(id)) !== signature) return
+    // Replacing the active theme already reinstalled its layer; a transient
+    // preview would announce a theme that is already applied.
+    if (snapshot.activeThemeId === id && !snapshot.previewing) return
     try {
       runtime.previewTheme(id)
     } catch { /* disposed runtime */ }

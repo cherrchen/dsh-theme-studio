@@ -15,7 +15,7 @@ export interface ThemeStudioSettings {
 /** Host user-settings namespace owned by Theme Studio. */
 export const THEME_STUDIO_SETTINGS_NAMESPACE = 'theme-studio'
 
-/** Durable field storing the applied builtin theme id, or `null` for Default. */
+/** Durable field storing the applied builtin or imported theme id, or `null` for Default. */
 export const ACTIVE_THEME_ID_FIELD = 'activeThemeId'
 
 /** Durable field storing imported `dsh-theme.json` source objects. */

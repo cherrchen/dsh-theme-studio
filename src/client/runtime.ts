@@ -329,7 +329,6 @@ export class ThemeStudioRuntime {
     }
     this.settingsStatus = 'ready'
     this.saveError = false
-    this.importedRequested = undefined
     this.syncImports(section.value)
     this.applyDurable(section.value?.activeThemeId)
   }
