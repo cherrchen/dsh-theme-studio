@@ -79,6 +79,16 @@ Current，v1。本文是主题文件格式的唯一真源；解析器实现见 [
 - 存储的原始文件对象位于 `theme-studio.importedThemes`（见[设置契约](./settings-and-package-contract.md)），Host schema 只做宽松结构校验；严格解析在 Client，无法读取的条目被跳过并计入 `droppedImports`。
 - 导出的文件名是 `<id>.dsh-theme.json`；导入主题原样回写其存储文件，内置主题导出时 id 改写为 `user.<短名>` 以便回导。
 
+## 命令行校验器
+
+`lib/validate-theme.js` 随包发布（第三构建入口，在 `files` 清单内但不在 `exports` 中，以文件路径取用），供 Theme Creator skill 与用户手工校验使用：
+
+```sh
+node lib/validate-theme.js <theme.dsh-theme.json>
+```
+
+stdout 打印结构化 JSON：`format.ok` 表示文件通过本文件的格式校验（失败时附 `error.code` 与 `error.path`）；格式合法时附 `contrast` 报告（`passed`、`total`、`failed`、`unknown` 与逐条 `issues`）。退出码：`0` 校验通过；`1` 校验未过——包括格式拒绝、读取失败与含 `failed`/`unknown` 对比度检查；`2` 用法错误。`ok` 字段聚合全部结论；`ok:false` 不等于"不可导入"——低对比度在客户端同样只是诊断，不阻止导入与应用（见 [ADR-0006](../decisions/ADR-0006-contrast-diagnostics-scope.md)）。
+
 ## 版本策略
 
 `version` 是文件格式版本，不是插件版本。当前只存在 1；未知更高版本被拒绝而非猜测解析，等插件升级后再导入。`$schema` 的字符串值对解析透明（类型仍按公开 schema 校验），升级格式时应同时更新本文件与 `schemas/dsh-theme.schema.json` 并补充一致性测试。

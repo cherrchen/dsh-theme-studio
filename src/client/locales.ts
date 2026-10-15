@@ -31,6 +31,7 @@ export const zh = {
   'group.imported': '导入的主题',
   'action.import': '导入主题…',
   'action.manage': '管理主题…',
+  'action.create': '创建自己的主题…',
   'action.cancel': '取消',
   'action.confirmImport': '导入',
   'action.export': '导出',
@@ -65,6 +66,15 @@ export const zh = {
   'manage.imported': '导入',
   'manage.empty': '尚未导入主题。',
   'manage.dropped': '{count} 条已保存的主题无法读取，已在列表中跳过。',
+  'creator.section': '创作助手',
+  'creator.title': '创建自己的主题',
+  'creator.body': '此版本不能替你打开会话。请打开一个会话（建议使用创造模式 Cordis），在输入框中输入 /dsh-theme-creator 后发送。',
+  'creator.label.off': '关闭',
+  'creator.label.gesture': '手势',
+  'creator.label.catalog': '目录',
+  'creator.mode.off': '不注册主题创作 skill。',
+  'creator.mode.gesture': '仅在你输入 /dsh-theme-creator 时加载创作指引（默认）。',
+  'creator.mode.catalog': 'skill 出现在模型的可用列表中，模型可自行调用。',
 } satisfies Record<string, string>
 
 /** The settings.theme-studio namespace key union. */
@@ -99,6 +109,7 @@ export const en = {
   'group.imported': 'Imported',
   'action.import': 'Import theme…',
   'action.manage': 'Manage themes…',
+  'action.create': 'Create your own theme…',
   'action.cancel': 'Cancel',
   'action.confirmImport': 'Import',
   'action.export': 'Export',
@@ -133,6 +144,15 @@ export const en = {
   'manage.imported': 'Imported',
   'manage.empty': 'No imported themes yet.',
   'manage.dropped': '{count} stored theme(s) could not be read and were skipped.',
+  'creator.section': 'Theme creator',
+  'creator.title': 'Create your own theme',
+  'creator.body': 'This version cannot open a session for you. Open a session (the Cordis mode is recommended), type /dsh-theme-creator in the input box, and send.',
+  'creator.label.off': 'Off',
+  'creator.label.gesture': 'Gesture',
+  'creator.label.catalog': 'Catalog',
+  'creator.mode.off': 'The theme-creator skill is not registered.',
+  'creator.mode.gesture': 'The creator instructions load only when you type /dsh-theme-creator (default).',
+  'creator.mode.catalog': 'The skill appears in the model\u2019s skill list and can be invoked automatically.',
 } satisfies Record<ThemeStudioKey, string>
 
 /**

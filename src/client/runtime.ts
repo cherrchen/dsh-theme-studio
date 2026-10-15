@@ -3,8 +3,9 @@
 import type { ThemeSettingsHost } from '../compat/settings-client.ts'
 import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
 import {
-  ACTIVE_SOURCE, ACTIVE_THEME_ID_FIELD, IMPORTED_THEMES_FIELD, PREVIEW_SOURCE,
-  THEME_STUDIO_SETTINGS_NAMESPACE, type ThemeStudioSettings,
+  ACTIVE_SOURCE, ACTIVE_THEME_ID_FIELD, CREATOR_AGENT_MODE_FIELD, IMPORTED_THEMES_FIELD,
+  PREVIEW_SOURCE, THEME_STUDIO_SETTINGS_NAMESPACE, creatorAgentModeOf,
+  type CreatorAgentMode, type ThemeStudioSettings,
 } from '../constants.ts'
 import { presetToOverrides } from './adapter.ts'
 import { withoutOfficialFontTokens } from './font-boundary.ts'
@@ -41,6 +42,8 @@ export interface ThemeStudioSnapshot {
   saveError: boolean
   /** Stored theme-file entries skipped as unreadable in the latest adoption. */
   droppedImports: number
+  /** Theme Creator skill visibility adopted from the durable section. */
+  creatorMode: CreatorAgentMode
   /** Monotonic change counter. */
   revision: number
 }
@@ -128,6 +131,7 @@ export class ThemeStudioRuntime {
   private settingsStatus: ThemeStudioSnapshot['settingsStatus']
   private saveError = false
   private droppedImports = 0
+  private creatorMode: CreatorAgentMode = 'off'
   private revision = 0
   private snapshot: ThemeStudioSnapshot
 
@@ -266,6 +270,17 @@ export class ThemeStudioRuntime {
   }
 
   /**
+   * Persist the Theme Creator visibility mode. The accepted snapshot echoes
+   * the choice back through `creatorMode`; nothing optimistic is shown.
+   * @param mode - visibility for the Theme Creator skill.
+   */
+  setCreatorMode(mode: CreatorAgentMode): void {
+    this.assertOpen()
+    if (this.host === undefined || this.settingsStatus !== 'ready') return
+    this.queueWrite(CREATOR_AGENT_MODE_FIELD, mode)
+  }
+
+  /**
    * Imported list as last requested, while a write is pending or until the
    * next accepted snapshot makes the registry authoritative again.
    * @returns the requested array, or `undefined` when nothing is in flight.
@@ -330,6 +345,7 @@ export class ThemeStudioRuntime {
     this.settingsStatus = 'ready'
     this.saveError = false
     this.syncImports(section.value)
+    this.creatorMode = creatorAgentModeOf(section.value?.creatorAgentMode)
     this.applyDurable(section.value?.activeThemeId)
   }
 
@@ -396,6 +412,7 @@ export class ThemeStudioRuntime {
         this.snapshot.settingsStatus !== this.settingsStatus
         || this.snapshot.saveError !== this.saveError
         || this.snapshot.droppedImports !== this.droppedImports
+        || this.snapshot.creatorMode !== this.creatorMode
         || this.snapshot.previewing !== this.previewing
         || this.snapshot.previewThemeId !== this.previewThemeId
       ) this.publish()
@@ -502,6 +519,7 @@ export class ThemeStudioRuntime {
       || JSON.stringify(section.value?.importedThemes ?? []) === JSON.stringify(this.importedRequested)
     this.importedRequested = undefined
     this.syncImports(section.value)
+    this.creatorMode = creatorAgentModeOf(section.value?.creatorAgentMode)
     if (!rejected && importsMatch && this.durableMatches(section.value?.activeThemeId, this.activeThemeId)) {
       this.acceptedThemeId = this.activeThemeId
       if (normalizeId(section.value?.activeThemeId) === null) this.repairBlockedRaw = undefined
@@ -597,6 +615,7 @@ export class ThemeStudioRuntime {
       settingsStatus: this.settingsStatus,
       saveError: this.saveError,
       droppedImports: this.droppedImports,
+      creatorMode: this.creatorMode,
       revision: this.revision,
     })
   }

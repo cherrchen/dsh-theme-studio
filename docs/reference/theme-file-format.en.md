@@ -79,6 +79,16 @@ Color values are limited to the subset the official resolver supports (source of
 - Stored source objects live in `theme-studio.importedThemes` (see [settings contract](./settings-and-package-contract.md)); the Host schema is deliberately loose while the Client parses strictly, and unreadable entries are skipped and counted in `droppedImports`.
 - Downloads are named `<id>.dsh-theme.json`; imported themes round-trip their stored file verbatim, and builtin exports rewrite the id to `user.<short>` so the file can be imported back.
 
+## Command-line validator
+
+`lib/validate-theme.js` ships with the package (a third build entry, listed in `files` but not in `exports`, consumed by file path) for the Theme Creator skill and manual checks:
+
+```sh
+node lib/validate-theme.js <theme.dsh-theme.json>
+```
+
+stdout carries a structured JSON report: `format.ok` marks whether the file passes the format validation above (failures carry `error.code` and `error.path`); a valid file also gets a `contrast` report (`passed`, `total`, `failed`, `unknown`, and per-check `issues`). Exit codes: `0` pass; `1` validation failed — including format rejection, read failure, or any `failed`/`unknown` contrast check; `2` usage error. The `ok` field aggregates every conclusion; `ok:false` does not mean "cannot import" — low contrast remains advisory in the client and never blocks import or apply (see [ADR-0006](../decisions/ADR-0006-contrast-diagnostics-scope.md)).
+
 ## Versioning
 
 `version` is the file format version, not the plugin version. Only 1 exists; unknown higher versions are rejected instead of guessed at, so the file can be imported once the plugin is updated. A `$schema` string is transparent to the parser (the type is still checked against the published schema); when the format evolves, update this document, `schemas/dsh-theme.schema.json` and the consistency tests together.

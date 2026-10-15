@@ -8,13 +8,14 @@
 
 ## 项目简介
 
-DSH（DeepSeek Harness）原生只提供浅色 / 深色 / 跟随系统三种外观模式；本插件是一个不修改上游任何代码的外部扩展，在「设置 → 通用」注入「主题」行，把可选配色扩为"**8 套内置主题 + 默认项**"，并支持导入/导出自定义的 `dsh-theme.json` 主题文件。
+DSH（DeepSeek Harness）原生只提供浅色 / 深色 / 跟随系统三种外观模式；本插件是一个不修改上游任何代码的外部扩展，在「设置 → 通用」注入「主题」行，把可选配色扩为"**8 套内置主题 + 默认项**"，并支持导入/导出自定义的 `dsh-theme.json` 主题文件，还可以借助可选的 Theme Creator skill 让模型帮你创作配色。
 
 官方「外观」管模式不管配色，同类桌面工具早已提供多套主题可选；本插件把同样的能力带给 DSH：主题行落在官方「外观」与「字号」之间，选择器沿用官方语言行同款下拉样式，悬停即预览、点击即应用。
 
 - **官方外观所有权不动**：浅色 / 深色 / 跟随系统、字体与字号仍由官方设置管理；本插件只通过 `ctx.theme.overrideTokens` 产生 token 覆盖层，快照与 DOM 呈现仍归宿主。
 - **预览不写盘**：悬停菜单项只临时套色，关闭菜单即恢复；只有点击应用才由 Host 持久化，重启后自动还原。
 - **不配等于没装**：声明 `platform:web`，不依赖 Electron、Node 客户端能力或 Desktop provider，也不注册模型工具或提示词内容；未选主题时界面与未装插件逐项一致。
+- **创作不打扰**：Theme Creator skill 默认只响应 `/dsh-theme-creator` 用户手势，不进模型目录；主题菜单的「创建自己的主题」会打开 Cordis 会话并预填手势（不自动发送），产物经导入确认后才生效。
 
 当前发布版本 `v0.1.4`。各版本的用户可见变更见 [CHANGELOG](./CHANGELOG.md)；进度与发布状态见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
 
@@ -174,6 +175,12 @@ Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均
 
 导入的主题随 Host 设置持久化并进入公开 catalog，其他插件同样能通过 `ctx.themeStudio.catalog` 发现它们。
 
+### 创作自己的主题
+
+主题菜单底部的 **创建自己的主题** 打开一个 Cordis 会话并在输入框预填 `/dsh-theme-creator `（不自动发送——你可以补一句想要的风格再回车）；在较早的 DSH 版本上，该入口改为提示你手动输入这个手势。Theme Creator skill 会引导模型在工作区写出 `dsh-theme.json` 并用随包校验器 `node lib/validate-theme.js <file>` 自检，最后回到 **导入主题** 确认生效。
+
+创作助手的可见性由 `creatorAgentMode` 控制（插件管理页中可切换，默认 `gesture`）：`gesture` 只响应用户手势、不进模型目录，`catalog` 同时允许模型路由，`off` 完全关闭并隐藏入口。
+
 ## 项目结构
 
 ```text
@@ -216,7 +223,7 @@ Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均
 
 ## 已知限制
 
-- 主题编辑器尚未实现：`dsh-theme.json` 导入/导出已支持（见[文件格式](./docs/reference/theme-file-format.md)），改名/改色 UI 与 Theme Creator 仍属规划，见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
+- 主题编辑器尚未实现：`dsh-theme.json` 导入/导出与 Theme Creator skill 已支持（见[文件格式](./docs/reference/theme-file-format.md)），改名/改色 UI 仍属规划，见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
 - 对比度校验是诊断而非门禁：部分内置配色低于阈值，不自动修色也不阻止预览或应用；`pnpm contrast:report` 见[token 参考](./docs/reference/theme-tokens.md)。
 - 预览由悬停驱动：键盘聚焦菜单项不触发预览，可直接 Enter 应用。
 - 只读 catalog `ctx.themeStudio.catalog` 只在 Client 提供，含内置与导入主题、不含「默认」项；不提供 register API 或 Host RPC，导入分区随设置快照更新，契约见 [catalog 参考](./docs/reference/theme-catalog.md)。

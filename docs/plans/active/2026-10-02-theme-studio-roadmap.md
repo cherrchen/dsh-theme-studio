@@ -2,7 +2,7 @@
 
 ## Status
 
-Active：长期路线图。2026-10-02 根据实际提交与本地 tag 建立；下列 completed 批次是历史追溯，不冒充先前存在的实施计划。未来方向尚未实施或排期。
+Active：长期路线图。2026-10-02 根据实际提交与本地 tag 建立；下列 completed 批次是历史追溯，不冒充先前存在的实施计划。未列出的未来方向尚未实施或排期。
 
 ## Goal
 
@@ -27,6 +27,7 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 | DSH 0.2.1-alpha.1/alpha.2 与字体正交、保存失败提示 | Completed，本分支实现 | v0.1.4 | [兼容矩阵](../../development/dsh-compatibility.md) |
 | 元数据驱动的多版本矩阵、候选探测与发布复用 | Completed，本分支实现 | v0.1.4；远端跨平台结果由 PR CI 提供 | [兼容矩阵](../../development/dsh-compatibility.md) |
 | `dsh-theme.json` v1 与主题导入/导出、复合 catalog | Completed，本分支实现 | 未随 tag 发布（v0.1.4 之后） | [导入导出](../completed/2026-10-14-theme-file-import-export.md)、[文件格式](../../reference/theme-file-format.md) |
+| Theme Creator：运行时 skill + `creatorAgentMode` + 一键跳转 + 校验器 | Completed，本分支实现 | 未随 tag 发布（v0.1.4 之后） | [ADR-0010](../../decisions/ADR-0010-theme-creator-runtime-skill.md)、[设置契约](../../reference/settings-and-package-contract.md) |
 
 “发布状态”以 tag 与远端产物为准：v0.1.4 于 2026-10-11 打 tag、发布 GitHub Release 并推上 npm（`@dsh-electron/dsh-theme-studio@0.1.4`），Stage 2/3、文档补齐与兼容/发布改进均纳入其中；每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
 
@@ -34,7 +35,7 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 
 runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化（`activeThemeId` + `importedThemes`），官方 Appearance 保留所有权。catalog 在 Client 父 fiber 提供为 builtin+imported 复合目录，settings 子树可停止/重建。主题文件导入/导出/删除走浏览器 file picker 与 Blob 下载，不扩大 portable 权限。对比度默认报告可复现、全内置可计算，但有低于阈值的配对；报告与 UI 认证必须分开。
 
-当前全部受支持 DSH 版本由[兼容契约](../../../src/compat/dsh-version.ts)决定。清单包含 0.2.1-alpha.1 至 0.2.1-alpha.3（0.2.1-alpha.3 于 2026-10-15 提升）；证据见[兼容矩阵](../../development/dsh-compatibility.md)。没有把 Theme Creator 或公共主题文件放进这次兼容升级。
+当前全部受支持 DSH 版本由[兼容契约](../../../src/compat/dsh-version.ts)决定。清单包含 0.2.1-alpha.1 至 0.2.1-alpha.3（0.2.1-alpha.3 于 2026-10-15 提升）；证据见[兼容矩阵](../../development/dsh-compatibility.md)。Theme Creator 已实现：`dsh-theme-creator` skill 由 `creatorAgentMode` 驱动注册（默认 `gesture`，模型目录零占用），菜单一键跳转按 `startSession` 能力门控降级，`lib/validate-theme.js` 提供命令行校验；skill 不新增 agent preset、模型工具或系统提示改写。
 
 ## Scope and Non-goals
 
@@ -45,7 +46,6 @@ runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化（
 | 方向 | 开始前需解决的契约 | 验收要求 |
 | --- | --- | --- |
 | 主题编辑器 | `dsh-theme.json` 之上新增改名/改色 UI 的契约与持久化路径 | 不回退 palette+overrides 模型；编辑结果可导出回导 |
-| Theme Creator Agent | 模型工具契约、prompt、产物 schema、校验反馈与用户确认 | 模型产生主题经过格式与对比度检查；不可直接从当前 Model Experience 推断已有 |
 | 配色可读性改进 | 对标 palette 身份、具体语义配对、视觉影响与变更范围 | 用实际报告和真实 UI 决定修正，不默认把所有品牌色都当普通文本 |
 | 设置写入错误呈现 | 已在 0.2.1 兼容批次实现：accepted snapshot 回收敛，并显示可重试的保存失败 | 不再作为未实施项 |
 | 明暗 Mosaic 与真实 UI 验证 | 色块跟随模式、浏览器场景、实际 backdrop、跨平台宿主 | 截图、真实 profile 磁盘旅程、unload/reload 与可访问性测试 |

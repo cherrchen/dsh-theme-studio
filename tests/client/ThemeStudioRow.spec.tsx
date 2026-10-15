@@ -50,7 +50,7 @@ const IMPORTED_CARD: ThemeStudioCard = {
   },
 }
 
-function createRowState(cards: readonly ThemeStudioCard[]) {
+function createRowState(cards: readonly ThemeStudioCard[], creatorMode: ThemeStudioRowState['creatorMode'] = 'off') {
   let state: ThemeStudioRowState = {
     activeThemeId: null,
     previewThemeId: null,
@@ -58,6 +58,7 @@ function createRowState(cards: readonly ThemeStudioCard[]) {
     settingsStatus: 'ready',
     saveError: false,
     droppedImports: 0,
+    creatorMode,
     revision: 0,
     cards: [...cards],
   }
@@ -82,8 +83,8 @@ function createRowState(cards: readonly ThemeStudioCard[]) {
   }
 }
 
-function mount(cards: readonly ThemeStudioCard[] = CARDS) {
-  const store = createRowState(cards)
+function mount(cards: readonly ThemeStudioCard[] = CARDS, creatorMode: ThemeStudioRowState['creatorMode'] = 'off') {
+  const store = createRowState(cards, creatorMode)
   const previewTheme = vi.fn()
   const activateTheme = vi.fn()
   const cancelPreview = vi.fn()
@@ -92,6 +93,7 @@ function mount(cards: readonly ThemeStudioCard[] = CARDS) {
   const saveImportedTheme = vi.fn((source: Record<string, unknown>) => source['id'] as string)
   const removeImportedTheme = vi.fn()
   const exportTheme = vi.fn()
+  const startThemeCreation = vi.fn(() => true)
   const props: ThemeStudioRowComponentProps = {
     useSessions: (() => undefined) as never,
     useWorkspaces: (() => undefined) as never,
@@ -106,9 +108,10 @@ function mount(cards: readonly ThemeStudioCard[] = CARDS) {
     saveImportedTheme,
     removeImportedTheme,
     exportTheme,
+    startThemeCreation,
   }
   render(<ThemeStudioRow {...props} />)
-  return { store, previewTheme, activateTheme, cancelPreview, inspectThemeFile, importIdTaken, saveImportedTheme, removeImportedTheme, exportTheme }
+  return { store, previewTheme, activateTheme, cancelPreview, inspectThemeFile, importIdTaken, saveImportedTheme, removeImportedTheme, exportTheme, startThemeCreation }
 }
 
 function selector(name = 'Default') {
@@ -530,5 +533,28 @@ describe('ThemeStudioRow', () => {
     // Rows without a description simply omit the element.
     const nordicRow = within(dialog).getByText('dsh-theme-studio.nordic').parentElement!
     expect(nordicRow.textContent).not.toContain('Cool blue palette.')
+  })
+
+  it('hides the create-theme action while creatorMode is off', () => {
+    mount(CARDS, 'off')
+    fireEvent.click(selector())
+    expect(screen.queryByRole('menuitem', { name: 'Create your own theme…' })).toBeNull()
+  })
+
+  it('offers create-theme while creatorMode is gesture and launches the session', () => {
+    const b = mount(CARDS, 'gesture')
+    fireEvent.click(selector())
+    fireEvent.click(option('Create your own theme…'))
+    expect(b.startThemeCreation).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('shows the manual gesture hint when the session launch is unavailable', () => {
+    const b = mount(CARDS, 'gesture')
+    b.startThemeCreation.mockReturnValue(false)
+    fireEvent.click(selector())
+    fireEvent.click(option('Create your own theme…'))
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.textContent).toContain('/dsh-theme-creator')
   })
 })

@@ -163,6 +163,41 @@ export function Modal({ open, onClose, title, children, footer }: {
   )
 }
 
+/** SegmentedControl contract double: a tablist of tabs mirroring the published roles. */
+export function SegmentedControl<Value extends string>({ id, value, options, onChange, label, disabled, className }: {
+  id: string
+  value: Value
+  options: readonly { value: Value; label: string; disabled?: boolean; title?: string }[]
+  onChange: (next: Value) => void
+  label: string
+  disabled?: boolean
+  className?: string
+}) {
+  return (
+    <div role="tablist" aria-label={label} className={className}>
+      {options.map(option => {
+        const active = option.value === value
+        return (
+          <button
+            key={option.value}
+            id={`${id}-${option.value}`}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            aria-controls={`${id}-${option.value}-panel`}
+            tabIndex={active ? 0 : -1}
+            disabled={disabled === true || option.disabled === true}
+            title={option.title}
+            onClick={() => { if (!active) onChange(option.value) }}
+          >
+            {option.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 /** IconChevronDownOutlineRegular look-alike carrying the native artwork. */
 export function IconChevronDownOutlineRegular({ size = 14, className }: { size?: number; className?: string }) {
   return (
