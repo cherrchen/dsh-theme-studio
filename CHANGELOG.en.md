@@ -11,6 +11,7 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - Public `dsh-theme.json` v1 theme file format with a packaged JSON Schema (`schemas/dsh-theme.schema.json`): `palette` requires all 13 fields per scheme, optional sparse `overrides` layer over derived tokens; color values are limited to the contrast resolver's supported subset and an omitted `version` defaults to 1.
 - Import and manage actions in the Themes menu: imports persist through a confirmation dialog and preview automatically, duplicate ids let the user choose overwrite or an automatically generated id; the manage dialog exports and removes imported themes, and builtin themes export as re-importable `user.*` files.
 - The public `ctx.themeStudio.catalog` is now a builtin + imported composite (ADR-0009): `list()`/`get()`/`validate()` cover imported themes and `list()` returns a frozen snapshot at call time.
+- Support DSH 0.2.1-alpha.3.
 
 ### Changed
 

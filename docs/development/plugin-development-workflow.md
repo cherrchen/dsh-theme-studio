@@ -100,7 +100,7 @@ node scripts/report-contrast.mjs --json > contrast-report.json
 
 ```sh
 pnpm compat:matrix
-node scripts/run-dsh-matrix.mjs 0.2.0-rc.2 0.2.1-alpha.1 0.2.1-alpha.2
+node scripts/run-dsh-matrix.mjs 0.2.0-rc.2 0.2.1-alpha.1 0.2.1-alpha.2 0.2.1-alpha.3
 node scripts/run-dsh-matrix.mjs --candidate <exact-version>
 node scripts/upgrade-dsh.mjs --print-latest-prerelease
 node scripts/upgrade-dsh.mjs --print-installed

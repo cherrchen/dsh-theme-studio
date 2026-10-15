@@ -104,16 +104,106 @@ try {
     if (message.type() === 'error') report.consoleErrors.push(message.text())
   })
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 })
+  // Newer shells nest Settings inside the sidebar account menu; older hosts
+  // keep a direct Settings button. Either entry marks the shell as ready.
   const openSettings = page.getByRole('button', { name: /^设置$|^Settings$/u }).first()
-  await openSettings.waitFor({ timeout: 30000 })
+  const accountMenu = page.getByRole('button', { name: /^账号菜单$|^Account menu$/u }).first()
+  const settingsEntry = openSettings.or(accountMenu)
+  // The Settings panel is itself an aria-modal dialog named by its title;
+  // first-run dismissal must skip it or its own Close button shuts the panel.
+  const settingsName = /^设置$|^Settings$/u
+  const settingsDialog = page.getByRole('dialog', { name: settingsName }).first()
+  const modalDialogs = page.locator('[role="dialog"][aria-modal="true"]')
+  const dialogName = async (dialog) => dialog.evaluate((element) => {
+    const label = element.getAttribute('aria-label')
+    if (label !== null) return label
+    return (element.getAttribute('aria-labelledby') ?? '')
+      .split(/\s+/u)
+      .map((id) => document.getElementById(id)?.textContent ?? '')
+      .join(' ')
+      .trim()
+  }).catch(() => '')
+  // First-run overlays mount asynchronously once their settings snapshot
+  // resolves, and mark the app root inert behind a mask. Each foreign dialog
+  // exits through its own Close affordance or advances through a Continue/
+  // Configure-later button; one with neither is waited out. Returns whether
+  // any first-run dialog was up during the pass.
+  const dismissFirstRunDialogs = async () => {
+    let seen = false
+    for (let attempts = 0; attempts < 30; attempts += 1) {
+      let acted = false
+      let waiting = 0
+      const count = await modalDialogs.count()
+      for (let index = 0; index < count; index += 1) {
+        const dialog = modalDialogs.nth(index)
+        if (!await dialog.isVisible().catch(() => false)) continue
+        if (settingsName.test(await dialogName(dialog))) continue
+        seen = true
+        const close = dialog.getByRole('button', { name: /^关闭$|^Close$/u }).first()
+        if (await close.isVisible().catch(() => false)) {
+          await close.click().catch(() => {})
+          acted = true
+          break
+        }
+        const advance = dialog.getByRole('button', { name: /^继续$|^Continue$|^稍后配置$|^Configure later$/u }).first()
+        if (await advance.isVisible().catch(() => false)) {
+          await advance.click().catch(() => {})
+          acted = true
+          break
+        }
+        waiting += 1
+      }
+      if (acted) continue
+      if (waiting === 0) return seen
+      await page.waitForTimeout(400)
+    }
+    return seen
+  }
+  const openSettingsPanel = async () => {
+    const deadline = Date.now() + 60000
+    for (;;) {
+      await dismissFirstRunDialogs()
+      try {
+        // A delayed first-run dialog takes down or masks the panel; only
+        // drive the entry when the panel is not open yet.
+        if (!await settingsDialog.isVisible().catch(() => false)) {
+          if (await openSettings.isVisible()) {
+            await openSettings.click({ timeout: 8000 })
+          } else {
+            await accountMenu.click({ timeout: 8000 })
+            await page.getByRole('menuitem', { name: /^设置$|^Settings$/u }).first().click({ timeout: 8000 })
+          }
+        }
+        // A dialog can still mount after the click, so return only after a
+        // quiet window in which the panel stays up and its content receives
+        // pointer events (the trial click runs actionability without clicking).
+        let quietSince = Date.now()
+        for (;;) {
+          if (Date.now() >= deadline) throw new Error('the settings panel never stayed interactable')
+          if (await dismissFirstRunDialogs()) {
+            quietSince = Date.now()
+            continue
+          }
+          if (!await settingsDialog.isVisible().catch(() => false)) {
+            throw new Error('the settings panel closed right after opening')
+          }
+          try {
+            await settingsDialog.getByText(/通用|General/u).first().click({ trial: true, timeout: 3000 })
+          } catch {
+            quietSince = Date.now()
+            continue
+          }
+          if (Date.now() - quietSince >= 1500) return
+          await page.waitForTimeout(200)
+        }
+      } catch (error) {
+        if (Date.now() >= deadline) throw error
+      }
+    }
+  }
+  await settingsEntry.waitFor({ timeout: 30000 })
   note('client shell is ready')
-  const continueButton = page.getByRole('button', { name: /^继续$|^Continue$/u }).first()
-  await continueButton.waitFor({ timeout: 5000 }).catch(() => {})
-  if (await continueButton.isVisible()) await continueButton.click()
-  const later = page.getByRole('button', { name: /^稍后配置$|^Configure later$/u }).first()
-  await later.waitFor({ timeout: 5000 }).catch(() => {})
-  if (await later.isVisible()) await later.click()
-  await openSettings.click()
+  await openSettingsPanel()
   note('opened Settings')
   const general = page.getByText(/通用|General/u).first()
   if (await general.count()) await general.click()
@@ -148,7 +238,7 @@ try {
   // Older hosts close the whole Settings dialog on Escape; reopen it before
   // driving the selector again.
   if (!await pill.isVisible()) {
-    await openSettings.click()
+    await openSettingsPanel()
     const general = page.getByText(/通用|General/u).first()
     if (await general.count()) await general.click()
   }
@@ -159,7 +249,7 @@ try {
   const applied = await background()
   if (applied !== previewed) throw new Error('apply did not commit the previewed background variable')
   await page.reload({ waitUntil: 'domcontentloaded' })
-  await openSettings.waitFor({ timeout: 30000 })
+  await settingsEntry.waitFor({ timeout: 30000 })
   await page.waitForFunction(value => getComputedStyle(document.body).getPropertyValue('--dsw-alias-bg-base').trim() === value, applied)
   const restored = await background()
   if (restored !== applied) throw new Error('reload did not keep the applied background variable')
@@ -168,7 +258,7 @@ try {
   await stopServer()
   url = await startServer(cli)
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 })
-  await openSettings.waitFor({ timeout: 30000 })
+  await settingsEntry.waitFor({ timeout: 30000 })
   await page.waitForFunction(value => getComputedStyle(document.body).getPropertyValue('--dsw-alias-bg-base').trim() === value, applied)
   note('a fresh Host process restored the applied theme from the isolated profile')
   const related = report.consoleErrors.filter(line => /^pageerror:|theme-studio|Theme Studio|overrideTokens/u.test(line.split('\n')[0]))

@@ -85,7 +85,10 @@ describe('compatibility tooling', () => {
     const report = assessRepository(root)
     expect(report.failures).toEqual([])
     expect(report.ok).toBe(true)
-    expect(report.diagnosis).toBe('consistent')
+    // A candidate probe keeps a widened checkout honest without claiming support.
+    expect(report.diagnosis).toBe(
+      process.env.DSH_THEME_STUDIO_CANDIDATE ? 'candidate probe consistent' : 'consistent',
+    )
   })
 
   it('splits an npm view document', () => {
