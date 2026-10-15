@@ -94,6 +94,8 @@ node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
 
 矩阵工具修复一处：候选模式下 `DSH_THEME_STUDIO_CANDIDATE` 使 `assessRepository` 的诊断名不同，`tests/scripts/compat-tools.spec.ts` 的 checkout 断言原先固定期待 `consistent`，现按该环境变量接受 `candidate probe consistent`。
 
+浏览器旅程脚本修复一处：alpha.3 起 Web 端设置入口收进侧边栏账号菜单（`settings.launcher` 由 `ui-settings-account` 的 AccountMenu 注册，直连 `settings.trigger` 齿轮按钮只在 launcher 缺席时回退渲染），`scripts/smoke-client.mjs` 原先固定点击名为 设置/Settings 的按钮而在 alpha.3 超时。现优先直连按钮、缺席时走 账号菜单/Account menu → 设置/Settings menuitem，两条路径覆盖新旧 shell；首启对话框仍在入口探测后统一关闭。
+
 ## 元数据驱动的矩阵
 
 2026-10-10 起，Cordis、Schemastery 和配套运行时不再使用脚本里的手写版本表。`scripts/lib/metadata.mjs` 读取被测精确版本的已发布 `dependencies` / `peerDependencies`，只接受能唯一确定的 exact、caret 或 tilde。CI 用 `scripts/list-dsh-releases.mjs` 从同一份清单生成版本轴。`scripts/upgrade-dsh.mjs` 可以改当前 checkout 的 pin，但默认不改 peer 和支持清单；`--admit-candidate` 只给一次性探测使用。每周 upgrade workflow 和 `run-dsh-matrix.mjs --candidate` 都不会提交或发布。

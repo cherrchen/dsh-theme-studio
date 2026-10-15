@@ -104,8 +104,20 @@ try {
     if (message.type() === 'error') report.consoleErrors.push(message.text())
   })
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 })
+  // Newer shells nest Settings inside the sidebar account menu; older hosts
+  // keep a direct Settings button. Either entry marks the shell as ready.
   const openSettings = page.getByRole('button', { name: /^设置$|^Settings$/u }).first()
-  await openSettings.waitFor({ timeout: 30000 })
+  const accountMenu = page.getByRole('button', { name: /^账号菜单$|^Account menu$/u }).first()
+  const settingsEntry = openSettings.or(accountMenu)
+  const openSettingsPanel = async () => {
+    if (await openSettings.isVisible()) {
+      await openSettings.click()
+      return
+    }
+    await accountMenu.click()
+    await page.getByRole('menuitem', { name: /^设置$|^Settings$/u }).first().click()
+  }
+  await settingsEntry.waitFor({ timeout: 30000 })
   note('client shell is ready')
   const continueButton = page.getByRole('button', { name: /^继续$|^Continue$/u }).first()
   await continueButton.waitFor({ timeout: 5000 }).catch(() => {})
@@ -113,7 +125,7 @@ try {
   const later = page.getByRole('button', { name: /^稍后配置$|^Configure later$/u }).first()
   await later.waitFor({ timeout: 5000 }).catch(() => {})
   if (await later.isVisible()) await later.click()
-  await openSettings.click()
+  await openSettingsPanel()
   note('opened Settings')
   const general = page.getByText(/通用|General/u).first()
   if (await general.count()) await general.click()
@@ -148,7 +160,7 @@ try {
   // Older hosts close the whole Settings dialog on Escape; reopen it before
   // driving the selector again.
   if (!await pill.isVisible()) {
-    await openSettings.click()
+    await openSettingsPanel()
     const general = page.getByText(/通用|General/u).first()
     if (await general.count()) await general.click()
   }
@@ -159,7 +171,7 @@ try {
   const applied = await background()
   if (applied !== previewed) throw new Error('apply did not commit the previewed background variable')
   await page.reload({ waitUntil: 'domcontentloaded' })
-  await openSettings.waitFor({ timeout: 30000 })
+  await settingsEntry.waitFor({ timeout: 30000 })
   await page.waitForFunction(value => getComputedStyle(document.body).getPropertyValue('--dsw-alias-bg-base').trim() === value, applied)
   const restored = await background()
   if (restored !== applied) throw new Error('reload did not keep the applied background variable')
@@ -168,7 +180,7 @@ try {
   await stopServer()
   url = await startServer(cli)
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 })
-  await openSettings.waitFor({ timeout: 30000 })
+  await settingsEntry.waitFor({ timeout: 30000 })
   await page.waitForFunction(value => getComputedStyle(document.body).getPropertyValue('--dsw-alias-bg-base').trim() === value, applied)
   note('a fresh Host process restored the applied theme from the isolated profile')
   const related = report.consoleErrors.filter(line => /^pageerror:|theme-studio|Theme Studio|overrideTokens/u.test(line.split('\n')[0]))
