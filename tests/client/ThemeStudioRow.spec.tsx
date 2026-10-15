@@ -88,6 +88,7 @@ function mount(cards: readonly ThemeStudioCard[] = CARDS) {
   const activateTheme = vi.fn()
   const cancelPreview = vi.fn()
   const inspectThemeFile = vi.fn(() => ({ ok: false as const, error: { code: 'not-json' as const } }))
+  const importIdTaken = vi.fn(() => false)
   const saveImportedTheme = vi.fn((source: Record<string, unknown>) => source['id'] as string)
   const removeImportedTheme = vi.fn()
   const exportTheme = vi.fn()
@@ -101,12 +102,13 @@ function mount(cards: readonly ThemeStudioCard[] = CARDS) {
     activateTheme,
     cancelPreview,
     inspectThemeFile,
+    importIdTaken,
     saveImportedTheme,
     removeImportedTheme,
     exportTheme,
   }
   render(<ThemeStudioRow {...props} />)
-  return { store, previewTheme, activateTheme, cancelPreview, inspectThemeFile, saveImportedTheme, removeImportedTheme, exportTheme }
+  return { store, previewTheme, activateTheme, cancelPreview, inspectThemeFile, importIdTaken, saveImportedTheme, removeImportedTheme, exportTheme }
 }
 
 function selector(name = 'Default') {
@@ -222,6 +224,25 @@ describe('ThemeStudioRow', () => {
     fireEvent.click(selector())
     fireEvent.click(option('Default'))
     expect(b.activateTheme).toHaveBeenCalledWith(null)
+  })
+
+  it('renders the applied name inside a capped selector label', () => {
+    const b = mount()
+    act(() => {
+      b.store.actions.sync({
+        activeThemeId: 'dsh-theme-studio.graphite',
+        previewThemeId: null,
+        previewing: false,
+        settingsStatus: 'ready',
+        saveError: false,
+        droppedImports: 0,
+        revision: 1,
+      })
+    })
+    const trigger = selector('Graphite')
+    const label = within(trigger).getByText('Graphite')
+    expect(label.tagName).toBe('SPAN')
+    expect(label.getAttribute('title')).toBe('Graphite')
   })
 
   it('announces the previewed name while keeping the applied theme in the selector', () => {
@@ -345,6 +366,30 @@ describe('ThemeStudioRow', () => {
     })
     fireEvent.click(within(dialog).getByRole('button', { name: names[0]! }))
     expect(b.saveImportedTheme).toHaveBeenCalledOnce()
+  })
+
+  it('re-resolves through the duplicate dialog when the id was claimed meanwhile', async () => {
+    const b = mount([...CARDS, IMPORTED_CARD])
+    b.inspectThemeFile.mockReturnValue({
+      ok: true,
+      file: { version: 1, id: 'user.moss', name: 'Moss' },
+      source: { id: 'user.moss' },
+      collision: null,
+      summary: { failed: 0, unknown: 0 },
+    } as never)
+    fireEvent.click(selector())
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
+      target: { files: [new File(['{}'], 'moss.json')] },
+    })
+    const dialog = await screen.findByRole('dialog')
+    // The id became taken between inspection and confirm (pending write or a
+    // catalog change); append must not persist a duplicate.
+    b.importIdTaken.mockReturnValue(true)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Import' }))
+    expect(b.importIdTaken).toHaveBeenCalledWith('user.moss')
+    expect(b.saveImportedTheme).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog').textContent).toContain('user.moss')
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Overwrite it' })).toBeDefined()
   })
 
   it('shows the parse error when the file is rejected', async () => {

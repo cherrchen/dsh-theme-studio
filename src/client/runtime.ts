@@ -99,8 +99,14 @@ export class ThemeStudioRuntime {
   /**
    * Newest imported-themes array this runtime asked the Host to store. Read-back
    * base for follow-up edits before the accepted snapshot echoes the write.
+   * May carry preserved raw entries the strict parser skipped.
    */
-  private importedRequested: readonly Record<string, unknown>[] | undefined
+  private importedRequested: readonly unknown[] | undefined
+  /**
+   * Newest accepted raw `importedThemes` array, verbatim including entries the
+   * strict parser skipped. Edits merge on it so unreadable entries survive.
+   */
+  private importedAccepted: readonly unknown[] | undefined
   /** Last id adopted from a ready Host snapshot. Optimistic choices do not update it. */
   private acceptedThemeId: string | null = null
   /** Unknown raw value whose repair write already failed. A later different value may retry. */
@@ -239,9 +245,10 @@ export class ThemeStudioRuntime {
   /**
    * Persist the imported theme-file list. The Host accepted snapshot stays the
    * durable authority; the catalog only changes when the write is adopted.
-   * @param sources - stored theme-file objects in menu order.
+   * @param sources - stored theme-file entries in menu order; entries the
+   *   strict parser cannot read are kept verbatim.
    */
-  saveImportedThemes(sources: readonly Record<string, unknown>[]): void {
+  saveImportedThemes(sources: readonly unknown[]): void {
     this.assertOpen()
     if (this.host === undefined || this.settingsStatus !== 'ready') return
     this.importedRequested = [...sources]
@@ -253,8 +260,18 @@ export class ThemeStudioRuntime {
    * next accepted snapshot makes the registry authoritative again.
    * @returns the requested array, or `undefined` when nothing is in flight.
    */
-  requestedImportedSources(): readonly Record<string, unknown>[] | undefined {
+  requestedImportedSources(): readonly unknown[] | undefined {
     return this.importedRequested
+  }
+
+  /**
+   * Merge base for imported-list edits: the newest requested array while a
+   * write is pending, otherwise the accepted raw field — including entries
+   * the strict parser skipped, so editing cannot silently delete them.
+   * @returns the editing base, or `undefined` until a ready snapshot is adopted.
+   */
+  editableImportedSources(): readonly unknown[] | undefined {
+    return this.importedRequested ?? this.importedAccepted
   }
 
   /** Drop overlays, listeners, and pending persist work. */
@@ -314,6 +331,7 @@ export class ThemeStudioRuntime {
    * preview whose theme vanished.
    */
   private syncImports(value: ThemeStudioSettings | undefined): void {
+    this.importedAccepted = Array.isArray(value?.importedThemes) ? value.importedThemes : undefined
     const { entries, dropped } = parseStoredThemeFiles(value?.importedThemes)
     const changed = this.imports?.setImported(entries) === true
     this.droppedImports = dropped

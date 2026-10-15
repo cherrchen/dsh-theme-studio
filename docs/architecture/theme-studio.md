@@ -78,7 +78,7 @@ ThemeSnapshot → ThemePresenter → DOM
 
 Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`；registry 的 imported 分区替换同样触发 store 的 `setCards` 投影。槽位注入组件时绑定 actions 并立即同步当前快照。下拉交互调用 runtime facade：选项悬停走 previewTheme，指针离开主题行或进入 footer 动作、选中 footer 动作、菜单关闭都走 cancelPreview，选中主题走 activateTheme/restoreDefault。Apply 乐观更新 active 层并异步调用 Host.set。写入队列按 `{field, value}` 串行：`activeThemeId` 与 `importedThemes` 各自合并未发出的值且互不阻塞；进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
 
-导入数据流：隐藏 file input 读文件 → `inspectThemeFile` 校验并附对比度摘要 → Modal 确认（重复 id 时先经三选对话框）→ `saveImportedTheme` 以 `requestedImportedSources()` 为合并基准写入 `importedThemes` → Host 采纳后 imported 分区替换 → `previewWhenImported` 等待 runtime 结算并核对 accepted 源文件后，对更新过的 id 触发 transient preview。导出走 `sourceOf` 原样回写（imported）或 `themeFileForPreset` 重建（builtin，id 改写为 `user.` 前缀）。删除激活的导入主题不写 `activeThemeId`——由 adoption 期的 unknown-id 修复回落 Default。
+导入数据流：隐藏 file input 读文件 → `inspectThemeFile` 校验并附对比度摘要（计入在途写入的 id 冲突）→ Modal 确认（重复 id 时先经三选对话框）→ `saveImportedTheme` 以 `editableImportedSources()` 为合并基准写入 `importedThemes`（在途请求优先，否则 accepted 原始数组，无法解析的条目逐字保留）→ Host 采纳后 imported 分区替换 → `previewWhenImported` 等待 runtime 结算并核对 accepted 源文件后，对更新过的 id 触发 transient preview。确认前会按 catalog 与在途写入重查 id：已过期仍判冲突则回到三选对话框，`append` 兜底走 keep-both 改名，不写持久重复 id。导出走 `sourceOf` 原样回写（imported）或 `themeFileForPreset` 重建（builtin，id 改写为 `user.` 前缀）。删除激活的导入主题不写 `activeThemeId`——由 adoption 期的 unknown-id 修复回落 Default。
 
 ### catalog 与校验
 

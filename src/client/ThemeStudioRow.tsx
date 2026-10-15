@@ -32,6 +32,8 @@ export interface ThemeStudioRowInjected {
   cancelPreview: () => void
   /** Parse and inspect one theme file's text without persisting anything. */
   inspectThemeFile: (text: string) => ThemeFileInspection
+  /** Whether an imported theme or an in-flight write already owns the id. */
+  importIdTaken: (id: string) => boolean
   /**
    * Persist one imported theme file.
    * @returns the id the theme lands under.
@@ -80,7 +82,7 @@ type DialogState =
  */
 export function ThemeStudioRow({
   t, useStore, previewTheme, activateTheme, cancelPreview,
-  inspectThemeFile, saveImportedTheme, removeImportedTheme, exportTheme,
+  inspectThemeFile, importIdTaken, saveImportedTheme, removeImportedTheme, exportTheme,
 }: ThemeStudioRowComponentProps) {
   const cards = useStore(s => s.cards)
   const activeThemeId = useStore(s => s.activeThemeId)
@@ -97,6 +99,7 @@ export function ThemeStudioRow({
   // not leak the transient preview.
   useEffect(() => () => { cancelPreview() }, [cancelPreview])
   const activeCard = cards.find(card => card.id === activeThemeId)
+  const activeName = activeCard === undefined ? t('default.name') : cardName(activeCard, t)
   const previewCard = cards.find(card => card.id === previewThemeId)
   const previewName = previewing ? cardName(previewCard ?? cards.find(card => card.id === null), t) : ''
   const settingsUnavailable = settingsStatus === 'unavailable'
@@ -126,6 +129,12 @@ export function ThemeStudioRow({
   const closeDialog = (): void => { setDialog(null) }
   const confirmImport = (inspection: ImportOk, mode: ImportResolution): void => {
     if (!settingsReady) return
+    // The catalog or a pending write may have claimed the id since the file
+    // was picked; re-resolve instead of appending a durable duplicate.
+    if (mode === 'append' && importIdTaken(inspection.file.id)) {
+      setDialog({ kind: 'duplicate', inspection })
+      return
+    }
     saveImportedTheme(inspection.source, mode)
     closeDialog()
   }
@@ -206,7 +215,7 @@ export function ThemeStudioRow({
             }}
           >
             <Mosaic preview={activeCard?.preview.light ?? DEFAULT_PREVIEW.light} />
-            {activeCard === undefined ? t('default.name') : cardName(activeCard, t)}
+            <span className={css.selectorName} title={activeName}>{activeName}</span>
             <ChevronDownIcon className={css.chevron} />
           </button>
         )}
@@ -332,10 +341,11 @@ function ManageRow({ card, t, onExport, onRemove, removeDisabled = false }: {
   removeDisabled?: boolean
 }) {
   const id = card.id as string
+  const name = cardName(card, t)
   return (
     <div className={css.manageRow}>
       <Mosaic preview={card.preview.light} />
-      <span className={css.manageName}>{cardName(card, t)}</span>
+      <span className={css.manageName} title={name}>{name}</span>
       <span className={css.manageId}>{id}</span>
       <Button size="sm" onClick={() => { onExport(id) }}>{t('action.export')}</Button>
       {onRemove === undefined ? null : (

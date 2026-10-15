@@ -67,6 +67,16 @@
   flex: none;
 }
 
+/* Imported names are unbounded (the format allows nearly the file limit);
+ * cap the pill label so a long verbatim name cannot stretch the row. */
+.selectorName {
+  min-width: 0;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Option label fills the row so the trailing check sits at the far edge;
  * the native Menu wraps the label itself on newer hosts. The block box is
  * stretched over the item's padding and icon gap so a hover anywhere on the
@@ -148,6 +158,10 @@
 
 .manageName {
   flex: none;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 13px;
   color: var(--dsw-alias-label-primary);
 }

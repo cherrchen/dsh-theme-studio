@@ -32,7 +32,7 @@ getSnapshot 返回冻结对象；引用在下次 publish 前稳定。subscribe �
 | `restoreDefault()` | 删除，activeThemeId=null | 删除，结束预览 | 写 null |
 | `dispose()` | 删除 | 删除 | 不发起新写入，取消监听和本地后续 adoption |
 
-另有 `saveImportedThemes(sources)`：把导入主题文件对象列表整体排入 `importedThemes` 字段写队列（无 Host 或 settings 尚未 ready 时为 no-op）；`requestedImportedSources()` 返回最近一次请求的列表，供 UI 在写入在途时以此为合并基准，避免连续导入互相覆盖。以上修改调用 assertOpen；dispose 本身幂等。未知显式 id 抛错，不把拼写错误当默认。若 constructor host 为 undefined，仍可在直接实例上使用临时/本地动作，但持久操作不写 Host。实际 Client 组装没有 transport 时只提供 catalog，不挂载 Themes row。
+另有 `saveImportedThemes(sources)`：把导入主题条目列表整体排入 `importedThemes` 字段写队列（无 Host 或 settings 尚未 ready 时为 no-op）；`requestedImportedSources()` 返回最近一次请求的列表，`editableImportedSources()` 按「在途请求优先、否则 accepted 原始数组」给出编辑合并基准——原始数组逐字保留无法解析的条目，后续导入、覆盖或删除不会把它们从持久设置里抹掉。以上修改调用 assertOpen；dispose 本身幂等。未知显式 id 抛错，不把拼写错误当默认。若 constructor host 为 undefined，仍可在直接实例上使用临时/本地动作，但持久操作不写 Host。实际 Client 组装没有 transport 时只提供 catalog，不挂载 Themes row。
 
 ## 两层 source
 

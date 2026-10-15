@@ -19,7 +19,7 @@ import { DEFAULT_PREVIEW } from './presets.ts'
 import { ThemeStudioRuntime } from './runtime.ts'
 import { createThemeStudioRowStore, type ThemeStudioCard } from './store.ts'
 import {
-  exportThemeById, inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
+  exportThemeById, importIdTaken, inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
 } from './theme-import.ts'
 import { ThemeStudioRow, type ThemeStudioRowInjected } from './ThemeStudioRow.tsx'
 
@@ -42,7 +42,7 @@ export {
 } from './theme-file.ts'
 export type { DshThemeFile, StoredThemeEntry, StoredThemeParse, ThemeFileError, ThemeFileErrorCode, ThemeFileParse } from './theme-file.ts'
 export {
-  exportThemeById, inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
+  exportThemeById, importIdTaken, inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
 } from './theme-import.ts'
 export type { ImportContrastSummary, ImportResolution, ThemeFileInspection } from './theme-import.ts'
 export type { ChromePalette } from './chrome-tokens.ts'
@@ -138,7 +138,8 @@ function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> 
         else runtime.activateTheme(id)
       },
       cancelPreview: () => { runtime.cancelPreview() },
-      inspectThemeFile: (text) => inspectThemeFile(text, registry),
+      inspectThemeFile: (text) => inspectThemeFile(text, registry, runtime),
+      importIdTaken: (id) => importIdTaken(registry, id, runtime),
       saveImportedTheme: (source, mode) => {
         const id = saveImportedTheme(runtime, registry, source, mode)
         previewWhenImported(registry, runtime, id)

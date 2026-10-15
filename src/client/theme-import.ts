@@ -19,6 +19,13 @@ export interface ImportContrastSummary {
   readonly unknown: number
 }
 
+/** Id carried by a raw stored entry; `undefined` for unreadable shapes. */
+function storedId(entry: unknown): unknown {
+  return typeof entry === 'object' && entry !== null
+    ? (entry as Record<string, unknown>)['id']
+    : undefined
+}
+
 /** Inspection of one file: parse, compile, collision, and contrast counts. */
 export type ThemeFileInspection =
   | {
@@ -37,9 +44,10 @@ export type ThemeFileInspection =
  * collision is impossible: file ids cannot use the `dsh-theme-studio.` prefix.
  * @param text - file contents.
  * @param registry - catalog consulted for collisions and diagnostics.
+ * @param runtime - when given, an in-flight import write also collides.
  * @returns inspection result for the confirmation flow.
  */
-export function inspectThemeFile(text: string, registry: ThemeStudioRegistry): ThemeFileInspection {
+export function inspectThemeFile(text: string, registry: ThemeStudioRegistry, runtime?: ThemeStudioRuntime): ThemeFileInspection {
   const parsed = parseThemeFile(text)
   if (!parsed.ok) return { ok: false, error: parsed.error }
   const preset = compileThemeFile(parsed.file)
@@ -52,7 +60,7 @@ export function inspectThemeFile(text: string, registry: ThemeStudioRegistry): T
     ok: true,
     file: parsed.file,
     source: parsed.source,
-    collision: registry.isImported(parsed.file.id) ? 'imported' : null,
+    collision: importIdTaken(registry, parsed.file.id, runtime) ? 'imported' : null,
     summary,
   }
 }
@@ -61,8 +69,29 @@ export function inspectThemeFile(text: string, registry: ThemeStudioRegistry): T
 export type ImportResolution = 'append' | 'replace' | 'rename'
 
 /**
+ * Whether an imported theme already owns `id`, counting an in-flight write
+ * the catalog has not adopted yet. Rechecked at confirm time so a dialog
+ * opened on a stale inspection cannot append a durable duplicate.
+ * @param registry - catalog holding the accepted imported list.
+ * @param id - theme id to check.
+ * @param runtime - owner of the pending write, when available.
+ * @returns true when the id is claimed.
+ */
+export function importIdTaken(
+  registry: ThemeStudioRegistry,
+  id: string,
+  runtime?: ThemeStudioRuntime,
+): boolean {
+  if (registry.isImported(id)) return true
+  return runtime?.requestedImportedSources()?.some(entry => storedId(entry) === id) === true
+}
+
+/**
  * Persist an imported theme file. `replace` overwrites the same-id entry in
- * place; `rename` stores the file under the first free `id-N` suffix.
+ * place; `rename` stores the file under the first free `id-N` suffix. The
+ * merge base is the pending request or the accepted raw array, so entries
+ * the strict parser skipped survive the edit. An `append` whose id was
+ * claimed after the inspection keeps both files under a fresh id.
  * @param runtime - owner of the settings write.
  * @param registry - catalog holding the current imported list.
  * @param source - the file object to store.
@@ -75,22 +104,27 @@ export function saveImportedTheme(
   source: Record<string, unknown>,
   mode: ImportResolution,
 ): string {
-  // Merge on the newest requested list when a write is still in flight; the
-  // registry only reflects accepted snapshots.
+  // Merge on the newest requested list when a write is still in flight;
+  // otherwise the accepted raw array keeps entries the parser skipped.
   const stored = [...(
-    runtime.requestedImportedSources() ?? registry.importedEntries().map(entry => entry.source)
+    runtime.editableImportedSources() ?? registry.importedEntries().map(entry => entry.source)
   )]
   let finalId = source['id'] as string
-  let next: Record<string, unknown>[]
-  if (mode === 'replace' && stored.some(entry => entry['id'] === finalId)) {
-    next = stored.map(entry => entry['id'] === finalId ? source : entry)
+  let next: unknown[]
+  if (mode === 'replace' && stored.some(entry => storedId(entry) === finalId)) {
+    next = stored.map(entry => storedId(entry) === finalId ? source : entry)
   } else {
-    if (mode === 'rename') {
-      const existing = new Set([
+    // An 'append' confirmed on a stale collision keeps both files under a
+    // fresh id instead of writing a durable duplicate.
+    if (mode === 'rename' || stored.some(entry => storedId(entry) === finalId)) {
+      const taken = new Set<string>([
         ...registry.list().map(preset => preset.id),
-        ...stored.map(entry => entry['id'] as string),
+        ...stored.flatMap((entry): string[] => {
+          const id = storedId(entry)
+          return typeof id === 'string' ? [id] : []
+        }),
       ])
-      finalId = uniqueThemeId(finalId, existing)
+      finalId = uniqueThemeId(finalId, taken)
       source = { ...source, id: finalId }
     }
     next = [...stored, source]
@@ -110,8 +144,8 @@ export function removeImportedTheme(
   registry: ThemeStudioRegistry,
   id: string,
 ): void {
-  const stored = runtime.requestedImportedSources() ?? registry.importedEntries().map(entry => entry.source)
-  runtime.saveImportedThemes(stored.filter(source => source['id'] !== id))
+  const stored = runtime.editableImportedSources() ?? registry.importedEntries().map(entry => entry.source)
+  runtime.saveImportedThemes(stored.filter(entry => storedId(entry) !== id))
 }
 
 /**
@@ -127,7 +161,7 @@ export function previewWhenImported(
   runtime: ThemeStudioRuntime,
   id: string,
 ): void {
-  const requested = runtime.requestedImportedSources()?.find(source => source['id'] === id)
+  const requested = runtime.requestedImportedSources()?.find(entry => storedId(entry) === id)
   const signature = requested === undefined ? undefined : JSON.stringify(requested)
   let off: (() => void) | undefined
   let stopped = false

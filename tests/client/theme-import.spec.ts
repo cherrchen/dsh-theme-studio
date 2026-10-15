@@ -6,7 +6,7 @@ import { ThemeStudioRegistry } from '../../src/client/catalog.ts'
 import { PREVIEW_SOURCE, ThemeStudioRuntime } from '../../src/client/runtime.ts'
 import { parseStoredThemeFiles } from '../../src/client/theme-file.ts'
 import {
-  inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
+  importIdTaken, inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
 } from '../../src/client/theme-import.ts'
 
 const LIGHT = {
@@ -94,6 +94,31 @@ describe('inspectThemeFile', () => {
     if (inspection.ok) return
     expect(inspection.error.code).toBe('not-json')
   })
+
+  it('flags a collision with an id an in-flight write carries', () => {
+    const { registry, runtime, host } = make()
+    host.set.mockImplementation(() => new Promise<void>(() => {}))
+    saveImportedTheme(runtime, registry, sourceOf('user.ocean'), 'append')
+    expect(registry.isImported('user.ocean')).toBe(false)
+    const inspection = inspectThemeFile(JSON.stringify(sourceOf('user.ocean')), registry, runtime)
+    expect(inspection.ok && inspection.collision === 'imported').toBe(true)
+    runtime.dispose()
+  })
+})
+
+describe('importIdTaken', () => {
+  it('reports catalog ids and ids a pending write carries', () => {
+    const { registry, runtime, host } = make(durableHost({
+      activeThemeId: null,
+      importedThemes: [sourceOf('user.ocean')],
+    }))
+    expect(importIdTaken(registry, 'user.ocean', runtime)).toBe(true)
+    expect(importIdTaken(registry, 'user.moss', runtime)).toBe(false)
+    host.set.mockImplementation(() => new Promise<void>(() => {}))
+    saveImportedTheme(runtime, registry, sourceOf('user.moss'), 'append')
+    expect(importIdTaken(registry, 'user.moss', runtime)).toBe(true)
+    runtime.dispose()
+  })
 })
 
 describe('saveImportedTheme / removeImportedTheme', () => {
@@ -129,6 +154,59 @@ describe('saveImportedTheme / removeImportedTheme', () => {
     await Promise.resolve()
     expect(registry.importedEntries().map(entry => entry.preset.id))
       .toEqual(['user.ocean', 'user.ocean-2', 'user.ocean-3'])
+  })
+
+  it('keeps preserved unreadable entries when editing the durable list', async () => {
+    const unreadable: unknown[] = [null, 'not-a-theme', { version: 99, id: 'user.future' }]
+    const { registry, runtime, host } = make(durableHost({
+      activeThemeId: null,
+      importedThemes: [sourceOf('user.ocean'), ...unreadable],
+    }))
+    expect(runtime.getSnapshot().droppedImports).toBe(3)
+    saveImportedTheme(runtime, registry, sourceOf('user.moss'), 'append')
+    await vi.waitFor(() => {
+      expect(host.scope.getSnapshot().value?.importedThemes).toHaveLength(5)
+    })
+    expect(host.scope.getSnapshot().value?.importedThemes).toEqual([
+      sourceOf('user.ocean'), ...unreadable, sourceOf('user.moss'),
+    ])
+    removeImportedTheme(runtime, registry, 'user.ocean')
+    await vi.waitFor(() => {
+      expect(host.scope.getSnapshot().value?.importedThemes).toHaveLength(4)
+    })
+    expect(host.scope.getSnapshot().value?.importedThemes).toEqual([
+      ...unreadable, sourceOf('user.moss'),
+    ])
+  })
+
+  it('renames instead of duplicating when the id was claimed in flight', async () => {
+    const { registry, runtime, host } = make()
+    const calls: Array<{ value: unknown, release: () => void }> = []
+    host.set.mockImplementation((field: string, next: unknown) => new Promise<void>(resolve => {
+      calls.push({
+        value: next,
+        release: () => {
+          host.publish({
+            status: 'ready',
+            value: { ...host.scope.getSnapshot().value!, [field]: next },
+            revision: (host.scope.getSnapshot().revision ?? 0) + 1,
+            writable: true,
+          })
+          resolve()
+        },
+      })
+    }))
+    saveImportedTheme(runtime, registry, sourceOf('user.ocean'), 'append')
+    const second = saveImportedTheme(runtime, registry, sourceOf('user.ocean', 'Ocean 2'), 'append')
+    expect(second).toBe('user.ocean-2')
+    expect(runtime.requestedImportedSources()?.map(entry => (entry as Record<string, unknown>)['id']))
+      .toEqual(['user.ocean', 'user.ocean-2'])
+    calls[0]!.release()
+    await vi.waitFor(() => { expect(calls).toHaveLength(2) })
+    calls[1]!.release()
+    await vi.waitFor(() => {
+      expect(registry.importedEntries().map(entry => entry.preset.id)).toEqual(['user.ocean', 'user.ocean-2'])
+    })
   })
 
   it('merges a follow-up import on the requested list while a write is in flight', async () => {
