@@ -10,7 +10,6 @@ interface SettingsScopeSnapshot<T> {
   user: unknown
   revision: number | undefined
   writable: boolean
-  mode: 'host' | 'memory'
 }
 
 interface SettingsScope<T> {
@@ -44,7 +43,7 @@ export interface StubSettingsScope<T> {
 export function stubSettingsScope<T>(): StubSettingsScope<T> {
   let snapshot: SettingsScopeSnapshot<T> = {
     status: 'loading', value: undefined, base: undefined, user: undefined,
-    revision: undefined, writable: false, mode: 'host',
+    revision: undefined, writable: false,
   }
   const listeners = new Set<() => void>()
   const set = vi.fn(() => Promise.resolve())

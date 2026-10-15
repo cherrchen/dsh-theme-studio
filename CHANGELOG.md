@@ -11,6 +11,7 @@
 - 公开 `dsh-theme.json` v1 主题文件格式并随包发布 JSON Schema（`schemas/dsh-theme.schema.json`）：`palette` 明暗各 13 字段必填，可选稀疏 `overrides` 叠加在派生 token 之上；色值限对比度 resolver 支持的子集，`version` 可省略默认为 1。
 - Themes 菜单新增导入/管理入口：导入经确认对话框写入设置并自动预览，重复 id 由用户选择覆盖或自动生成新 id；管理对话框支持导出与删除导入主题，内置主题也可导出为可回导的 `user.*` 文件。
 - 公共 `ctx.themeStudio.catalog` 升级为 builtin + imported 复合目录（ADR-0009）：`list()`/`get()`/`validate()` 覆盖导入主题，`list()` 在调用时返回冻结快照。
+- 支持 DSH 0.2.1-alpha.3。
 
 ### Changed
 

@@ -34,7 +34,7 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 
 runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化（`activeThemeId` + `importedThemes`），官方 Appearance 保留所有权。catalog 在 Client 父 fiber 提供为 builtin+imported 复合目录，settings 子树可停止/重建。主题文件导入/导出/删除走浏览器 file picker 与 Blob 下载，不扩大 portable 权限。对比度默认报告可复现、全内置可计算，但有低于阈值的配对；报告与 UI 认证必须分开。
 
-当前全部受支持 DSH 版本由[兼容契约](../../../src/compat/dsh-version.ts)决定。2026-10-10 起清单包含 0.2.1-alpha.1 与 0.2.1-alpha.2；证据见[兼容矩阵](../../development/dsh-compatibility.md)。没有把 Theme Creator 或公共主题文件放进这次兼容升级。
+当前全部受支持 DSH 版本由[兼容契约](../../../src/compat/dsh-version.ts)决定。清单包含 0.2.1-alpha.1 至 0.2.1-alpha.3（0.2.1-alpha.3 于 2026-10-15 提升）；证据见[兼容矩阵](../../development/dsh-compatibility.md)。没有把 Theme Creator 或公共主题文件放进这次兼容升级。
 
 ## Scope and Non-goals
 

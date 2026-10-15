@@ -49,7 +49,7 @@ The exact supported releases are owned by `src/compat/dsh-version.ts` as the sin
 | `v0.1.6` | `0.1.6-alpha.1`, `0.1.6-alpha.2` |
 | `v0.1.7` | `0.1.7-alpha.1`, `0.1.7-alpha.2`, `0.1.7-rc.1`, `0.1.7-rc.2` |
 | `v0.2.0` | `0.2.0-rc.1`, `0.2.0-rc.2` |
-| `v0.2.1` | `0.2.1-alpha.1`, `0.2.1-alpha.2` |
+| `v0.2.1` | `0.2.1-alpha.1`, `0.2.1-alpha.2`, `0.2.1-alpha.3` |
 
 Releases outside the table — or installs mixing different `@deepseek-ai/dsh-*` versions — are unverified: the plugin itself does not probe the installed tree or block itself at runtime. Peer admission during install may reject some mismatched releases, but an unrejected mixed install can still start; it simply falls outside the supported set.
 

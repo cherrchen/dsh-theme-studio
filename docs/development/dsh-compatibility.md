@@ -72,7 +72,27 @@ node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
 | invariants | npm 没有 `@deepseek-ai/dsh-invariants@0.2.1-alpha.1` 或 `alpha.2` | 开发依赖不再 pin 该包。旧版若传递依赖它，由该版自己的范围和矩阵漂移修正处理 |
 | 设置与槽位实现 | settings、ui-settings、ui-slots 源码相对 rc.2 无实现差异 | 继续复用现有适配 |
 
-当前开发基线是 0.2.1-alpha.2 / Cordis 4.0.5-alpha.1 / Schemastery 3.18.5-alpha.1。上述既有升级批次的十二版矩阵全部通过，包括 0.2.1-alpha.1 与 0.2.1-alpha.2。开发基线上的 `pnpm contrast:report --strict` 仍对现有低对比度配对退出 1。
+上述既有升级批次的十二版矩阵全部通过，包括 0.2.1-alpha.1 与 0.2.1-alpha.2。开发基线上的 `pnpm contrast:report --strict` 仍对现有低对比度配对退出 1。
+
+### 0.2.1-alpha.3 审查与提升（2026-10-15）
+
+审查来源为本地 `deepseek-harness` 仓库标签 `dsh-v0.2.1-alpha.2` → `dsh-v0.2.1-alpha.3`，以及 npm 上已发布的 0.2.1-alpha.3 精确版本包。
+
+| 接缝 | 上游变化及风险 | 插件处理 |
+| --- | --- | --- |
+| 共享运行时 | alpha.3 使用 Cordis 4.0.5-alpha.2、Schemastery 3.18.5-alpha.2 与配套 cordis plugin / cosmokit 1.8.6-alpha.2；vendor 源树除版本号与 timer locale 外无代码差异 | peer 与 dependency 追加这两个精确预发布；overrides、开发 pin 与 minimumReleaseAgeExclude 随 `upgrade-dsh.mjs` 重钉 |
+| 设置 Client | `ConfigFormSnapshot.mode` 字段与 `ConfigForms`/`SettingsDescribeMirror` 的 `persistence` 形参被移除：非 loopback 浏览器也写 Host 文档，不再保留进程内 memory 模式 | 插件只消费 `status`/`value`/`set`/`subscribe` 结构面，`ThemeSettingsHost` 不需改动；`tests/harness.ts` 的 stub 去掉无消费者的 `mode` 字段对齐新形状 |
+| 设置写入 | `ConfigForm` 的 `set`/`mutate`/`unset` 契约不变（`mutate` 在 alpha.2 已存在），`set` 返回 `false` 表拒绝的语义不变 | 沿用现有 converging 与 `status.saveFailed` 处理 |
+| 主题覆盖 | `overrideTokens` 的 source、light/dark、seq 与 disposer 语义未变；`ThemeRuntime` 内部多字段写改走 `mutate`，新增 desktop 字号快捷键（可选 `shortcuts` 注入） | 不新增版本分支；官方 ThemeRuntime 行为矩阵直接加载 alpha.3 真实 bundle 复验 |
+| 槽位与渲染 | `SlotSpec`/`SlotEntryDef` 新增可选 `inline`；keyed hook 增加可选 `member` 形参 | 均为可选新增，向后兼容，`settings.general.item` 注册不变 |
+| remotes 聚合 | 转发 `emit` 事件可携带 `resources` 访问控制元数据；新增 `RestartReason`、`LlmNativeAuth` 等类型导出 | 插件只依赖 `remote` 服务在场，不使用这些导出 |
+| connection | Host 侧 `OperatorPeer` 改名 `Peer`，新增 `/connect` 路由、socket factory 与 `interactions` 选项 | 插件不经由这些公开导出，client 注入面 `connection` 服务仍在 |
+| ui-primitives | 新增 `HoverCardGroup`；`projectUserText` 被 `UserTextRun`/`ReferenceChip` 取代 | 本插件只用 `Menu`/`Button`/`Modal`/`MenuEntry` 与 chevron 图标，alpha.3 导出未变 |
+| 设置 Host | `packages/settings/settings/src` 无实现变更 | 沿用 `src/compat/settings-host.ts` 能力探测 |
+
+当前开发基线是 0.2.1-alpha.3 / Cordis 4.0.5-alpha.2 / Schemastery 3.18.5-alpha.2。本轮先在隔离副本执行 `node scripts/run-dsh-matrix.mjs --candidate 0.2.1-alpha.3`，install、`compat:check`（candidate 判定）、lint、typecheck、build、全部单测、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 行为矩阵与真实 CLI profile composition 全部退出 0；提升后重跑全部十三个支持版本，逐命令结果见 [alpha.3 提升矩阵](./dsh-compatibility-alpha3-results-2026-10-15.json)。运行环境为 macOS arm64、Node 24.18.0、pnpm 11.7.0；本轮未设置 `DSH_BROWSER_E2E`，不声称验证真实浏览器旅程。
+
+矩阵工具修复一处：候选模式下 `DSH_THEME_STUDIO_CANDIDATE` 使 `assessRepository` 的诊断名不同，`tests/scripts/compat-tools.spec.ts` 的 checkout 断言原先固定期待 `consistent`，现按该环境变量接受 `candidate probe consistent`。
 
 ## 元数据驱动的矩阵
 
