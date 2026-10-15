@@ -109,41 +109,94 @@ try {
   const openSettings = page.getByRole('button', { name: /^设置$|^Settings$/u }).first()
   const accountMenu = page.getByRole('button', { name: /^账号菜单$|^Account menu$/u }).first()
   const settingsEntry = openSettings.or(accountMenu)
+  // The Settings panel is itself an aria-modal dialog named by its title;
+  // first-run dismissal must skip it or its own Close button shuts the panel.
+  const settingsName = /^设置$|^Settings$/u
+  const settingsDialog = page.getByRole('dialog', { name: settingsName }).first()
+  const modalDialogs = page.locator('[role="dialog"][aria-modal="true"]')
+  const dialogName = async (dialog) => dialog.evaluate((element) => {
+    const label = element.getAttribute('aria-label')
+    if (label !== null) return label
+    return (element.getAttribute('aria-labelledby') ?? '')
+      .split(/\s+/u)
+      .map((id) => document.getElementById(id)?.textContent ?? '')
+      .join(' ')
+      .trim()
+  }).catch(() => '')
   // First-run overlays mount asynchronously once their settings snapshot
-  // resolves, and mark the app root inert behind a mask. A dialog's own Close
-  // affordance exits immediately; flows without one are advanced through their
-  // Continue/Configure-later button. A modal with neither is waited out.
-  const modalDialog = page.locator('[role="dialog"][aria-modal="true"]').first()
-  const modalClose = modalDialog.getByRole('button', { name: /^关闭$|^Close$/u }).first()
-  const firstRunAdvance = page.getByRole('button', { name: /^继续$|^Continue$|^稍后配置$|^Configure later$/u }).first()
+  // resolves, and mark the app root inert behind a mask. Each foreign dialog
+  // exits through its own Close affordance or advances through a Continue/
+  // Configure-later button; one with neither is waited out. Returns whether
+  // any first-run dialog was up during the pass.
   const dismissFirstRunDialogs = async () => {
+    let seen = false
     for (let attempts = 0; attempts < 30; attempts += 1) {
-      if (await modalClose.isVisible().catch(() => false)) {
-        await modalClose.click().catch(() => {})
-        continue
+      let acted = false
+      let waiting = 0
+      const count = await modalDialogs.count()
+      for (let index = 0; index < count; index += 1) {
+        const dialog = modalDialogs.nth(index)
+        if (!await dialog.isVisible().catch(() => false)) continue
+        if (settingsName.test(await dialogName(dialog))) continue
+        seen = true
+        const close = dialog.getByRole('button', { name: /^关闭$|^Close$/u }).first()
+        if (await close.isVisible().catch(() => false)) {
+          await close.click().catch(() => {})
+          acted = true
+          break
+        }
+        const advance = dialog.getByRole('button', { name: /^继续$|^Continue$|^稍后配置$|^Configure later$/u }).first()
+        if (await advance.isVisible().catch(() => false)) {
+          await advance.click().catch(() => {})
+          acted = true
+          break
+        }
+        waiting += 1
       }
-      if (await firstRunAdvance.isVisible().catch(() => false)) {
-        await firstRunAdvance.click().catch(() => {})
-        continue
-      }
-      if (!await modalDialog.isVisible().catch(() => false)) return
+      if (acted) continue
+      if (waiting === 0) return seen
       await page.waitForTimeout(400)
     }
+    return seen
   }
   const openSettingsPanel = async () => {
     const deadline = Date.now() + 60000
     for (;;) {
       await dismissFirstRunDialogs()
       try {
-        if (await openSettings.isVisible()) {
-          await openSettings.click({ timeout: 8000 })
-        } else {
-          await accountMenu.click({ timeout: 8000 })
-          await page.getByRole('menuitem', { name: /^设置$|^Settings$/u }).first().click({ timeout: 8000 })
+        // A delayed first-run dialog takes down or masks the panel; only
+        // drive the entry when the panel is not open yet.
+        if (!await settingsDialog.isVisible().catch(() => false)) {
+          if (await openSettings.isVisible()) {
+            await openSettings.click({ timeout: 8000 })
+          } else {
+            await accountMenu.click({ timeout: 8000 })
+            await page.getByRole('menuitem', { name: /^设置$|^Settings$/u }).first().click({ timeout: 8000 })
+          }
         }
-        return
+        // A dialog can still mount after the click, so return only after a
+        // quiet window in which the panel stays up and its content receives
+        // pointer events (the trial click runs actionability without clicking).
+        let quietSince = Date.now()
+        for (;;) {
+          if (Date.now() >= deadline) throw new Error('the settings panel never stayed interactable')
+          if (await dismissFirstRunDialogs()) {
+            quietSince = Date.now()
+            continue
+          }
+          if (!await settingsDialog.isVisible().catch(() => false)) {
+            throw new Error('the settings panel closed right after opening')
+          }
+          try {
+            await settingsDialog.getByText(/通用|General/u).first().click({ trial: true, timeout: 3000 })
+          } catch {
+            quietSince = Date.now()
+            continue
+          }
+          if (Date.now() - quietSince >= 1500) return
+          await page.waitForTimeout(200)
+        }
       } catch (error) {
-        // A first-run dialog mounted after the dismissal pass; loop and retry.
         if (Date.now() >= deadline) throw error
       }
     }
