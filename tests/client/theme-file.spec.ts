@@ -61,9 +61,10 @@ describe('dsh-theme.json v1 parser', () => {
     expect(codeOf(`{"a":"${'x'.repeat(THEME_FILE_MAX_LENGTH)}`)).toBe('too-large')
   })
 
-  it('rejects versions other than 1', () => {
+  it('rejects versions other than 1, including an explicit null', () => {
     expect(codeOf(validFile({ version: 2 }))).toBe('unsupported-version')
     expect(codeOf(validFile({ version: '1' }))).toBe('unsupported-version')
+    expect(codeOf(validFile({ version: null }))).toBe('unsupported-version')
   })
 
   it('rejects malformed, reserved, and builtin-namespace ids', () => {
@@ -85,6 +86,18 @@ describe('dsh-theme.json v1 parser', () => {
     expect(codeOf(validFile({ name: { zh: '海' } }))).toBe('missing-name')
     expect(codeOf(validFile({ description: 3 }))).toBe('invalid-metadata')
     expect(codeOf(validFile({ author: ['a'] }))).toBe('invalid-metadata')
+  })
+
+  it('rejects non-string $schema values, including deeply nested ones', () => {
+    expect(codeOf(validFile({ $schema: 3 }))).toBe('invalid-metadata')
+    expect(codeOf(validFile({ $schema: null }))).toBe('invalid-metadata')
+    expect(codeOf(validFile({ $schema: { ref: 'x' } }))).toBe('invalid-metadata')
+    expect(codeOf(validFile({ $schema: [] }))).toBe('invalid-metadata')
+    // A ~5000-deep array used to pass validation, persist, then overflow the
+    // catalog's deep-freeze recursion on every startup.
+    let deep: unknown = 0
+    for (let i = 0; i < 5000; i += 1) deep = [deep]
+    expect(codeOf(validFile({ $schema: deep }))).toBe('invalid-metadata')
   })
 
   it('rejects missing, extra, or non-string palette fields', () => {
@@ -203,6 +216,18 @@ describe('dsh-theme.json v1 parser', () => {
     expect(parseStoredThemeFiles(undefined)).toEqual({ entries: [], dropped: 0 })
     expect(parseStoredThemeFiles('nope')).toEqual({ entries: [], dropped: 1 })
   })
+
+  it('drops a stored entry whose $schema slipped past older validation', () => {
+    // Entries persisted by a build that tolerated non-string $schema fail the
+    // current parser, so they are skipped instead of reaching the catalog's
+    // recursive freezeSource.
+    let deep: unknown = 0
+    for (let i = 0; i < 5000; i += 1) deep = [deep]
+    const poisoned = validFile({ id: 'user.poison', $schema: deep })
+    const stored = parseStoredThemeFiles([validFile({ id: 'user.moss', name: 'Moss' }), poisoned])
+    expect(stored.dropped).toBe(1)
+    expect(stored.entries.map(entry => entry.preset.id)).toEqual(['user.moss'])
+  })
 })
 
 describe('dsh-theme.schema.json agreement', () => {
@@ -240,6 +265,10 @@ describe('dsh-theme.schema.json agreement', () => {
       'junk',
       42,
       validFile({ version: 2 }),
+      validFile({ version: null }),
+      validFile({ $schema: 7 }),
+      validFile({ $schema: null }),
+      validFile({ $schema: { ref: 'x' } }),
       validFile({ id: 'Bad' }),
       validFile({ id: 'default' }),
       validFile({ id: 'dsh-theme-studio.mine' }),
