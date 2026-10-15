@@ -100,9 +100,15 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+/** Detail text for a rejected value; objects and arrays are named, never stringified recursively. */
+function describeValue(value: unknown): string {
+  if (value === null || typeof value !== 'object') return String(value)
+  return Array.isArray(value) ? 'array' : 'object'
+}
+
 function readId(value: unknown): ThemeFileError | null {
   if (typeof value !== 'string' || !ID_PATTERN.test(value)) {
-    return { code: 'invalid-id', path: 'id', detail: String(value) }
+    return { code: 'invalid-id', path: 'id', detail: describeValue(value) }
   }
   if (RESERVED_IDS.has(value)) return { code: 'reserved-id', path: 'id', detail: value }
   if (value.startsWith(BUILTIN_ID_PREFIX)) return { code: 'builtin-id', path: 'id', detail: value }
@@ -148,7 +154,7 @@ function readOverrideMap(value: unknown, path: string): { ok: true; map: Readonl
       return { ok: false, error: { code: 'invalid-override-name', path: `${path}.${name}`, detail: name } }
     }
     if (typeof color !== 'string' || !checkColorSyntax(color)) {
-      return { ok: false, error: { code: 'invalid-color', path: `${path}.${name}`, detail: String(color) } }
+      return { ok: false, error: { code: 'invalid-color', path: `${path}.${name}`, detail: describeValue(color) } }
     }
     map[name] = color
   }
@@ -199,18 +205,18 @@ export function validateThemeFileData(data: unknown): ThemeFileParse {
   }
   const version = data['version'] === undefined ? THEME_FILE_VERSION : data['version']
   if (version !== THEME_FILE_VERSION) {
-    return fail('unsupported-version', 'version', String(data['version']))
+    return fail('unsupported-version', 'version', describeValue(data['version']))
   }
   const idError = readId(data['id'])
   if (idError) return { ok: false, error: idError }
   const id = data['id'] as string
   const name = data['name']
   if (typeof name !== 'string' || name.trim().length === 0) {
-    return fail('missing-name', 'name', String(name))
+    return fail('missing-name', 'name', describeValue(name))
   }
   for (const key of ['$schema', 'description', 'author'] as const) {
     if (data[key] !== undefined && typeof data[key] !== 'string') {
-      return fail('invalid-metadata', key, String(data[key]))
+      return fail('invalid-metadata', key, describeValue(data[key]))
     }
   }
   const paletteValue = data['palette']
