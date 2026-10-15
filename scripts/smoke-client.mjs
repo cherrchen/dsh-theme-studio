@@ -110,13 +110,18 @@ try {
   const accountMenu = page.getByRole('button', { name: /^账号菜单$|^Account menu$/u }).first()
   const settingsEntry = openSettings.or(accountMenu)
   // First-run overlays mount asynchronously once their settings snapshot
-  // resolves, and mark the app root inert behind a mask. Dismiss whatever is
-  // currently up; a dialog without an advance button still counts as a modal,
-  // so the loop waits it out instead of racing the mask.
-  const firstRunAdvance = page.getByRole('button', { name: /^继续$|^Continue$|^稍后配置$|^Configure later$/u }).first()
+  // resolves, and mark the app root inert behind a mask. A dialog's own Close
+  // affordance exits immediately; flows without one are advanced through their
+  // Continue/Configure-later button. A modal with neither is waited out.
   const modalDialog = page.locator('[role="dialog"][aria-modal="true"]').first()
+  const modalClose = modalDialog.getByRole('button', { name: /^关闭$|^Close$/u }).first()
+  const firstRunAdvance = page.getByRole('button', { name: /^继续$|^Continue$|^稍后配置$|^Configure later$/u }).first()
   const dismissFirstRunDialogs = async () => {
     for (let attempts = 0; attempts < 30; attempts += 1) {
+      if (await modalClose.isVisible().catch(() => false)) {
+        await modalClose.click().catch(() => {})
+        continue
+      }
       if (await firstRunAdvance.isVisible().catch(() => false)) {
         await firstRunAdvance.click().catch(() => {})
         continue
