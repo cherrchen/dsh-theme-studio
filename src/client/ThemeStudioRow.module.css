@@ -135,6 +135,14 @@
   color: var(--dsw-alias-state-warn-primary);
 }
 
+/* A file's description is unbounded; keep it to one line with the tooltip
+ * carrying the full text. */
+.modalDesc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Manage dialog: grouped theme rows with export/remove actions. */
 .manageBody {
   display: flex;
@@ -166,7 +174,8 @@
   color: var(--dsw-alias-label-primary);
 }
 
-.manageId {
+.manageId,
+.manageDesc {
   flex: 1;
   min-width: 0;
   overflow: hidden;

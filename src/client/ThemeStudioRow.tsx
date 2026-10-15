@@ -265,6 +265,11 @@ export function ThemeStudioRow({
             <p className={css.modalText}>
               {formatLocale(t('import.confirm.body'), { name: dialog.inspection.file.name, id: dialog.inspection.file.id })}
             </p>
+            {dialog.inspection.file.description === undefined ? null : (
+              <p className={`${css.modalText} ${css.modalDesc}`} title={dialog.inspection.file.description}>
+                {dialog.inspection.file.description}
+              </p>
+            )}
             <p className={dialog.inspection.summary.failed + dialog.inspection.summary.unknown === 0 ? css.modalText : css.modalWarn}>
               {dialog.inspection.summary.failed + dialog.inspection.summary.unknown === 0
                 ? t('import.contrast.pass')
@@ -356,7 +361,10 @@ function ManageRow({ card, t, onExport, onRemove, removeDisabled = false }: {
     <div className={css.manageRow}>
       <Mosaic preview={card.preview.light} />
       <span className={css.manageName} title={name}>{name}</span>
-      <span className={css.manageId}>{id}</span>
+      <span className={css.manageId} title={id}>{id}</span>
+      {card.description === undefined ? null : (
+        <span className={css.manageDesc} title={card.description}>{card.description}</span>
+      )}
       <Button size="sm" onClick={() => { onExport(id) }}>{t('action.export')}</Button>
       {onRemove === undefined ? null : (
         <Button size="sm" disabled={removeDisabled} className={css.removeButton} onClick={() => { onRemove(id) }}>{t('action.remove')}</Button>
