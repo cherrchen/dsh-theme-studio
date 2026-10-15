@@ -63,10 +63,20 @@ export interface ThemeStudioRuntimeOptions {
   theme: ThemeOverrideSurface
   /** Durable Theme Studio section; omitted when settings are unavailable. */
   host: ThemeSettingsHost<ThemeStudioSettings> | undefined
-  /** Theme lookup used by activate/preview. */
+  /**
+   * Theme lookup used by activate/preview. A catalog that also implements
+   * {@link ImportedThemeSink} — `ThemeStudioRegistry` does — additionally
+   * receives the durable imported list from each accepted snapshot. The sink
+   * is derived from this object so the runtime and the public catalog can
+   * never observe divergent imported sections.
+   */
   catalog: ThemeCatalog
-  /** Imported-theme section updated from each accepted snapshot. */
-  imports?: ImportedThemeSink
+}
+
+/** A catalog carrying the imported-section sink face. */
+function isImportedThemeSink(catalog: ThemeCatalog): catalog is ThemeCatalog & ImportedThemeSink {
+  const candidate = catalog as Partial<ImportedThemeSink>
+  return typeof candidate.setImported === 'function' && typeof candidate.isImported === 'function'
 }
 
 function normalizeId(value: unknown): string | null {
@@ -122,13 +132,13 @@ export class ThemeStudioRuntime {
   private snapshot: ThemeStudioSnapshot
 
   /**
-   * @param options - theme overlay surface, optional settings scope, catalog, imports sink.
+   * @param options - theme overlay surface, optional settings scope, and the shared catalog.
    */
   constructor(options: ThemeStudioRuntimeOptions) {
     this.theme = options.theme
     this.host = options.host
     this.catalog = options.catalog
-    this.imports = options.imports
+    this.imports = isImportedThemeSink(options.catalog) ? options.catalog : undefined
     this.settingsStatus = options.host === undefined ? 'unavailable' : 'loading'
     this.snapshot = this.buildSnapshot()
     if (this.host !== undefined) {

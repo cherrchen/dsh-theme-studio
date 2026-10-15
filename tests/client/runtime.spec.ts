@@ -467,7 +467,6 @@ function composite(host = durableHost({ activeThemeId: null, importedThemes: [] 
     theme: overlay.theme,
     host: host.scope,
     catalog: registry,
-    imports: registry,
   })
   return { runtime, overlay, host, registry }
 }
@@ -481,7 +480,6 @@ describe('ThemeStudioRuntime imported themes', () => {
       theme: overlay.theme,
       host: host.scope,
       catalog: registry,
-      imports: registry,
     })
     expect(registry.get(OCEAN)?.name).toBe('Ocean')
     expect(runtime.getSnapshot().activeThemeId).toBe(OCEAN)
@@ -651,7 +649,7 @@ describe('ThemeStudioRuntime imported themes', () => {
   it('ignores importedThemes writes when no settings host exists', () => {
     const overlay = fakeTheme()
     const registry = new ThemeStudioRegistry()
-    const runtime = new ThemeStudioRuntime({ theme: overlay.theme, host: undefined, catalog: registry, imports: registry })
+    const runtime = new ThemeStudioRuntime({ theme: overlay.theme, host: undefined, catalog: registry })
     runtime.saveImportedThemes([themeSource(OCEAN)])
     expect(runtime.requestedImportedSources()).toBeUndefined()
     expect(registry.isImported(OCEAN)).toBe(false)

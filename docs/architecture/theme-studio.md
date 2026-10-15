@@ -82,7 +82,7 @@ Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `syn
 
 ### catalog 与校验
 
-Client `apply` 首先创建唯一 `ThemeStudioRegistry`，调用 `ctx.provide('themeStudio', Object.freeze({ catalog }))`。设置通道 child 启动的 runtime 使用同一实例并作为 `imports` sink：每份 ready Host snapshot 把 `importedThemes` 解析为 imported 分区并原子替换，再结算 `activeThemeId`——导入 id 因此不会走 unknown-id 修复路径。`validate` 每次按当前冻结 preset 计算新报告，报告和 checks 都不可变；registry 提供 `revision`/`subscribe` 供 UI 投影，但报告本身没有变化流或缓存失效协议。校验既不写设置也不安装 overlay。
+Client `apply` 首先创建唯一 `ThemeStudioRegistry`，调用 `ctx.provide('themeStudio', Object.freeze({ catalog }))`。设置通道 child 启动的 runtime 使用同一实例作 catalog；实现了 `ImportedThemeSink` 的 catalog 被结构检测为 imported 分区 sink，因此两个视图不可能分叉。每份 ready Host snapshot 把 `importedThemes` 解析为 imported 分区并原子替换，再结算 `activeThemeId`——导入 id 因此不会走 unknown-id 修复路径。`validate` 每次按当前冻结 preset 计算新报告，报告和 checks 都不可变；registry 提供 `revision`/`subscribe` 供 UI 投影，但报告本身没有变化流或缓存失效协议。校验既不写设置也不安装 overlay。
 
 ## Lifecycle
 

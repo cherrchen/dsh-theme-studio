@@ -2,7 +2,7 @@
 
 ## Construction
 
-源码：[runtime.ts](../../src/client/runtime.ts)。从 `/client` 导出 `ThemeStudioRuntime`、`ThemeStudioSnapshot`、`ThemeOverrideSurface`、`ImportedThemeSink`；构造 options 接收 theme、host（可 undefined）、catalog（最小 ThemeCatalog）及可选 `imports` sink（`ThemeStudioRegistry`）。实例不依赖 DOM；theme 的唯一所需方法是 `overrideTokens(source, tokenPairs): disposer`。
+源码：[runtime.ts](../../src/client/runtime.ts)。从 `/client` 导出 `ThemeStudioRuntime`、`ThemeStudioSnapshot`、`ThemeOverrideSurface`、`ImportedThemeSink`；构造 options 接收 theme、host（可 undefined）、catalog（最小 ThemeCatalog）。catalog 同时实现 `ImportedThemeSink` 时（`ThemeStudioRegistry` 如此）被结构检测为 imported 分区 sink——sink 只能从 catalog 导出，runtime 与公共 catalog 不会观察到分叉的 imported 分区。实例不依赖 DOM；theme 的唯一所需方法是 `overrideTokens(source, tokenPairs): disposer`。
 
 构造先生成快照，根据 host 是否存在将 status 置为 unavailable/loading；存在则订阅 Host 并立即 adoption。不会把先前不存在的 theme id 自动注册到官方 registry。
 

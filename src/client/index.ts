@@ -108,7 +108,7 @@ function descriptionKeyOf(id: string): string {
  * @param ctx - client context that already carries theme, slots, and locale.
  */
 function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> | undefined, registry: ThemeStudioRegistry): void {
-  const runtime = new ThemeStudioRuntime({ theme: ctx.theme, host, catalog: registry, imports: registry })
+  const runtime = new ThemeStudioRuntime({ theme: ctx.theme, host, catalog: registry })
   ctx.effect(() => () => { runtime.dispose() }, 'theme-studio: runtime')
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'theme-studio: settings row dictionaries')
 

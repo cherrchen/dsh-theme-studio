@@ -61,7 +61,6 @@ function make(host = durableHost()) {
     theme: overlay.theme,
     host: host.scope,
     catalog: registry,
-    imports: registry,
   })
   return { registry, runtime, host, overlay }
 }
