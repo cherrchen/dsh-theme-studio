@@ -336,8 +336,10 @@ export class ThemeStudioRuntime {
   /**
    * Feed the durable `importedThemes` field into the catalog before resolving
    * `activeThemeId`, so imported ids never take the unknown-id repair path.
-   * A changed imported section also reinstalls the active layer and drops a
-   * preview whose theme vanished.
+   * A changed imported section also reinstalls the active layer, drops a
+   * preview whose theme vanished, and restacks a surviving preview on top —
+   * overlay layers compose in install order, so a fresh active layer would
+   * otherwise cover it.
    */
   private syncImports(value: ThemeStudioSettings | undefined): void {
     this.importedAccepted = Array.isArray(value?.importedThemes) ? value.importedThemes : undefined
@@ -361,6 +363,12 @@ export class ThemeStudioRuntime {
     ) {
       const preset = this.catalog.get(this.activeThemeId)
       if (preset !== undefined) this.installActive(preset)
+    }
+    // A reinstalled active layer lands on top of the overlay stack; lift the
+    // surviving preview back above it and pick up its new tokens at once.
+    if (this.previewing && this.previewThemeId !== null) {
+      const preview = this.catalog.get(this.previewThemeId)
+      if (preview !== undefined) this.installPreview(preview)
     }
   }
 

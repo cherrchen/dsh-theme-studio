@@ -30,6 +30,7 @@
 - 主题文件的 `$schema` 字段按公开 JSON Schema 收紧为字符串；此前非字符串值（如深嵌套对象）可通过校验并持久化，其后的深冻结会因递归过深抛出 RangeError，且该持久化条目每次启动都使导入目录加载失败。
 - 主题文件的 `version: null` 不再被当作省略处理，按公开 JSON Schema 拒绝为 `unsupported-version`。
 - 主题文件校验不再对被拒绝的值做递归字符串化：把 `id`、`name`、`version` 或 override 色值写成深嵌套数组的文件现在按对应错误码拒绝，不再抛出 RangeError。
+- 激活导入主题且正在预览其他主题时，`importedThemes` 变更重装 active 层后不再盖住预览层：仍然有效的预览会重新装回顶层并刷新 token，屏幕与预览状态保持一致。
 
 ## [0.1.4] - 2026-10-11
 

@@ -30,6 +30,7 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - A theme file's `$schema` field is now restricted to strings per the published JSON Schema; non-string values (such as deeply nested objects) previously passed validation and were persisted, then overflowed the deep-freeze recursion with a RangeError — and the same stored entry failed catalog loading again on every restart.
 - A theme file's `version: null` is no longer treated as omitted; it is rejected as `unsupported-version`, matching the published JSON Schema.
 - Theme-file validation no longer recursively stringifies rejected values: a deeply nested array as `id`, `name`, `version`, or an override color is now rejected with the matching error code instead of throwing a RangeError.
+- While an imported theme is active and another theme is being previewed, an `importedThemes` change no longer lets the reinstalled active layer cover the preview: the surviving preview is restacked on top with refreshed tokens, so the screen matches the preview state.
 
 ## [0.1.4] - 2026-10-11
 
