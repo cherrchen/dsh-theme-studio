@@ -603,6 +603,55 @@ describe('ThemeStudioRuntime imported themes', () => {
     expect(runtime.getSnapshot().activeThemeId).toBe(OCEAN)
   })
 
+  it('restacks a surviving preview above the reinstalled active layer', () => {
+    const moss = themeSource(MOSS, 'Moss')
+    ;(moss['palette'] as Record<string, unknown>)['light'] = { ...OCEAN_PALETTE.light, brand: '#112233' }
+    const host = durableHost({
+      activeThemeId: OCEAN,
+      importedThemes: [themeSource(OCEAN), moss],
+    })
+    const { runtime, overlay } = composite(host)
+    runtime.previewTheme(MOSS)
+    expect(overlay.layers.get(PREVIEW_SOURCE)!.seq)
+      .toBeGreaterThan(overlay.layers.get(ACTIVE_SOURCE)!.seq)
+    // Any adopted importedThemes change reinstalls the imported active layer;
+    // without a restack it would cover the preview while the snapshot still
+    // reports it.
+    host.publish({
+      status: 'ready',
+      value: { activeThemeId: OCEAN, importedThemes: [themeSource(OCEAN, 'Ocean v2'), moss] },
+      revision: 2,
+      writable: true,
+    })
+    expect(runtime.getSnapshot()).toMatchObject({ previewing: true, previewThemeId: MOSS })
+    const active = overlay.layers.get(ACTIVE_SOURCE)!
+    const preview = overlay.layers.get(PREVIEW_SOURCE)!
+    // Highest-seq layer wins per token, so the composed brand is the
+    // previewed Moss value, not the active Ocean one.
+    expect(preview.seq).toBeGreaterThan(active.seq)
+    expect(preview.tokens['--dsw-alias-brand-primary']?.light).toBe('#112233')
+    expect(active.tokens['--dsw-alias-brand-primary']?.light).toBe('#2b6cb0')
+  })
+
+  it('refreshes the preview layer when the previewed theme is overwritten', () => {
+    const host = durableHost({
+      activeThemeId: OCEAN,
+      importedThemes: [themeSource(OCEAN), themeSource(MOSS)],
+    })
+    const { runtime, overlay } = composite(host)
+    runtime.previewTheme(MOSS)
+    const changed = themeSource(MOSS)
+    ;(changed['palette'] as Record<string, unknown>)['light'] = { ...OCEAN_PALETTE.light, brand: '#112233' }
+    host.publish({
+      status: 'ready',
+      value: { activeThemeId: OCEAN, importedThemes: [themeSource(OCEAN), changed] },
+      revision: 2,
+      writable: true,
+    })
+    expect(runtime.getSnapshot()).toMatchObject({ previewing: true, previewThemeId: MOSS })
+    expect(overlay.layers.get(PREVIEW_SOURCE)?.tokens['--dsw-alias-brand-primary']?.light).toBe('#112233')
+  })
+
   it('drops a vanished preview theme without touching the active overlay', () => {
     const host = durableHost({
       activeThemeId: GRAPHITE,
