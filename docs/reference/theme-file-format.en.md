@@ -41,7 +41,7 @@ Current, v1. This document is the single source of truth for the theme file form
 
 | Field | Required | Rules |
 | --- | --- | --- |
-| `$schema` | no | Editor hint; the parser ignores it |
+| `$schema` | no | Editor hint; non-string values are rejected (`invalid-metadata`), string values are not interpreted |
 | `version` | no | Omitted means `1`; any other value is rejected (`unsupported-version`) |
 | `id` | yes | `^[a-z0-9][a-z0-9.-]{0,63}$`; must not use the `dsh-theme-studio.` prefix; `default`/`light`/`dark`/`system` are reserved |
 | `name` | yes | Non-empty string shown verbatim in the menu; not a localization object |
@@ -81,7 +81,7 @@ Color values are limited to the subset the official resolver supports (source of
 
 ## Versioning
 
-`version` is the file format version, not the plugin version. Only 1 exists; unknown higher versions are rejected instead of guessed at, so the file can be imported once the plugin is updated. `$schema` is transparent to the parser; when the format evolves, update this document, `schemas/dsh-theme.schema.json` and the consistency tests together.
+`version` is the file format version, not the plugin version. Only 1 exists; unknown higher versions are rejected instead of guessed at, so the file can be imported once the plugin is updated. A `$schema` string is transparent to the parser (the type is still checked against the published schema); when the format evolves, update this document, `schemas/dsh-theme.schema.json` and the consistency tests together.
 
 ## Validation
 

@@ -27,6 +27,7 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - A theme file that fails to read (for example, an I/O error mid-read) now shows the import error dialog instead of an unhandled Promise rejection.
 - The import confirmation and manage dialogs now show a theme file's `description` field, matching the file-format reference; long descriptions ellipsize with the full text as a tooltip.
 - Theme-menu hover preview is now tracked per whole row: resting the pointer on a row's padding or the icon/text gap no longer restores the applied theme; moving onto separators, group labels, footer actions, or outside the menu still does.
+- A theme file's `$schema` field is now restricted to strings per the published JSON Schema; non-string values (such as deeply nested objects) previously passed validation and were persisted, then overflowed the deep-freeze recursion with a RangeError — and the same stored entry failed catalog loading again on every restart.
 
 ## [0.1.4] - 2026-10-11
 

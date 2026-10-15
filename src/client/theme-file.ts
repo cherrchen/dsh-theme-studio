@@ -208,7 +208,7 @@ export function validateThemeFileData(data: unknown): ThemeFileParse {
   if (typeof name !== 'string' || name.trim().length === 0) {
     return fail('missing-name', 'name', String(name))
   }
-  for (const key of ['description', 'author'] as const) {
+  for (const key of ['$schema', 'description', 'author'] as const) {
     if (data[key] !== undefined && typeof data[key] !== 'string') {
       return fail('invalid-metadata', key, String(data[key]))
     }

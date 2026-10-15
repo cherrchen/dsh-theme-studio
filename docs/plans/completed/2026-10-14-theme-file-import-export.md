@@ -50,7 +50,7 @@ Completed。2026-10-14 需求对齐确认后建立并实施完毕；功能尚未
 }
 ```
 
-- `version` 可省略 = 1；>1 拒绝。`$schema` 透传不校验。
+- `version` 可省略 = 1；>1 拒绝。`$schema` 必须是字符串（缺失或非字符串按 `invalid-metadata` 拒绝），字符串值透传不参与解析。
 - `id`：`^[a-z0-9][a-z0-9.-]{0,63}$`；拒绝 `dsh-theme-studio.` 前缀与 `default/light/dark/system`。
 - 色值白名单对齐 resolver 语法：`#hex`、`rgb()/rgba()`、`transparent/black/white`、`var(--token[, fallback])`、`color-mix(in srgb,…)`；`var()` 只做语法校验，解析期未知名走 unknown 诊断。
 - `overrides` token 名限 `--dsw-`/`--shiki-`/`--dsh-` 前缀，拒绝官方字体变量；light/dark 键集合必须对称。
