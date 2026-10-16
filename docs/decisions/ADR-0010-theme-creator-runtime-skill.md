@@ -41,4 +41,4 @@ Accepted（2026-10-15 需求确认后随 Theme Creator 功能实施）。
 - skill 注册是 effects：fiber 释放即注销，模式翻转先 dispose 再 register，由测试覆盖。
 - `creatorAgentMode` 是 durable 字段，默认 `gesture`；旧版本快照缺失该字段由 `creatorAgentModeOf` 规范化。
 - 一键跳转不自动发送：用户必须审阅并回车，`/name` 手势才产生真实的 skill 注入。
-- `import.meta.url` 在 host bundle（`lib/index.js`）中解析兄弟入口 `lib/validate-theme.js` 的绝对路径，skill 正文在注册时把该路径烘进校验命令。
+- `import.meta.dirname` 在 host bundle（`lib/index.js`）中定位兄弟入口 `lib/validate-theme.js` 的绝对路径，skill 正文在注册时把该路径烘进校验命令。

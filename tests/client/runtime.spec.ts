@@ -570,6 +570,25 @@ describe('ThemeStudioRuntime imported themes', () => {
     expect(host.scope.getSnapshot().value?.importedThemes).toEqual([themeSource(MOSS)])
   })
 
+  it('flags a creator-mode write the accepted snapshot never echoes', async () => {
+    const host = durableHost({ activeThemeId: null, importedThemes: [] })
+    const { runtime } = composite(host)
+    expect(runtime.getSnapshot().creatorMode).toBe('gesture')
+    host.set.mockImplementation(() => Promise.resolve())
+    runtime.setCreatorMode('catalog')
+    await Promise.resolve()
+    expect(runtime.getSnapshot()).toMatchObject({ creatorMode: 'gesture', saveError: true })
+  })
+
+  it('adopts the creator mode echoed by the accepted snapshot', async () => {
+    const host = durableHost({ activeThemeId: null, importedThemes: [] })
+    const { runtime } = composite(host)
+    runtime.setCreatorMode('catalog')
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(runtime.getSnapshot()).toMatchObject({ creatorMode: 'catalog', saveError: false })
+  })
+
   it('removes the active imported theme and falls back to Default on the next snapshot', async () => {
     const host = durableHost({ activeThemeId: OCEAN, importedThemes: [themeSource(OCEAN)] })
     const { runtime, overlay, registry } = composite(host)

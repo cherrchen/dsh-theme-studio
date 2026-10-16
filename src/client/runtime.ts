@@ -122,6 +122,8 @@ export class ThemeStudioRuntime {
   private importedAccepted: readonly unknown[] | undefined
   /** Last id adopted from a ready Host snapshot. Optimistic choices do not update it. */
   private acceptedThemeId: string | null = null
+  /** Newest creator mode this runtime asked the Host to store. Compared against the accepted echo. */
+  private creatorModeRequested: CreatorAgentMode | undefined
   /** Unknown raw value whose repair write already failed. A later different value may retry. */
   private repairBlockedRaw: unknown = undefined
   private disposed = false
@@ -277,6 +279,7 @@ export class ThemeStudioRuntime {
   setCreatorMode(mode: CreatorAgentMode): void {
     this.assertOpen()
     if (this.host === undefined || this.settingsStatus !== 'ready') return
+    this.creatorModeRequested = mode
     this.queueWrite(CREATOR_AGENT_MODE_FIELD, mode)
   }
 
@@ -338,7 +341,7 @@ export class ThemeStudioRuntime {
       }
       return
     }
-    if (this.importedRequested !== undefined) {
+    if (this.importedRequested !== undefined || this.creatorModeRequested !== undefined) {
       this.finishPersist()
       return
     }
@@ -518,9 +521,12 @@ export class ThemeStudioRuntime {
     const importsMatch = this.importedRequested === undefined
       || JSON.stringify(section.value?.importedThemes ?? []) === JSON.stringify(this.importedRequested)
     this.importedRequested = undefined
+    const creatorMatch = this.creatorModeRequested === undefined
+      || creatorAgentModeOf(section.value?.creatorAgentMode) === this.creatorModeRequested
+    this.creatorModeRequested = undefined
     this.syncImports(section.value)
     this.creatorMode = creatorAgentModeOf(section.value?.creatorAgentMode)
-    if (!rejected && importsMatch && this.durableMatches(section.value?.activeThemeId, this.activeThemeId)) {
+    if (!rejected && importsMatch && creatorMatch && this.durableMatches(section.value?.activeThemeId, this.activeThemeId)) {
       this.acceptedThemeId = this.activeThemeId
       if (normalizeId(section.value?.activeThemeId) === null) this.repairBlockedRaw = undefined
       this.saveError = false

@@ -4,7 +4,6 @@
  * snapshot so the skill only exists while its mode asks for it.
  */
 
-import { fileURLToPath } from 'node:url'
 import type { SkillRegistration } from '@deepseek-ai/dsh-skill'
 import {
   CREATOR_AGENT_MODE_FIELD, creatorAgentModeOf, THEME_CREATOR_SKILL_NAME, type CreatorAgentMode,
@@ -62,18 +61,18 @@ export function createCreatorSectionSource(): CreatorSectionSource & {
 }
 
 /**
- * Absolute path of the bundled validator CLI. `import.meta.url` resolves
+ * Absolute path of the bundled validator CLI. `import.meta.dirname` resolves
  * inside the emitted host bundle (`lib/index.js`), so the sibling entry
  * `lib/validate-theme.js` is found wherever the package is installed.
  * @returns the filesystem path passed to the skill content.
  */
 export function creatorValidatorPath(): string {
-  return fileURLToPath(new URL('./validate-theme.js', import.meta.url))
+  return `${import.meta.dirname}/validate-theme.js`
 }
 
 /** Quote a path for one shell command line. */
 function shellQuote(value: string): string {
-  return `"${value.replaceAll('"', '\\"')}"`
+  return `'${value.replaceAll("'", "'\\''")}'`
 }
 
 /**

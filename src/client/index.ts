@@ -138,9 +138,11 @@ function descriptionKeyOf(id: string): string {
 
 /**
  * Restore the durable overlay and register the Themes row on one context.
- * @param ctx - client context that already carries theme, slots, and locale.
+ * @param ctx - the settings-transport child context that owns this runtime.
+ * @param probe - the apply-scope context used for optional-service lookups
+ *   (`ctx.get` reads the global store; the child is a scoped proxy).
  */
-function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> | undefined, registry: ThemeStudioRegistry): void {
+function start(ctx: ClientContext, probe: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> | undefined, registry: ThemeStudioRegistry): void {
   const runtime = new ThemeStudioRuntime({ theme: ctx.theme, host, catalog: registry })
   ctx.effect(() => () => { runtime.dispose() }, 'theme-studio: runtime')
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'theme-studio: settings row dictionaries')
@@ -181,10 +183,15 @@ function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> 
       removeImportedTheme: (id) => { removeImportedTheme(runtime, registry, id) },
       exportTheme: (id) => { exportThemeById(registry, id) },
       startThemeCreation: () => {
-        const start = themeCreationStart(ctx)
+        const start = themeCreationStart(probe)
         if (start === undefined) return false
-        start()
-        return true
+        try {
+          start()
+          return true
+        }
+        catch {
+          return false
+        }
       },
     }
   }
@@ -227,7 +234,7 @@ export function apply(ctx: ClientContext): void {
   ): boolean => {
     if (started) return false
     started = true
-    start(child, host, registry)
+    start(child, ctx, host, registry)
     return true
   }
   const releaseWhenStopped = (owns: boolean): (() => void) => {
