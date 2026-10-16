@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import { Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import { ChevronDownIcon } from '../compat/menu-icons.tsx'
-import type { CreatorAgentMode } from '../constants.ts'
+import { CREATOR_AGENT_MODES, type CreatorAgentMode } from '../constants.ts'
 import type { createThemeStudioRowStore } from './store.ts'
 import css from './ThemeStudioRow.module.css'
 
@@ -22,8 +22,6 @@ export interface CreatorConfigInjected {
 export type CreatorConfigSectionProps =
   PropsRuntime<'plugins.bundle.config'> & PropsStore<ReturnType<typeof createThemeStudioRowStore>>
   & PropsLocale<'settings.theme-studio'> & CreatorConfigInjected
-
-const MODES: readonly CreatorAgentMode[] = ['off', 'gesture', 'catalog']
 
 /**
  * Render the creator-mode section on the bundle's Plugins page.
@@ -51,7 +49,7 @@ export function CreatorConfigSection({ view, t, useStore, setCreatorMode }: Crea
       <Menu
         open={expanded}
         onClose={() => { setOpen(false) }}
-        items={MODES.map(mode => ({ id: mode, label: t(`creator.label.${mode}`) }))}
+        items={CREATOR_AGENT_MODES.map(mode => ({ id: mode, label: t(`creator.label.${mode}`) }))}
         selectedId={creatorMode}
         onSelect={(id) => {
           setCreatorMode(id as CreatorAgentMode)

@@ -70,9 +70,15 @@ export function creatorValidatorPath(): string {
   return `${import.meta.dirname}/validate-theme.js`
 }
 
-/** Quote a path for one shell command line. */
+/**
+ * Quote a path for one shell command line. POSIX single-quote escaping on
+ * POSIX hosts; Windows file names cannot contain `"`, so double-quoting is
+ * the form cmd and PowerShell both accept.
+ */
 function shellQuote(value: string): string {
-  return `'${value.replaceAll("'", "'\\''")}'`
+  return process.platform === 'win32'
+    ? `"${value}"`
+    : `'${value.replaceAll("'", "'\\''")}'`
 }
 
 /**
