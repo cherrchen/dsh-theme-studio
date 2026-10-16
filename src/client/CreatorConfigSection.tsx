@@ -3,7 +3,7 @@
  * through the `plugins.bundle.config` keyed slot. The slot exists from DSH
  * 0.1.6-alpha.2; hosts without it keep the stored or default mode.
  */
-import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
+import type {} from '../compat/plugin-manager-slot.ts'
 import { useId } from 'react'
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type { CreatorAgentMode } from '../constants.ts'
@@ -34,10 +34,8 @@ export function CreatorConfigSection({ view, t, useStore, setCreatorMode }: Crea
   const settingsStatus = useStore(s => s.settingsStatus)
   if (view !== 'page') return null
   return (
-    <div>
-      <p className={css.manageGroup}>
-        <label htmlFor={selectId}>{t('creator.section')}</label>
-      </p>
+    <div className={css.creatorField}>
+      <label htmlFor={selectId}>{t('creator.section')}</label>
       <select
         id={selectId}
         value={creatorMode}
@@ -48,7 +46,7 @@ export function CreatorConfigSection({ view, t, useStore, setCreatorMode }: Crea
           <option key={mode} value={mode}>{t(`creator.label.${mode}`)}</option>
         ))}
       </select>
-      <p className={css.modalDesc}>{t(`creator.mode.${creatorMode}`)}</p>
+      <p className={css.creatorDesc}>{t(`creator.mode.${creatorMode}`)}</p>
     </div>
   )
 }

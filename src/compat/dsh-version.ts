@@ -45,7 +45,6 @@ export const OPTIONAL_CORE_PACKAGES = [
   '@deepseek-ai/dsh-client-connection',
   '@deepseek-ai/dsh-client-locale',
   '@deepseek-ai/dsh-client-store',
-  '@deepseek-ai/dsh-client-ui-plugin-manager',
   '@deepseek-ai/dsh-client-ui-primitives',
   '@deepseek-ai/dsh-client-ui-renderer',
   '@deepseek-ai/dsh-client-ui-settings',

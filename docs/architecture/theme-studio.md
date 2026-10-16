@@ -90,7 +90,7 @@ Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `syn
 
 Host 的 settings 附件暴露 `{section, dispose}`：`section` 在旧 transport 下包装 namespace scope 的 `get`/`watch`，在新 transport 下以 `describe()` 读值、`settings/document-updated` 作 watch。`watchCreatorAgent` 在独立的 `ctx.inject(['skills'])` fiber 中 reconcile：section 缺席或 `creatorAgentMode` 为 `off` 时不注册；`gesture`/`catalog` 注册同一份虚拟 skill、仅 invocation 策略不同；模式翻转先 dispose 再 register，fiber 停止时全部释放。
 
-Client 菜单 footer 的「创建自己的主题」在 `creatorAgentMode !== 'off'` 时出现。点击时先取消预览，再惰性探测 `ctx.get('uiWorkspace')`：`startSession` 具备两参签名（`Function.length >= 2`）就调用 `startSession(undefined, { agentPreset: 'cordis', prompt: '/dsh-theme-creator ' })`——上游负责建/复用会话、选 preset、预填草稿与导航，不自动发送；否则弹出本地化提示让用户手动输入手势。`creatorAgentMode` 的 UI 写入在插件管理页进行：Client 向 `plugins.bundle.config`（key 为包名，0.1.6-alpha.2 起由 `ui-plugin-manager` 声明）贡献 `CreatorConfigSection`，写入复用 runtime 的字段写队列，与 activeThemeId/importedThemes 同样以 accepted 快照回收敛；无该 slot 的宿主保持已存储或默认档位。
+Client 菜单 footer 的「创建自己的主题」在 `creatorAgentMode !== 'off'` 时出现。点击时先取消预览，再惰性探测 `ctx.get('uiWorkspace')`：`startSession` 具备两参签名（`Function.length >= 2`）就调用 `startSession(undefined, { agentPreset: 'cordis', prompt: '/dsh-theme-creator ' })`——上游负责建/复用会话、选 preset、预填草稿与导航，不自动发送；否则弹出本地化提示让用户手动输入手势。`creatorAgentMode` 的 UI 写入在插件管理页进行：Client 向 `plugins.bundle.config`（key 为包名，0.1.6-alpha.2 起由 `ui-plugin-manager` 声明；该包同时才开始发布，故契约由 `src/compat/plugin-manager-slot.ts` 本地镜像而非依赖声明）贡献 `CreatorConfigSection`，写入复用 runtime 的字段写队列，与 activeThemeId/importedThemes 同样以 accepted 快照回收敛；无该 slot 的宿主保持已存储或默认档位。
 
 skill 产出的 `dsh-theme.json` 经随包的 `lib/validate-theme.js`（第三构建入口，`creatorValidatorPath()` 经 `import.meta.url` 定位）自检；模型迭代到 `ok` 后由用户走既有导入路径确认——skill 不接触 overlay 与设置写入。
 
