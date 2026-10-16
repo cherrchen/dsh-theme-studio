@@ -50,7 +50,11 @@ const IMPORTED_CARD: ThemeStudioCard = {
   },
 }
 
-function createRowState(cards: readonly ThemeStudioCard[], creatorMode: ThemeStudioRowState['creatorMode'] = 'off') {
+function createRowState(
+  cards: readonly ThemeStudioCard[],
+  creatorMode: ThemeStudioRowState['creatorMode'] = 'off',
+  creatorAvailable = true,
+) {
   let state: ThemeStudioRowState = {
     activeThemeId: null,
     previewThemeId: null,
@@ -59,6 +63,7 @@ function createRowState(cards: readonly ThemeStudioCard[], creatorMode: ThemeStu
     saveError: false,
     droppedImports: 0,
     creatorMode,
+    creatorAvailable,
     revision: 0,
     cards: [...cards],
   }
@@ -83,8 +88,12 @@ function createRowState(cards: readonly ThemeStudioCard[], creatorMode: ThemeStu
   }
 }
 
-function mount(cards: readonly ThemeStudioCard[] = CARDS, creatorMode: ThemeStudioRowState['creatorMode'] = 'off') {
-  const store = createRowState(cards, creatorMode)
+function mount(
+  cards: readonly ThemeStudioCard[] = CARDS,
+  creatorMode: ThemeStudioRowState['creatorMode'] = 'off',
+  creatorAvailable = true,
+) {
+  const store = createRowState(cards, creatorMode, creatorAvailable)
   const previewTheme = vi.fn()
   const activateTheme = vi.fn()
   const cancelPreview = vi.fn()
@@ -539,6 +548,18 @@ describe('ThemeStudioRow', () => {
     mount(CARDS, 'off')
     fireEvent.click(selector())
     expect(screen.queryByRole('menuitem', { name: 'Create your own theme…' })).toBeNull()
+  })
+
+  it('hides the create-theme action while the host has no skill catalog', () => {
+    const b = mount(CARDS, 'gesture', false)
+    fireEvent.click(selector())
+    expect(screen.queryByRole('menuitem', { name: 'Create your own theme…' })).toBeNull()
+    // The durable mode still wants the skill; the entry appears as soon as
+    // the catalog remote is provided.
+    act(() => {
+      b.store.actions.sync({ ...b.store.getSnapshot(), creatorAvailable: true, revision: 1 })
+    })
+    expect(option('Create your own theme…')).toBeDefined()
   })
 
   it('offers create-theme while creatorMode is gesture and launches the session', () => {

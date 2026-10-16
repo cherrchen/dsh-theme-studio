@@ -146,6 +146,15 @@ function start(ctx: ClientContext, probe: ClientContext, host: ThemeSettingsHost
   const runtime = new ThemeStudioRuntime({ theme: ctx.theme, host, catalog: registry })
   ctx.effect(() => () => { runtime.dispose() }, 'theme-studio: runtime')
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'theme-studio: settings row dictionaries')
+  // The Session-addressed `skills` remote is the only client-visible proxy
+  // for the host skill registry; while it is absent no `/name` gesture can
+  // resolve, so the creator entry must follow this capability rather than
+  // the durable mode alone. The inject re-runs as the namespace appears or
+  // drops with the connection.
+  ctx.inject(['remote.skills'], () => {
+    runtime.setCreatorAvailable(true)
+    return () => { runtime.setCreatorAvailable(false) }
+  })
 
   let cardCache: { rev: number; cards: ThemeStudioCard[] } | undefined
   const currentCards = (): ThemeStudioCard[] => {

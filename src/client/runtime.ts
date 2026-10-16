@@ -44,6 +44,13 @@ export interface ThemeStudioSnapshot {
   droppedImports: number
   /** Theme Creator skill visibility adopted from the durable section. */
   creatorMode: CreatorAgentMode
+  /**
+   * Whether the host exposes the Session-addressed skill catalog
+   * (`remote.skills`). Without it the `/dsh-theme-creator` gesture cannot
+   * resolve on this connection regardless of the stored mode, so the UI
+   * must not offer the creator entry at all.
+   */
+  creatorAvailable: boolean
   /** Monotonic change counter. */
   revision: number
 }
@@ -134,6 +141,7 @@ export class ThemeStudioRuntime {
   private saveError = false
   private droppedImports = 0
   private creatorMode: CreatorAgentMode = 'off'
+  private creatorAvailable = false
   private revision = 0
   private snapshot: ThemeStudioSnapshot
 
@@ -281,6 +289,20 @@ export class ThemeStudioRuntime {
     if (this.host === undefined || this.settingsStatus !== 'ready') return
     this.creatorModeRequested = mode
     this.queueWrite(CREATOR_AGENT_MODE_FIELD, mode)
+  }
+
+  /**
+   * Publish whether the host exposes the Session-addressed skill catalog
+   * remote (`remote.skills`). The catalog namespace is the only
+   * client-visible proxy for the `/name` gesture's resolution path —
+   * `ctx.skills` itself lives on the Host — so the Themes menu follows
+   * this capability instead of the durable mode alone.
+   * @param available - catalog remote presence.
+   */
+  setCreatorAvailable(available: boolean): void {
+    if (this.disposed || this.creatorAvailable === available) return
+    this.creatorAvailable = available
+    this.publish()
   }
 
   /**
@@ -622,6 +644,7 @@ export class ThemeStudioRuntime {
       saveError: this.saveError,
       droppedImports: this.droppedImports,
       creatorMode: this.creatorMode,
+      creatorAvailable: this.creatorAvailable,
       revision: this.revision,
     })
   }

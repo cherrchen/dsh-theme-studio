@@ -28,6 +28,7 @@ function createSectionState(overrides: Partial<ThemeStudioRowState> = {}) {
     saveError: false,
     droppedImports: 0,
     creatorMode: 'gesture',
+    creatorAvailable: true,
     revision: 0,
     cards: [...CARDS],
     ...overrides,

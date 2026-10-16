@@ -104,6 +104,7 @@ export function ThemeStudioRow({
   const saveError = useStore(s => s.saveError)
   const droppedImports = useStore(s => s.droppedImports)
   const creatorMode = useStore(s => s.creatorMode)
+  const creatorAvailable = useStore(s => s.creatorAvailable)
   const [open, setOpen] = useState(false)
   const [dialog, setDialog] = useState<DialogState | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
@@ -259,9 +260,11 @@ export function ThemeStudioRow({
         footer={[
           { id: ACTION_IMPORT, label: <span className={css.itemLabel}>{t('action.import')}</span>, disabled: !settingsReady },
           { id: ACTION_MANAGE, label: <span className={css.itemLabel}>{t('action.manage')}</span>, disabled: !settingsReady },
-          ...creatorMode === 'off' ? [] : [
+          // The entry needs both halves: a durable mode that asks for the
+          // skill and a host skill catalog that can resolve the gesture.
+          ...(creatorMode !== 'off' && creatorAvailable ? [
             { id: ACTION_CREATE, label: <span className={css.itemLabel}>{t('action.create')}</span>, disabled: !settingsReady },
-          ],
+          ] : []),
         ]}
         align="end"
         portal

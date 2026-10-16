@@ -277,4 +277,22 @@ describe('Theme Studio client apply', () => {
     await fiber.dispose()
     expect(b.slots.entries()).toHaveLength(0)
   })
+
+  it('gates the creator entry on the remote.skills namespace', async () => {
+    const b = await bench({ activeThemeId: null, importedThemes: [], creatorAgentMode: 'gesture' })
+    const plugin = b.ctx.plugin({ inject: [...inject], apply })
+    await plugin.await()
+    await settle(b.ctx)
+    const { instance } = faceOf(b.slots)
+    expect(instance.getSnapshot().creatorAvailable).toBe(false)
+
+    const drop = b.ctx.provide('remote.skills', { list: vi.fn() } as never)
+    await settle(b.ctx)
+    expect(instance.getSnapshot().creatorAvailable).toBe(true)
+
+    await drop()
+    await settle(b.ctx)
+    expect(instance.getSnapshot().creatorAvailable).toBe(false)
+    await plugin.dispose()
+  })
 })
