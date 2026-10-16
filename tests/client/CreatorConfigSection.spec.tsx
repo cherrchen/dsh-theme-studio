@@ -88,7 +88,13 @@ describe('CreatorConfigSection', () => {
 
   it.each(['loading', 'unavailable'] as const)('disables the control while settings are %s', (settingsStatus) => {
     mount({ settingsStatus })
-    expect((screen.getByRole('button', { name: /Gesture/ }) as HTMLButtonElement).disabled).toBe(true)
+    // The pill must not claim a stored mode before the accepted snapshot
+    // arrives: `creatorMode` inits to 'off', which is not what a default
+    // (gesture) host has saved.
+    const pill = screen.getByRole('button') as HTMLButtonElement
+    expect(pill.disabled).toBe(true)
+    expect(pill.textContent).toBe(settingsStatus === 'loading' ? 'Loading…' : 'Unavailable')
+    expect(screen.queryByText(/\/dsh-theme-creator/)).toBeNull()
   })
 
   it.each(['loading', 'unavailable'] as const)('keeps an open menu closed through a %s detour', (settingsStatus) => {

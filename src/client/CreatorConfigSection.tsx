@@ -35,7 +35,8 @@ export function CreatorConfigSection({ view, t, useStore, setCreatorMode }: Crea
   const creatorMode = useStore(s => s.creatorMode)
   const settingsStatus = useStore(s => s.settingsStatus)
   const saveError = useStore(s => s.saveError)
-  const disabled = settingsStatus !== 'ready'
+  const ready = settingsStatus === 'ready'
+  const disabled = !ready
   // A disabled trigger cannot stay expanded: when settings drop out of
   // `ready` mid-interaction the local flag must follow, or the menu would
   // pop back open on the next `ready` snapshot without a user action.
@@ -67,13 +68,15 @@ export function CreatorConfigSection({ view, t, useStore, setCreatorMode }: Crea
             aria-expanded={expanded}
             onClick={() => { setOpen(v => !v) }}
           >
-            <span className={css.selectorName}>{t(`creator.label.${creatorMode}`)}</span>
+            <span className={css.selectorName}>
+              {ready ? t(`creator.label.${creatorMode}`) : t(`creator.${settingsStatus}`)}
+            </span>
             <ChevronDownIcon className={css.chevron} />
           </button>
         )}
       />
       {saveError ? <p className={css.alert} role="alert">{t('status.saveFailed')}</p> : null}
-      <p className={css.creatorDesc}>{t(`creator.mode.${creatorMode}`)}</p>
+      {ready ? <p className={css.creatorDesc}>{t(`creator.mode.${creatorMode}`)}</p> : null}
     </div>
   )
 }
