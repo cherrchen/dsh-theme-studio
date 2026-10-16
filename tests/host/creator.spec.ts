@@ -205,4 +205,32 @@ describe('host apply creator wiring', () => {
     expect(skills.register).not.toHaveBeenCalled()
     await fiber.dispose()
   })
+
+  it('drives registration through the describe() seam on the newer transport', async () => {
+    const ctx = new Context()
+    let value: unknown = { creatorAgentMode: 'gesture' }
+    const configure = vi.fn(() => () => {})
+    const describe = vi.fn(() => [{ ns: 'theme-studio', value }])
+    ctx.provide('settings', { configure, describe } as never)
+    const skills = registry()
+    ctx.provide('skills', skills as never)
+    const fiber = ctx.plugin({ apply })
+    await fiber.await()
+    expect(configure).toHaveBeenCalledWith({ auto: false }, expect.anything())
+    expect(skills.registered).toHaveLength(1)
+    expect(skills.registered[0]?.invocation.modelInvocable).toBe(false)
+
+    value = { creatorAgentMode: 'catalog' }
+    ctx.emit('settings/document-updated')
+    expect(skills.disposers[0]).toHaveBeenCalledOnce()
+    expect(skills.registered).toHaveLength(2)
+    expect(skills.registered[1]?.invocation.modelInvocable).toBe(true)
+
+    await fiber.dispose()
+    expect(skills.disposers[1]).toHaveBeenCalledOnce()
+    // The document-updated listener is gone with the fiber.
+    value = { creatorAgentMode: 'off' }
+    ctx.emit('settings/document-updated')
+    expect(skills.register).toHaveBeenCalledTimes(2)
+  })
 })
