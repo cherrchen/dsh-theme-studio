@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { CreatorConfigSection } from '../../src/client/CreatorConfigSection.tsx'
 import type { CreatorConfigSectionProps } from '../../src/client/CreatorConfigSection.tsx'
 import type { ThemeStudioCard, ThemeStudioRowState } from '../../src/client/store.ts'
@@ -19,38 +19,64 @@ const CARDS: ThemeStudioCard[] = [
   },
 ]
 
-function mount(
-  creatorMode: ThemeStudioRowState['creatorMode'] = 'gesture',
-  settingsStatus: ThemeStudioRowState['settingsStatus'] = 'ready',
-) {
-  const state: ThemeStudioRowState = {
+function createSectionState(overrides: Partial<ThemeStudioRowState> = {}) {
+  let state: ThemeStudioRowState = {
     activeThemeId: null,
     previewThemeId: null,
     previewing: false,
-    settingsStatus,
+    settingsStatus: 'ready',
     saveError: false,
     droppedImports: 0,
-    creatorMode,
+    creatorMode: 'gesture',
     revision: 0,
     cards: [...CARDS],
+    ...overrides,
   }
+  const listeners = new Set<() => void>()
+  return {
+    getSnapshot: () => state,
+    subscribe: (listener: () => void) => {
+      listeners.add(listener)
+      return () => { listeners.delete(listener) }
+    },
+    actions: {
+      sync: (snapshot: Omit<ThemeStudioRowState, 'cards'>) => {
+        if (snapshot.revision <= state.revision) return
+        state = { ...state, ...snapshot, cards: state.cards }
+        for (const listener of [...listeners]) listener()
+      },
+      setCards: (next: readonly ThemeStudioCard[]) => {
+        state = { ...state, cards: [...next] }
+        for (const listener of [...listeners]) listener()
+      },
+    },
+  }
+}
+
+function mount(overrides: Partial<ThemeStudioRowState> = {}) {
+  const store = createSectionState(overrides)
   const setCreatorMode = vi.fn()
   const props: CreatorConfigSectionProps = {
     view: 'page',
     useSessions: (() => undefined) as never,
     useWorkspaces: (() => undefined) as never,
-    useStore: bindSnapshotSelector({ getSnapshot: () => state, subscribe: () => () => {} }),
-    actions: {} as never,
+    useStore: bindSnapshotSelector(store),
+    actions: store.actions as never,
     t: key => en[key] ?? key,
     setCreatorMode,
   }
   render(<CreatorConfigSection {...props} />)
-  return { setCreatorMode }
+  return { store, setCreatorMode }
+}
+
+function sync(store: ReturnType<typeof createSectionState>, next: Partial<ThemeStudioRowState>): void {
+  const snapshot = store.getSnapshot()
+  store.actions.sync({ ...snapshot, ...next, revision: snapshot.revision + 1 })
 }
 
 describe('CreatorConfigSection', () => {
   it('renders the stored mode on the selector and writes the chosen menu item', () => {
-    const b = mount('gesture')
+    const b = mount({ creatorMode: 'gesture' })
     const pill = screen.getByRole('button', { name: /Gesture/ }) as HTMLButtonElement
     expect(pill.getAttribute('aria-haspopup')).toBe('menu')
     fireEvent.click(pill)
@@ -61,22 +87,43 @@ describe('CreatorConfigSection', () => {
   })
 
   it.each(['loading', 'unavailable'] as const)('disables the control while settings are %s', (settingsStatus) => {
-    mount('gesture', settingsStatus)
+    mount({ settingsStatus })
     expect((screen.getByRole('button', { name: /Gesture/ }) as HTMLButtonElement).disabled).toBe(true)
   })
 
+  it.each(['loading', 'unavailable'] as const)('keeps an open menu closed through a %s detour', (settingsStatus) => {
+    const b = mount()
+    const pill = screen.getByRole('button', { name: /Gesture/ }) as HTMLButtonElement
+    fireEvent.click(pill)
+    expect(pill.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('menuitem', { name: 'Catalog' })).toBeDefined()
+    act(() => { sync(b.store, { settingsStatus }) })
+    expect(pill.disabled).toBe(true)
+    expect(pill.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('menuitem')).toBeNull()
+    act(() => { sync(b.store, { settingsStatus: 'ready' }) })
+    expect(pill.disabled).toBe(false)
+    expect(pill.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('menuitem')).toBeNull()
+  })
+
+  it('surfaces a rejected write next to the selector', () => {
+    const b = mount()
+    expect(screen.queryByRole('alert')).toBeNull()
+    act(() => { sync(b.store, { saveError: true }) })
+    const alert = screen.getByRole('alert')
+    expect(alert.textContent).toBe(en['status.saveFailed'])
+  })
+
   it('renders nothing for a non-page view', () => {
-    const state: ThemeStudioRowState = {
-      activeThemeId: null, previewThemeId: null, previewing: false, settingsStatus: 'ready',
-      saveError: false, droppedImports: 0, creatorMode: 'gesture', revision: 0, cards: [],
-    }
+    const store = createSectionState()
     const { container } = render(
       <CreatorConfigSection
         view={'summary' as never}
         useSessions={(() => undefined) as never}
         useWorkspaces={(() => undefined) as never}
-        useStore={bindSnapshotSelector({ getSnapshot: () => state, subscribe: () => () => {} })}
-        actions={{} as never}
+        useStore={bindSnapshotSelector(store)}
+        actions={store.actions as never}
         t={key => en[key] ?? key}
         setCreatorMode={vi.fn()}
       />,

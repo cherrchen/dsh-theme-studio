@@ -54,7 +54,7 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 | F24 | Host 按 accepted 快照驱动 `dsh-theme-creator` 注册：`off` 不注册，`gesture` 仅用户手势可见，`catalog` 模型可路由；模式翻转先 dispose 再 register，fiber 释放即注销 | `creator.spec.ts` 生命周期测试 |
 | F25 | `lib/validate-theme.js` 输出结构化 JSON：格式失败含错误码，合法文件附对比度报告；用法错误退出 2，校验未过退出 1 | `validate-theme.spec.ts` 正反例与构建产物冒烟 |
 | F26 | 菜单 footer 在 `creatorAgentMode !== 'off'` 时提供「创建自己的主题」；`startSession` 两参签名可用时打开 Cordis 会话并预填 `/dsh-theme-creator `（不自动发送），否则弹出本地化手动输入提示 | `ThemeStudioRow.spec.tsx` 门控与降级测试 |
-| F27 | 插件管理页（`plugins.bundle.config`）以 Menu 选择器写入 `creatorAgentMode`，控件样式与官方设置行一致；无该 slot 的宿主（0.1.5、0.1.6-alpha.1）保持已存储或默认档位 | `CreatorConfigSection.spec.tsx` 测试 |
+| F27 | 插件管理页（`plugins.bundle.config`）以 Menu 选择器写入 `creatorAgentMode`，控件样式与官方设置行一致；settings 离开 `ready` 时控件禁用、菜单收起且回到 `ready` 不自动重开，写入被拒时在选择器旁显示可本地化的保存失败；无该 slot 的宿主（0.1.5、0.1.6-alpha.1）保持已存储或默认档位 | `CreatorConfigSection.spec.tsx` 测试 |
 
 ## Non-functional Requirements
 

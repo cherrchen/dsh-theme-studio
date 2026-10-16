@@ -4,7 +4,7 @@
  * 0.1.6-alpha.2; hosts without it keep the stored or default mode.
  */
 import type {} from '../compat/plugin-manager-slot.ts'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import { ChevronDownIcon } from '../compat/menu-icons.tsx'
@@ -34,13 +34,21 @@ export function CreatorConfigSection({ view, t, useStore, setCreatorMode }: Crea
   const [open, setOpen] = useState(false)
   const creatorMode = useStore(s => s.creatorMode)
   const settingsStatus = useStore(s => s.settingsStatus)
-  if (view !== 'page') return null
+  const saveError = useStore(s => s.saveError)
   const disabled = settingsStatus !== 'ready'
+  // A disabled trigger cannot stay expanded: when settings drop out of
+  // `ready` mid-interaction the local flag must follow, or the menu would
+  // pop back open on the next `ready` snapshot without a user action.
+  useEffect(() => {
+    if (disabled) setOpen(false)
+  }, [disabled])
+  if (view !== 'page') return null
+  const expanded = open && !disabled
   return (
     <div className={css.creatorField}>
       <div className={css.creatorTitle}>{t('creator.section')}</div>
       <Menu
-        open={open && !disabled}
+        open={expanded}
         onClose={() => { setOpen(false) }}
         items={MODES.map(mode => ({ id: mode, label: t(`creator.label.${mode}`) }))}
         selectedId={creatorMode}
@@ -56,7 +64,7 @@ export function CreatorConfigSection({ view, t, useStore, setCreatorMode }: Crea
             className={css.selector}
             disabled={disabled}
             aria-haspopup="menu"
-            aria-expanded={open}
+            aria-expanded={expanded}
             onClick={() => { setOpen(v => !v) }}
           >
             <span className={css.selectorName}>{t(`creator.label.${creatorMode}`)}</span>
@@ -64,6 +72,7 @@ export function CreatorConfigSection({ view, t, useStore, setCreatorMode }: Crea
           </button>
         )}
       />
+      {saveError ? <p className={css.alert} role="alert">{t('status.saveFailed')}</p> : null}
       <p className={css.creatorDesc}>{t(`creator.mode.${creatorMode}`)}</p>
     </div>
   )
