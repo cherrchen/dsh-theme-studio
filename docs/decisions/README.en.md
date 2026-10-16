@@ -15,5 +15,6 @@ Long-lived choices recorded as ADRs with context, decisions, alternatives, and c
 | [Readonly Client theme catalog](./ADR-0007-readonly-client-theme-catalog.md) |
 | [Standalone builds and tagged releases](./ADR-0008-standalone-build-and-tagged-releases.md) |
 | [Imported themes join the public catalog dynamically](./ADR-0009-dynamic-imported-theme-catalog.md) |
+| [Theme Creator via runtime skill injection, not a fifth agent preset](./ADR-0010-theme-creator-runtime-skill.md) |
 
 [Documentation map](../README.en.md)

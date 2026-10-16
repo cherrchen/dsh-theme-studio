@@ -5,11 +5,12 @@
 import type { BoundActions } from '@deepseek-ai/dsh-client-ui-slots'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
+import type {} from '../compat/plugin-manager-slot.ts'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-theme/client'
 import {
-  THEME_STUDIO_SETTINGS_NAMESPACE, type ThemeStudioSettings,
+  THEME_CREATOR_SKILL_NAME, THEME_STUDIO_PACKAGE_NAME, THEME_STUDIO_SETTINGS_NAMESPACE, type ThemeStudioSettings,
 } from '../constants.ts'
 import type { ConfigFormsCarrier, SettingsScopeCarrier, ThemeSettingsHost } from '../compat/settings-client.ts'
 import { ThemeStudioRegistry } from './catalog.ts'
@@ -22,6 +23,7 @@ import {
   exportThemeById, importIdTaken, inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
 } from './theme-import.ts'
 import { ThemeStudioRow, type ThemeStudioRowInjected } from './ThemeStudioRow.tsx'
+import { CreatorConfigSection, type CreatorConfigInjected } from './CreatorConfigSection.tsx'
 
 
 export { ThemeStudioRuntime } from './runtime.ts'
@@ -45,6 +47,8 @@ export {
   exportThemeById, importIdTaken, inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
 } from './theme-import.ts'
 export type { ImportContrastSummary, ImportResolution, ThemeFileInspection } from './theme-import.ts'
+export { creatorAgentModeOf, CREATOR_AGENT_MODE_FIELD, THEME_CREATOR_SKILL_NAME } from '../constants.ts'
+export type { CreatorAgentMode } from '../constants.ts'
 export type { ChromePalette } from './chrome-tokens.ts'
 export { CHROME_PALETTE_KEYS, CHROME_TOKEN_NAMES } from './chrome-tokens.ts'
 export { NS as SETTINGS_NS } from './locales.ts'
@@ -72,6 +76,35 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
  * inside `apply` instead of listed here.
  */
 export const inject = ['theme', 'slots', 'locale', 'connection', 'remote']
+
+/** The slice of `ctx.uiWorkspace` the create-theme action needs. */
+interface UiWorkspaceStarter {
+  /**
+   * The two-parameter signature — `(workspaceId?, options?)` — only exists
+   * from DSH 0.2.1-alpha.1; `Function.length` is the capability probe.
+   */
+  startSession(workspaceId?: unknown, options?: { prompt?: string; agentPreset?: string }): void
+}
+
+/**
+ * Resolve the "open a Cordis session with the skill gesture prefilled" action.
+ * Evaluated lazily at click time so a ui-workspace service that arrives after
+ * this plugin still counts; `undefined` means the action degrades to a hint.
+ * @param ctx - client context carrying the optional uiWorkspace service.
+ * @returns the launcher, or `undefined` when the capability is absent.
+ */
+function themeCreationStart(ctx: ClientContext): (() => void) | undefined {
+  const service = ctx.get('uiWorkspace') as UiWorkspaceStarter | undefined
+  if (service === undefined || typeof service.startSession !== 'function' || service.startSession.length < 2) {
+    return undefined
+  }
+  return () => {
+    service.startSession(undefined, {
+      agentPreset: 'cordis',
+      prompt: `/${THEME_CREATOR_SKILL_NAME} `,
+    })
+  }
+}
 
 function cardsOf(registry: ThemeStudioRegistry): ThemeStudioCard[] {
   return [
@@ -105,12 +138,23 @@ function descriptionKeyOf(id: string): string {
 
 /**
  * Restore the durable overlay and register the Themes row on one context.
- * @param ctx - client context that already carries theme, slots, and locale.
+ * @param ctx - the settings-transport child context that owns this runtime.
+ * @param probe - the apply-scope context used for optional-service lookups
+ *   (`ctx.get` reads the global store; the child is a scoped proxy).
  */
-function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> | undefined, registry: ThemeStudioRegistry): void {
+function start(ctx: ClientContext, probe: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> | undefined, registry: ThemeStudioRegistry): void {
   const runtime = new ThemeStudioRuntime({ theme: ctx.theme, host, catalog: registry })
   ctx.effect(() => () => { runtime.dispose() }, 'theme-studio: runtime')
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'theme-studio: settings row dictionaries')
+  // The Session-addressed `skills` remote is the only client-visible proxy
+  // for the host skill registry; while it is absent no `/name` gesture can
+  // resolve, so the creator entry must follow this capability rather than
+  // the durable mode alone. The inject re-runs as the namespace appears or
+  // drops with the connection.
+  ctx.inject(['remote.skills'], () => {
+    runtime.setCreatorAvailable(true)
+    return () => { runtime.setCreatorAvailable(false) }
+  })
 
   let cardCache: { rev: number; cards: ThemeStudioCard[] } | undefined
   const currentCards = (): ThemeStudioCard[] => {
@@ -147,6 +191,17 @@ function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> 
       },
       removeImportedTheme: (id) => { removeImportedTheme(runtime, registry, id) },
       exportTheme: (id) => { exportThemeById(registry, id) },
+      startThemeCreation: () => {
+        const start = themeCreationStart(probe)
+        if (start === undefined) return false
+        try {
+          start()
+          return true
+        }
+        catch {
+          return false
+        }
+      },
     }
   }
   ctx.effect(() => ctx.slots.inject('settings.general.item', () => ctx.slots.register({
@@ -158,6 +213,18 @@ function start(ctx: ClientContext, host: ThemeSettingsHost<ThemeStudioSettings> 
     locale: NS,
     inject: injected,
   }, ThemeStudioRow)), 'theme-studio: themes row')
+  // The Plugins page declares this keyed slot; hosts without it never mount
+  // the section and keep the stored or default creatorAgentMode.
+  ctx.effect(() => ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({
+    name: 'plugins.bundle.config',
+    key: THEME_STUDIO_PACKAGE_NAME,
+    store,
+    locale: NS,
+    inject: (actions: BoundActions<typeof store>): CreatorConfigInjected => {
+      injected(actions)
+      return { setCreatorMode: (mode) => { runtime.setCreatorMode(mode) } }
+    },
+  }, CreatorConfigSection)), 'theme-studio: plugins page creator mode')
 }
 
 /**
@@ -176,7 +243,7 @@ export function apply(ctx: ClientContext): void {
   ): boolean => {
     if (started) return false
     started = true
-    start(child, host, registry)
+    start(child, ctx, host, registry)
     return true
   }
   const releaseWhenStopped = (owns: boolean): (() => void) => {

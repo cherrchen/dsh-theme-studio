@@ -47,6 +47,11 @@ export interface ThemeStudioRowInjected {
   removeImportedTheme: (id: string) => void
   /** Download one theme as a `dsh-theme.json` file. */
   exportTheme: (id: string) => void
+  /**
+   * Open a Cordis session with the creator gesture prefilled.
+   * @returns `true` when the session opened; `false` asks the row to show the manual hint.
+   */
+  startThemeCreation: () => boolean
 }
 
 /** Full component props: runtime share + store share + locale seat + injected face. */
@@ -70,6 +75,7 @@ const DEFAULT_ITEM_ID = 'default'
 /* Menu action ids contain a colon, which theme-file ids cannot carry. */
 const ACTION_IMPORT = 'theme-studio:import'
 const ACTION_MANAGE = 'theme-studio:manage'
+const ACTION_CREATE = 'theme-studio:create'
 
 type ImportOk = Extract<ThemeFileInspection, { ok: true }>
 
@@ -78,6 +84,7 @@ type DialogState =
   | { kind: 'confirm'; inspection: ImportOk }
   | { kind: 'duplicate'; inspection: ImportOk }
   | { kind: 'manage' }
+  | { kind: 'creator' }
 
 /**
  * Render the Themes row.
@@ -87,6 +94,7 @@ type DialogState =
 export function ThemeStudioRow({
   t, useStore, previewTheme, activateTheme, cancelPreview,
   inspectThemeFile, importIdTaken, saveImportedTheme, removeImportedTheme, exportTheme,
+  startThemeCreation,
 }: ThemeStudioRowComponentProps) {
   const cards = useStore(s => s.cards)
   const activeThemeId = useStore(s => s.activeThemeId)
@@ -95,6 +103,8 @@ export function ThemeStudioRow({
   const settingsStatus = useStore(s => s.settingsStatus)
   const saveError = useStore(s => s.saveError)
   const droppedImports = useStore(s => s.droppedImports)
+  const creatorMode = useStore(s => s.creatorMode)
+  const creatorAvailable = useStore(s => s.creatorAvailable)
   const [open, setOpen] = useState(false)
   const [dialog, setDialog] = useState<DialogState | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
@@ -234,13 +244,14 @@ export function ThemeStudioRow({
         items={menuItems}
         selectedId={activeThemeId ?? DEFAULT_ITEM_ID}
         onSelect={(id) => {
-          if (id === ACTION_IMPORT || id === ACTION_MANAGE) {
+          if (id === ACTION_IMPORT || id === ACTION_MANAGE || id === ACTION_CREATE) {
             // Action rows close the menu through setOpen, bypassing Menu's
             // onClose; drop a still-active preview like the other close paths.
             cancelPreview()
             if (settingsReady) {
               if (id === ACTION_IMPORT) fileInput.current?.click()
-              else setDialog({ kind: 'manage' })
+              else if (id === ACTION_MANAGE) setDialog({ kind: 'manage' })
+              else if (!startThemeCreation()) setDialog({ kind: 'creator' })
             }
           }
           else activateTheme(id === DEFAULT_ITEM_ID ? null : id)
@@ -249,6 +260,11 @@ export function ThemeStudioRow({
         footer={[
           { id: ACTION_IMPORT, label: <span className={css.itemLabel}>{t('action.import')}</span>, disabled: !settingsReady },
           { id: ACTION_MANAGE, label: <span className={css.itemLabel}>{t('action.manage')}</span>, disabled: !settingsReady },
+          // The entry needs both halves: a durable mode that asks for the
+          // skill and a host skill catalog that can resolve the gesture.
+          ...(creatorMode !== 'off' && creatorAvailable ? [
+            { id: ACTION_CREATE, label: <span className={css.itemLabel}>{t('action.create')}</span>, disabled: !settingsReady },
+          ] : []),
         ]}
         align="end"
         portal
@@ -373,6 +389,18 @@ export function ThemeStudioRow({
               <p className={css.modalText}>{t('manage.empty')}</p>
             )}
           </>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={dialog?.kind === 'creator'}
+        onClose={closeDialog}
+        title={t('creator.title')}
+        closeLabel={t('action.close')}
+        footer={<Button onClick={closeDialog} data-modal-autofocus>{t('action.close')}</Button>}
+      >
+        {dialog?.kind === 'creator' ? (
+          <p className={css.modalText}>{t('creator.body')}</p>
         ) : null}
       </Modal>
     </div>

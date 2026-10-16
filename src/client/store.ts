@@ -53,6 +53,8 @@ export function createThemeStudioRowStore(
       settingsStatus: 'loading',
       saveError: false,
       droppedImports: 0,
+      creatorMode: 'off',
+      creatorAvailable: false,
       revision: -1,
       cards,
     }),
@@ -65,6 +67,8 @@ export function createThemeStudioRowStore(
         draft.settingsStatus = snapshot.settingsStatus
         draft.saveError = snapshot.saveError === true
         draft.droppedImports = snapshot.droppedImports
+        draft.creatorMode = snapshot.creatorMode
+        draft.creatorAvailable = snapshot.creatorAvailable
         draft.revision = snapshot.revision
       },
       setCards: (draft, cards: readonly ThemeStudioCard[]) => {

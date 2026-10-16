@@ -21,6 +21,7 @@ overrides:
   '@deepseek-ai/dsh-client-ui-settings': 0.2.1-alpha.3
   '@deepseek-ai/dsh-client-ui-slots': 0.2.1-alpha.3
   '@deepseek-ai/dsh-client-ui-theme': 0.2.1-alpha.3
+  '@deepseek-ai/dsh-client-ui-workspace': 0.2.1-alpha.3
   '@deepseek-ai/dsh-cmdline': 0.2.1-alpha.3
   '@deepseek-ai/dsh-config-editor': 0.2.1-alpha.3
   '@deepseek-ai/dsh-credentials': 0.2.1-alpha.3
@@ -33,6 +34,7 @@ overrides:
   '@deepseek-ai/dsh-scope': 0.2.1-alpha.3
   '@deepseek-ai/dsh-session': 0.2.1-alpha.3
   '@deepseek-ai/dsh-settings': 0.2.1-alpha.3
+  '@deepseek-ai/dsh-skill': 0.2.1-alpha.3
   '@deepseek-ai/dsh-timeout': 0.2.1-alpha.3
   '@deepseek-ai/dsh-typert-protocol': 0.2.1-alpha.3
   '@deepseek-ai/dsh-util-crypto': 0.2.1-alpha.3
@@ -58,6 +60,7 @@ minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-client-ui-settings@0.2.1-alpha.3'
   - '@deepseek-ai/dsh-client-ui-slots@0.2.1-alpha.3'
   - '@deepseek-ai/dsh-client-ui-theme@0.2.1-alpha.3'
+  - '@deepseek-ai/dsh-client-ui-workspace@0.2.1-alpha.3'
   - '@deepseek-ai/dsh-cmdline@0.2.1-alpha.3'
   - '@deepseek-ai/dsh-config-editor@0.2.1-alpha.3'
   - '@deepseek-ai/dsh-credentials@0.2.1-alpha.3'
@@ -70,6 +73,7 @@ minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-scope@0.2.1-alpha.3'
   - '@deepseek-ai/dsh-session@0.2.1-alpha.3'
   - '@deepseek-ai/dsh-settings@0.2.1-alpha.3'
+  - '@deepseek-ai/dsh-skill@0.2.1-alpha.3'
   - '@deepseek-ai/dsh-timeout@0.2.1-alpha.3'
   - '@deepseek-ai/dsh-typert-protocol@0.2.1-alpha.3'
   - '@deepseek-ai/dsh-util-crypto@0.2.1-alpha.3'

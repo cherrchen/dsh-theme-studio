@@ -3,8 +3,9 @@
 import type { ThemeSettingsHost } from '../compat/settings-client.ts'
 import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
 import {
-  ACTIVE_SOURCE, ACTIVE_THEME_ID_FIELD, IMPORTED_THEMES_FIELD, PREVIEW_SOURCE,
-  THEME_STUDIO_SETTINGS_NAMESPACE, type ThemeStudioSettings,
+  ACTIVE_SOURCE, ACTIVE_THEME_ID_FIELD, CREATOR_AGENT_MODE_FIELD, IMPORTED_THEMES_FIELD,
+  PREVIEW_SOURCE, THEME_STUDIO_SETTINGS_NAMESPACE, creatorAgentModeOf,
+  type CreatorAgentMode, type ThemeStudioSettings,
 } from '../constants.ts'
 import { presetToOverrides } from './adapter.ts'
 import { withoutOfficialFontTokens } from './font-boundary.ts'
@@ -41,6 +42,15 @@ export interface ThemeStudioSnapshot {
   saveError: boolean
   /** Stored theme-file entries skipped as unreadable in the latest adoption. */
   droppedImports: number
+  /** Theme Creator skill visibility adopted from the durable section. */
+  creatorMode: CreatorAgentMode
+  /**
+   * Whether the host exposes the Session-addressed skill catalog
+   * (`remote.skills`). Without it the `/dsh-theme-creator` gesture cannot
+   * resolve on this connection regardless of the stored mode, so the UI
+   * must not offer the creator entry at all.
+   */
+  creatorAvailable: boolean
   /** Monotonic change counter. */
   revision: number
 }
@@ -119,6 +129,8 @@ export class ThemeStudioRuntime {
   private importedAccepted: readonly unknown[] | undefined
   /** Last id adopted from a ready Host snapshot. Optimistic choices do not update it. */
   private acceptedThemeId: string | null = null
+  /** Newest creator mode this runtime asked the Host to store. Compared against the accepted echo. */
+  private creatorModeRequested: CreatorAgentMode | undefined
   /** Unknown raw value whose repair write already failed. A later different value may retry. */
   private repairBlockedRaw: unknown = undefined
   private disposed = false
@@ -128,6 +140,8 @@ export class ThemeStudioRuntime {
   private settingsStatus: ThemeStudioSnapshot['settingsStatus']
   private saveError = false
   private droppedImports = 0
+  private creatorMode: CreatorAgentMode = 'off'
+  private creatorAvailable = false
   private revision = 0
   private snapshot: ThemeStudioSnapshot
 
@@ -266,6 +280,32 @@ export class ThemeStudioRuntime {
   }
 
   /**
+   * Persist the Theme Creator visibility mode. The accepted snapshot echoes
+   * the choice back through `creatorMode`; nothing optimistic is shown.
+   * @param mode - visibility for the Theme Creator skill.
+   */
+  setCreatorMode(mode: CreatorAgentMode): void {
+    this.assertOpen()
+    if (this.host === undefined || this.settingsStatus !== 'ready') return
+    this.creatorModeRequested = mode
+    this.queueWrite(CREATOR_AGENT_MODE_FIELD, mode)
+  }
+
+  /**
+   * Publish whether the host exposes the Session-addressed skill catalog
+   * remote (`remote.skills`). The catalog namespace is the only
+   * client-visible proxy for the `/name` gesture's resolution path —
+   * `ctx.skills` itself lives on the Host — so the Themes menu follows
+   * this capability instead of the durable mode alone.
+   * @param available - catalog remote presence.
+   */
+  setCreatorAvailable(available: boolean): void {
+    if (this.disposed || this.creatorAvailable === available) return
+    this.creatorAvailable = available
+    this.publish()
+  }
+
+  /**
    * Imported list as last requested, while a write is pending or until the
    * next accepted snapshot makes the registry authoritative again.
    * @returns the requested array, or `undefined` when nothing is in flight.
@@ -323,13 +363,14 @@ export class ThemeStudioRuntime {
       }
       return
     }
-    if (this.importedRequested !== undefined) {
+    if (this.importedRequested !== undefined || this.creatorModeRequested !== undefined) {
       this.finishPersist()
       return
     }
     this.settingsStatus = 'ready'
     this.saveError = false
     this.syncImports(section.value)
+    this.creatorMode = creatorAgentModeOf(section.value?.creatorAgentMode)
     this.applyDurable(section.value?.activeThemeId)
   }
 
@@ -396,6 +437,7 @@ export class ThemeStudioRuntime {
         this.snapshot.settingsStatus !== this.settingsStatus
         || this.snapshot.saveError !== this.saveError
         || this.snapshot.droppedImports !== this.droppedImports
+        || this.snapshot.creatorMode !== this.creatorMode
         || this.snapshot.previewing !== this.previewing
         || this.snapshot.previewThemeId !== this.previewThemeId
       ) this.publish()
@@ -501,8 +543,12 @@ export class ThemeStudioRuntime {
     const importsMatch = this.importedRequested === undefined
       || JSON.stringify(section.value?.importedThemes ?? []) === JSON.stringify(this.importedRequested)
     this.importedRequested = undefined
+    const creatorMatch = this.creatorModeRequested === undefined
+      || creatorAgentModeOf(section.value?.creatorAgentMode) === this.creatorModeRequested
+    this.creatorModeRequested = undefined
     this.syncImports(section.value)
-    if (!rejected && importsMatch && this.durableMatches(section.value?.activeThemeId, this.activeThemeId)) {
+    this.creatorMode = creatorAgentModeOf(section.value?.creatorAgentMode)
+    if (!rejected && importsMatch && creatorMatch && this.durableMatches(section.value?.activeThemeId, this.activeThemeId)) {
       this.acceptedThemeId = this.activeThemeId
       if (normalizeId(section.value?.activeThemeId) === null) this.repairBlockedRaw = undefined
       this.saveError = false
@@ -597,6 +643,8 @@ export class ThemeStudioRuntime {
       settingsStatus: this.settingsStatus,
       saveError: this.saveError,
       droppedImports: this.droppedImports,
+      creatorMode: this.creatorMode,
+      creatorAvailable: this.creatorAvailable,
       revision: this.revision,
     })
   }

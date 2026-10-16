@@ -7,11 +7,15 @@
 | `ui-theme.preference` | system / light / dark | 官方 Appearance |
 | `theme-studio.activeThemeId` | null 或主题 id（builtin 或 imported） | Theme Studio |
 | `theme-studio.importedThemes` | 导入的 `dsh-theme.json` 源对象数组，默认 `[]` | Theme Studio |
+| `theme-studio.creatorAgentMode` | `off` / `gesture` / `catalog`，默认 `gesture` | Theme Studio |
 | `THEME_STUDIO_SETTINGS_NAMESPACE` | theme-studio | Host namespace / profile entry id |
 | `ACTIVE_THEME_ID_FIELD` | activeThemeId | 常量与 schema |
 | `IMPORTED_THEMES_FIELD` | importedThemes | 常量与 schema |
+| `CREATOR_AGENT_MODE_FIELD` | creatorAgentMode | 常量与 schema |
 
 `activeThemeId` 的 Host schema 是 string/null union，默认 null，不把主题 id 清单固化进 schema；由 runtime 在读取 ready snapshot 后识别未知 id。`importedThemes` 的 Host schema 是宽松 `array`，默认 `[]`——严格逐文件校验在 Client 进行（见[文件格式](./theme-file-format.md)），无法解析的条目被跳过并在 UI 计入 `droppedImports`，不会让整个 namespace 快照失败；这使旧版本读新格式条目降级为跳过而不是丢数据。导入主题的原文件对象原样存储，导出可逐字回写。`DEFAULT_THEME_STUDIO_SETTINGS` 与 `Config` 从主入口导出；旧 namespace schema 与 Config 用新建 field 避免 volatile 改写共享对象。
+
+`creatorAgentMode` 控制 Theme Creator skill 的注册：`off` 不注册且隐藏 UI 入口，`gesture` 仅允许 `/dsh-theme-creator` 用户手势（不进模型目录，默认），`catalog` 同时允许模型路由。Host schema 接受这三个字符串；缺失或未知值由 `creatorAgentModeOf` 规范化为 `gesture`，旧版本快照对降级安全。Host 经 `ctx.inject(['skills'])` 接入技能注册表，Client 经 `ctx.get('uiWorkspace')` 读取可选会话启动能力——两者都是可选服务，缺席时对应功能关闭而主题功能不受影响。Themes 菜单的创作入口还要求 `remote.skills` 目录 Remote 在场（手势解析路径唯一的 Client 可见信号，经 `ctx.inject(['remote.skills'])` 反应式探测）；没有该 namespace 的连接不显示入口，但 durable `creatorAgentMode` 仍可照常读写（见 [ADR-0010](../decisions/ADR-0010-theme-creator-runtime-skill.md)）。
 
 ### 旧 Host / Client
 
@@ -43,7 +47,7 @@ Client 必需服务是 `theme`、`slots`、`locale`、`connection`、`remote`。
 | `./client` | lib/client.js | lib/types/client/index.d.ts | browser apply、runtime、adapter、catalog、presets、store、对比度、theme-file/theme-import 辅助函数与公开类型 |
 | `./package.json` | package.json | 不适用 | 包 metadata |
 
-公共 JSON Schema 位于包内 `schemas/dsh-theme.schema.json`（随 `files` 清单发布），供编辑器 `$schema` 引用与一致性测试使用；不注册到 exports，以文件路径取用。
+公共 JSON Schema 位于包内 `schemas/dsh-theme.schema.json`（随 `files` 清单发布），供编辑器 `$schema` 引用与一致性测试使用；不注册到 exports，以文件路径取用。`lib/validate-theme.js` 同样只在 `files` 清单：它是给 Theme Creator skill 与用户使用的命令行校验器（用法与报告格式见[文件格式](./theme-file-format.md#命令行校验器)），不是模块入口。
 
 没有 `./invariant` export：官方 ThemeRuntime 负责 overlay consistency，settings 服务负责 persistence。本包不得复制一个宿主 invariant provider。历史移除见 `d08aac9`。
 

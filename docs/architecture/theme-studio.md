@@ -2,7 +2,7 @@
 
 ## Background
 
-Current，2026-10-14 更新导入导出与复合 catalog。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，计划中的主题编辑器与 Theme Creator Agent 不属于已实现组件。
+Current，2026-10-15 更新 Theme Creator 与 `creatorAgentMode`。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，计划中的主题编辑器不属于已实现组件。
 
 ## Goals and Non-goals
 
@@ -15,6 +15,9 @@ flowchart TD
   Profile[cordis.patch.yml 包名载体行] --> Host[Host apply / Config]
   Profile --> Client[Client apply]
   Host --> Settings[settings register / configure]
+  Settings --> Section[ThemeStudioHostSection get/watch]
+  Section --> CreatorW[watchCreatorAgent]
+  CreatorW --> Skills[ctx.skills.register dsh-theme-creator]
   Settings --> Transport[settingsScope / configForms]
   Client --> Catalog[ThemeStudioRegistry]
   Client --> Service[ctx.themeStudio.catalog]
@@ -29,6 +32,8 @@ flowchart TD
   Catalog --> Contrast[纯 sRGB 对比度校验]
   Row --> FileIO[theme-file / theme-import / download]
   FileIO --> Runtime
+  Row --> UW[uiWorkspace.startSession 能力门控]
+  UW --> Session[Cordis 会话 预填 /dsh-theme-creator]
 ```
 
 ## Components
@@ -36,9 +41,10 @@ flowchart TD
 | 模块 | 责任 | 不负责的内容 |
 | --- | --- | --- |
 | `src/index.ts`、`settings.ts` | Host 注册/Config、导出 schema 与默认值 | UI、浏览器服务、主题呈现 |
-| `compat/settings-host.ts` | register/configure 能力探测、volatile 适配、effect 返回值 | 版本字符串驱动分支 |
+| `compat/settings-host.ts` | register/configure 能力探测、volatile 适配、`{section, dispose}` 附件 | 版本字符串驱动分支 |
 | `compat/settings-client.ts` | 两种 transport 的最小结构契约 | 独立 RPC 协议 |
 | `compat/menu-icons.tsx` | ui-primitives 下拉箭头图标探测与本地回退 | 版本字符串分支 |
+| `creator/`、`validate-theme.ts` | skill 正文、按 accepted 快照的 register/dispose watcher、校验器纯报告与 CLI 接线 | overlay、设置写入、模型工具 |
 | `client/index.ts` | provider、字典、槽位、runtime/store 组装与启停 | durable authority |
 | `client/presets.ts`、`chrome-tokens.ts` | 八套明暗配色、源 palette 保留与派生语义 token | 修改官方 stylesheets |
 | `client/catalog.ts` | `BuiltinPresetRegistry` 冻结静态分区；`ThemeStudioRegistry` 复合 imported 分区、快照、订阅与回写源 | 注册/编辑第三方主题 |
@@ -48,7 +54,7 @@ flowchart TD
 | `client/font-boundary.ts` | 安装 overlay 前去掉官方字体变量 | 字体设置 UI、字号和字体列表写入 |
 | `client/runtime.ts` | active/preview、Host adoption、双字段写队列、imported 分区同步、状态与监听器 | CSS 呈现 |
 | `client/store.ts` | 单向同步 runtime snapshot 与 catalog 投影的 cards | 第二持久设置源 |
-| `ThemeStudioRow.tsx`、CSS、`locales.ts` | 设置行、Menu 下拉选择器与色块、导入/重复/管理对话框、可访问性与文案 | 直接操纵 body 主题状态 |
+| `ThemeStudioRow.tsx`、`CreatorConfigSection.tsx`、CSS、`locales.ts` | 设置行、Menu 下拉选择器与色块、导入/重复/管理对话框、插件管理页的 creator 控件、可访问性与文案 | 直接操纵 body 主题状态 |
 | `contrast.ts`、`contrast-colors.ts` | 规则报告、sRGB 色值解析、混色、alpha 与亮度 | DOM/computed style 审核 |
 | `compat/dsh-version.ts`、开发脚本 | 清单、纯分类、安装树静态检查与矩阵 | 生产 Host 的 Node 探测 |
 
@@ -76,9 +82,17 @@ ThemeSnapshot → ThemePresenter → DOM
 
 ### 从 UI 到持久设置
 
-Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`；registry 的 imported 分区替换同样触发 store 的 `setCards` 投影。槽位注入组件时绑定 actions 并立即同步当前快照。下拉交互调用 runtime facade：悬停以整个 `menuitem` 行为单位——document 级 `mouseover`/`mouseout` 委托解析指针所在行，带 `data-ts-theme` 标记的行内任一位置（含 padding 与图标间隙）都走 previewTheme；落到无标记的行（footer 动作）、分隔线、组标签或菜单外，以及菜单关闭、选中 footer 动作都走 cancelPreview，选中主题走 activateTheme/restoreDefault。Apply 乐观更新 active 层并异步调用 Host.set。写入队列按 `{field, value}` 串行：`activeThemeId` 与 `importedThemes` 各自合并未发出的值且互不阻塞；进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
+Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`；registry 的 imported 分区替换同样触发 store 的 `setCards` 投影。槽位注入组件时绑定 actions 并立即同步当前快照。下拉交互调用 runtime facade：悬停以整个 `menuitem` 行为单位——document 级 `mouseover`/`mouseout` 委托解析指针所在行，带 `data-ts-theme` 标记的行内任一位置（含 padding 与图标间隙）都走 previewTheme；落到无标记的行（footer 动作）、分隔线、组标签或菜单外，以及菜单关闭、选中 footer 动作都走 cancelPreview，选中主题走 activateTheme/restoreDefault。Apply 乐观更新 active 层并异步调用 Host.set。写入队列按 `{field, value}` 串行：`activeThemeId` 与 `importedThemes` 各自合并未发出的值且互不阻塞；进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行与创作助手控件显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
 
 导入数据流：隐藏 file input 读文件 → `inspectThemeFile` 校验并附对比度摘要（计入在途写入的 id 冲突）→ Modal 确认（重复 id 时先经三选对话框）→ `saveImportedTheme` 以 `editableImportedSources()` 为合并基准写入 `importedThemes`（在途请求优先，否则 accepted 原始数组，无法解析的条目逐字保留）→ Host 采纳后 imported 分区替换 → `previewWhenImported` 等待 runtime 结算并核对 accepted 源文件后，对更新过的 id 触发 transient preview。确认前会按 catalog 与在途写入重查 id：已过期仍判冲突则回到三选对话框，`append` 兜底走 keep-both 改名，不写持久重复 id。导出走 `sourceOf` 原样回写（imported）或 `themeFileForPreset` 重建（builtin，id 改写为 `user.` 前缀）。删除激活的导入主题不写 `activeThemeId`——由 adoption 期的 unknown-id 修复回落 Default。
+
+### Theme Creator
+
+Host 的 settings 附件暴露 `{section, dispose}`：`section` 在旧 transport 下包装 namespace scope 的 `get`/`watch`，在新 transport 下以 `describe()` 读值、`settings/document-updated` 作 watch。`watchCreatorAgent` 在独立的 `ctx.inject(['skills'])` fiber 中 reconcile：section 缺席或 `creatorAgentMode` 为 `off` 时不注册；`gesture`/`catalog` 注册同一份虚拟 skill、仅 invocation 策略不同；模式翻转先 dispose 再 register，fiber 停止时全部释放。
+
+Client 菜单 footer 的「创建自己的主题」在 `creatorAgentMode !== 'off'` 且宿主暴露 `remote.skills` 目录 Remote 时出现——该 namespace（session-controller 的 `SessionSkillCatalog`，自 0.1.2 起存在，早于支持下限）是 `/name` 手势解析路径上唯一的 Client 可见信号，因为 `ctx.skills` 本体只在 Host。`ctx.inject(['remote.skills'])` 随连接到达/消失反应式置位 `creatorAvailable` 快照位。已知限制：它证明会话技能目录存在，不证明 Host `ctx.skills` 接受了注册——带了 session-controller 却排除 dsh-skill 的宿主组合仍可能留下失效入口（受支持版本的官方 composition 不含此形态）。点击时先取消预览，再惰性探测 `ctx.get('uiWorkspace')`：`startSession` 具备两参签名（`Function.length >= 2`）就调用 `startSession(undefined, { agentPreset: 'cordis', prompt: '/dsh-theme-creator ' })`——上游负责建/复用会话、选 preset、预填草稿与导航，不自动发送；否则弹出本地化提示让用户手动输入手势。`creatorAgentMode` 的 UI 写入在插件管理页进行：Client 向 `plugins.bundle.config`（key 为包名，0.1.6-alpha.2 起由 `ui-plugin-manager` 声明；该包同时才开始发布，故契约由 `src/compat/plugin-manager-slot.ts` 本地镜像而非依赖声明）贡献 `CreatorConfigSection`，写入复用 runtime 的字段写队列，与 activeThemeId/importedThemes 同样以 accepted 快照回收敛；控件在 settings 非 `ready` 时禁用并收起菜单（回到 `ready` 不自动重开），`saveError` 置位时在选择器旁提示 `status.saveFailed`。无该 slot 的宿主保持已存储或默认档位。
+
+skill 产出的 `dsh-theme.json` 经随包的 `lib/validate-theme.js`（第三构建入口，`creatorValidatorPath()` 经 `import.meta.dirname` 定位）自检；模型迭代到 `ok` 后由用户走既有导入路径确认——skill 不接触 overlay 与设置写入。
 
 ### catalog 与校验
 
@@ -112,7 +126,7 @@ Host 通过公开 settings 方法探测结构；Client 分别 inject transport�
 
 ## Alternatives and Decisions
 
-选择原因分别记录在 [ADR 目录](../decisions/README.md)：overlay 替代 CSS presenter、双 settings transport 替代单一新版 API、官方包注册替代自定义插件页、派生 chrome 替代只有 13 个 token、诊断报告替代自动改色、readonly catalog 替代第三方动态注册。
+选择原因分别记录在 [ADR 目录](../decisions/README.md)：overlay 替代 CSS presenter、双 settings transport 替代单一新版 API、官方包注册替代自定义插件页、派生 chrome 替代只有 13 个 token、诊断报告替代自动改色、readonly catalog 替代第三方动态注册、运行时 skill 注入替代第五 agent preset。
 
 ## Risks and Validation
 

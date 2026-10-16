@@ -12,10 +12,14 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - Import and manage actions in the Themes menu: imports persist through a confirmation dialog and preview automatically, duplicate ids let the user choose overwrite or an automatically generated id; the manage dialog exports and removes imported themes, and builtin themes export as re-importable `user.*` files.
 - The public `ctx.themeStudio.catalog` is now a builtin + imported composite (ADR-0009): `list()`/`get()`/`validate()` cover imported themes and `list()` returns a frozen snapshot at call time.
 - Support DSH 0.2.1-alpha.3.
+- Theme Creator (ADR-0010): the `dsh-theme-creator` skill is driven by the `creatorAgentMode` setting (`off`/`gesture`/`catalog`, default `gesture` — answers only the `/dsh-theme-creator` user gesture and stays out of the model catalog); the skill guides the model through writing a `dsh-theme.json` in the workspace and self-checking it with the bundled validator, and the result still requires the user's import confirmation.
+- "Create your own theme…" in the Themes menu: on versions offering the two-argument `startSession` it opens a Cordis session with `/dsh-theme-creator ` prefilled (never auto-sent); earlier versions degrade to a manual-gesture hint. `creatorAgentMode` is switchable on the Plugins management page (Plugins → Theme Studio); hosts without that page keep the stored or default mode.
+- A `lib/validate-theme.js` command-line validator ships with the package: `node lib/validate-theme.js <file>` prints a structured JSON format and contrast report (exit 0 pass / 1 failed / 2 usage).
 
 ### Changed
 
 - The `theme-studio` settings namespace gains an `importedThemes` field persisting imported theme source files; the Host schema stays loose while the Client parses strictly, so unreadable entries are skipped without breaking the rest of the settings.
+- The `theme-studio` settings namespace gains a `creatorAgentMode` field controlling Theme Creator visibility; snapshots missing the field normalize to the `gesture` default.
 
 ### Fixed
 

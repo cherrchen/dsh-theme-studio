@@ -10,6 +10,8 @@ export interface ThemeStudioSettings {
    * and skips unreadable ones.
    */
   importedThemes: unknown[]
+  /** Theme Creator skill visibility mode; normalized by {@link creatorAgentModeOf}. */
+  creatorAgentMode: string
 }
 
 /** Host user-settings namespace owned by Theme Studio. */
@@ -20,6 +22,32 @@ export const ACTIVE_THEME_ID_FIELD = 'activeThemeId'
 
 /** Durable field storing imported `dsh-theme.json` source objects. */
 export const IMPORTED_THEMES_FIELD = 'importedThemes'
+
+/** Durable field storing the Theme Creator skill visibility mode. */
+export const CREATOR_AGENT_MODE_FIELD = 'creatorAgentMode'
+
+/** Visibility modes for the Theme Creator skill. */
+export const CREATOR_AGENT_MODES = Object.freeze(['off', 'gesture', 'catalog'] as const)
+export type CreatorAgentMode = typeof CREATOR_AGENT_MODES[number]
+export const DEFAULT_CREATOR_AGENT_MODE: CreatorAgentMode = 'gesture'
+
+/** Name of the Theme Creator skill registered with the Host skill registry. */
+export const THEME_CREATOR_SKILL_NAME = 'dsh-theme-creator'
+
+/**
+ * Normalize a stored mode value. Unknown and missing values fall back to the
+ * default so a stale or hand-edited snapshot cannot produce an unknown state.
+ * @param value - raw settings field value.
+ * @returns a valid creator-agent mode.
+ */
+export function creatorAgentModeOf(value: unknown): CreatorAgentMode {
+  return (CREATOR_AGENT_MODES as readonly string[]).includes(value as string)
+    ? value as CreatorAgentMode
+    : DEFAULT_CREATOR_AGENT_MODE
+}
+
+/** npm package name, also the `plugins.bundle.config` keyed-slot entry key. */
+export const THEME_STUDIO_PACKAGE_NAME = '@dsh-electron/dsh-theme-studio'
 
 /** ThemeRuntime overlay source for the persisted Theme Studio theme. */
 export const ACTIVE_SOURCE = '@dsh-electron/dsh-theme-studio:active'

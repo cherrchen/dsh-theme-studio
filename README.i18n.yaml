@@ -1,6 +1,6 @@
 # Reviewed bilingual root README blob hashes, including the legacy Chinese entry.
 # Re-record only after checking semantic consistency and identical code examples:
 #   git hash-object README.md README.en.md README.zh.md
-README.md: 9d91b6fc8a6d8cc62aeae4207715efabd9b289d6
-README.en.md: d1efc766f428fa5a5bad1ef81682814af0948f73
+README.md: 53bc225a05d2a5d18639c4bdd27d9e35caba2642
+README.en.md: 6251d2359737bc0873d4768ea442bcd84fd64729
 README.zh.md: 06d8adb7cb16804aabcca31a250e73eeac237203

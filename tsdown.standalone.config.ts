@@ -83,6 +83,14 @@ export const nodeConfig: UserConfig = {
   },
 }
 
+// A separate build keeps the CLI self-contained: multi-entry bundles emit a
+// shared chunk that `files` would have to name explicitly.
+export const validateConfig: UserConfig = {
+  ...nodeConfig,
+  name: `${PACKAGE_NAME}/validate-theme`,
+  entry: ['lib/types/validate-theme.js'],
+}
+
 export const clientConfig: UserConfig = {
   name: `${PACKAGE_NAME}/client`,
   entry: { client: 'lib/types/client/index.js' },
@@ -132,4 +140,4 @@ export const clientConfig: UserConfig = {
   },
 }
 
-export default defineConfig([nodeConfig, clientConfig])
+export default defineConfig([nodeConfig, validateConfig, clientConfig])

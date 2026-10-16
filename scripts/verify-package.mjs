@@ -12,10 +12,10 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const failures = []
 const fail = (message) => failures.push(message)
 
-function run(command, args, cwd) {
+function run(command, args, cwd, stdio = 'inherit') {
   const file = process.platform === 'win32' && command === 'pnpm' ? 'pnpm.cmd' : command
   return new Promise((resolve, reject) => {
-    const child = spawn(file, args, { cwd, stdio: 'inherit', shell: process.platform === 'win32' })
+    const child = spawn(file, args, { cwd, stdio, shell: process.platform === 'win32' })
     child.on('error', reject)
     child.on('close', code => resolve(code ?? 1))
   })
@@ -34,6 +34,7 @@ const required = [
   'package/cordis.patch.yml',
   'package/lib/index.js',
   'package/lib/client.js',
+  'package/lib/validate-theme.js',
   'package/lib/types/index.d.ts',
   'package/lib/types/client/index.d.ts',
   'package/README.md',
@@ -41,6 +42,30 @@ const required = [
   'package/CHANGELOG.md',
   'package/CHANGELOG.en.md',
 ]
+
+/**
+ * A theme file that passes every format and contrast check: monochrome
+ * surfaces and labels put all derived pairs at the 21:1 extreme.
+ */
+const VALID_THEME = {
+  version: 1,
+  id: 'user.probe',
+  name: 'Probe',
+  palette: {
+    light: {
+      bgBase: '#ffffff', bgLayer1: '#ffffff', bgLayer2: '#ffffff', bgOverlay: '#ffffff',
+      borderL1: '#000000', borderL2: '#000000', brand: '#000000',
+      labelPrimary: '#000000', labelSecondary: '#000000',
+      error: '#000000', success: '#000000', warn: '#000000', sidebar: '#ffffff',
+    },
+    dark: {
+      bgBase: '#000000', bgLayer1: '#000000', bgLayer2: '#000000', bgOverlay: '#000000',
+      borderL1: '#ffffff', borderL2: '#ffffff', brand: '#ffffff',
+      labelPrimary: '#ffffff', labelSecondary: '#ffffff',
+      error: '#ffffff', success: '#ffffff', warn: '#ffffff', sidebar: '#000000',
+    },
+  },
+}
 
 if (!existsSync(join(root, 'lib/index.js')) || !existsSync(join(root, 'lib/client.js'))) {
   console.error('[package] lib/ is missing. Run pnpm build first.')
@@ -113,6 +138,24 @@ try {
         const loaded = await import(pathToFileURL(entry).href)
         if (loaded.name !== 'theme-studio') fail(`installed host name is ${String(loaded.name)}`)
         else console.log('[package] installed tarball host entry loaded')
+      }
+      const validator = join(probe, 'node_modules/@dsh-electron/dsh-theme-studio/lib/validate-theme.js')
+      if (!existsSync(validator)) {
+        fail('installed tarball has no lib/validate-theme.js')
+      } else {
+        // Smoke the bundled CLI end to end: usage error, format rejection,
+        // and a fully passing theme. Monochrome palettes make every derived
+        // contrast check land at the 21:1 extreme.
+        const smoke = async (args, want, label) => {
+          const code = await run('node', args, probe, 'ignore')
+          if (code !== want) fail(`validator ${label} exited ${code}, expected ${want}`)
+        }
+        writeFileSync(join(probe, 'probe.pass.dsh-theme.json'), `${JSON.stringify(VALID_THEME)}\n`)
+        writeFileSync(join(probe, 'probe.bad.dsh-theme.json'), '{')
+        await smoke([validator], 2, 'usage')
+        await smoke([validator, 'probe.bad.dsh-theme.json'], 1, 'malformed input')
+        await smoke([validator, 'probe.pass.dsh-theme.json'], 0, 'valid theme')
+        console.log('[package] validator CLI smoke passed (usage=2, malformed=1, valid=0)')
       }
     }
     const pointer = join(root, '.pack')

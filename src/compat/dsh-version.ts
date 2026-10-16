@@ -50,6 +50,8 @@ export const OPTIONAL_CORE_PACKAGES = [
   '@deepseek-ai/dsh-client-ui-settings',
   '@deepseek-ai/dsh-client-ui-slots',
   '@deepseek-ai/dsh-client-ui-theme',
+  '@deepseek-ai/dsh-client-ui-workspace',
+  '@deepseek-ai/dsh-skill',
 ] as const
 
 /** Every package the contract inspects, required first. */

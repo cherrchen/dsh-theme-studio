@@ -154,3 +154,16 @@ Themes 行改为与官方语言行同款的下拉选择器：selector 按钮（`
 回归用例覆盖旧 transport resolve void 但未接受的导入、覆盖与删除及重试，结算时 loading 后再 ready 的核对，设置加载或重新加载期间的导入确认保护，覆盖主题接受后的真实 preview token、并发导入与重复拒绝时的监听清理，以及 62–64 字符 id 的重命名和目录采纳。开发基线为 226 passed、1 个条件性 legacy-provider skip；每个隔离版本另执行 lint、typecheck、build、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 与 CLI profile smoke。
 
 这次没有设置 `DSH_BROWSER_E2E=1`，不声称验证真实浏览器 file picker 或导入主题的磁盘持久化旅程；本机矩阵也不替代 Linux/Windows 的 PR CI 证据。runtime 与文件规则仍分别以 [runtime 参考](../reference/theme-runtime.md)和[文件格式](../reference/theme-file-format.md)为准。
+
+## Theme Creator 接缝审查（2026-10-15）
+
+本批次把 `@deepseek-ai/dsh-skill` 与 `@deepseek-ai/dsh-client-ui-workspace` 加入 peer 声明、开发 pin 与 `OPTIONAL_CORE_PACKAGES`；两者按可选服务处理，缺席时对应功能关闭。审查来源为本地 `deepseek-harness` 仓库 git 历史（含 `--follow` 与 tag --contains），非版本字符串分支。
+
+| 接缝 | 上游事实 | 插件处理 |
+| --- | --- | --- |
+| `ctx.skills.register` | `SkillRegistration` 与 `register()` 在全部十三个受支持版本可用；`dsh-skill-badge` 是 provider 注册 bundled skill 的上游先例 | Host 以 `ctx.inject(['skills'])` 等待服务；`watchCreatorAgent` 按 accepted `creatorAgentMode` reconcile register/dispose，测试覆盖三档映射与模式翻转 |
+| `uiWorkspace.startSession` | `startSession(workspaceId?, options?)` 的两参签名在 `e400349e3a` 引入，首个包含 tag 为 `dsh-v0.2.1-alpha.1`；更早版本只有 `startSession(workspaceId)` | Client 以 `ctx.get('uiWorkspace')` 读可选服务，`startSession.length >= 2` 为能力探测；不满足时「创建自己的主题」降级为本地化手动手势提示 |
+| `settings/document-updated` | 新 transport 的设置变更事件，`ctx.on` 返回 disposer | `settings-host.ts` 的 `{section, dispose}` 附件在新 transport 下以 `describe()` 读值、该事件作 watch；旧 transport 继续包装 namespace scope |
+| `plugins.bundle.config` | keyed slot 由 `ui-plugin-manager` 在 `slot-contract.ts` 声明，首个包含 tag 为 `dsh-v0.1.6-alpha.2`；该包本身也从 0.1.6-alpha.2 起才发布，更早版本既不声明该 slot 也无法安装该包 | `src/compat/plugin-manager-slot.ts` 本地镜像上游 `SlotMap` 条目（owner 结构逐字一致），Client 以 `ctx.slots.inject('plugins.bundle.config', …)` 惰性贡献 `CreatorConfigSection`（key 为包名）；slot 不声明时注册不挂载，宿主保持已存储或默认 `creatorAgentMode` |
+
+验证证据：开发基线 0.2.1-alpha.2 上 `compat:check`、lint、typecheck、build、全部单测通过（含新增 creator/validate-theme/row/CreatorConfigSection 覆盖）；`lib/validate-theme.js` 冒烟覆盖合法文件（exit 0）、格式拒绝（exit 1）与用法错误（exit 2）。本轮未重跑逐版本安装树矩阵——新增接缝全部落在可选服务与结构探测上，不改动既有必需路径；逐版本证据以下一次矩阵批次为准。真实 Cordis 会话中 skill 注入与 `/dsh-theme-creator` 手势的端到端旅程未在本机验证。

@@ -18,10 +18,11 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 6. 提供只读 Client catalog，让其他插件发现当前主题（含导入主题）与校验报告。
 7. 提供公开的 `dsh-theme.json` 文件格式，支持导入、导出、管理与持久化用户主题。
 8. 保持独立构建、公开声明、可打包发布与受测版本兼容契约。
+9. 提供可选的 Theme Creator 能力：经用户手势唤起 skill 产出主题文件，默认不进入模型目录。
 
 ## Non-goals
 
-当前不提供第三方主题注册 API、主题编辑器、Theme Creator Agent、远程主题库或网络拉取。不新增模型工具、不改写系统提示、不替代官方 ThemePresenter。不为本包添加 Electron、preload、Desktop provider、Node 客户端能力或文件/网络授权——导入导出仅通过浏览器 file picker 与 Blob 下载完成。后续方向在[路线图](../plans/active/2026-10-02-theme-studio-roadmap.md)维护，未设定发布版本或交付日期。
+当前不提供第三方主题注册 API、主题编辑器、远程主题库或网络拉取。不新增模型工具、不改写系统提示、不替代官方 ThemePresenter；Theme Creator 的产出仍需用户经现有导入流程确认后才进入 durable settings，skill 自身不安装 overlay、不写设置。不为本包添加 Electron、preload、Desktop provider、Node 客户端能力或文件/网络授权——导入导出仅通过浏览器 file picker 与 Blob 下载完成，`lib/validate-theme.js` 是由用户在会话中显式运行的校验工具而非插件运行时能力。后续方向在[路线图](../plans/active/2026-10-02-theme-studio-roadmap.md)维护，未设定发布版本或交付日期。
 
 ## Functional Requirements
 
@@ -49,6 +50,11 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 | F20 | Manage 对话框对 builtin 仅导出，对导入主题提供导出与删除；删除激活主题回落 Default | UI 与 runtime 回落测试 |
 | F21 | 导出名 `<id>.dsh-theme.json`；导入主题原样回写，builtin 导出改写为 `user.<短名>` 可回导 | `theme-file.spec.ts` 往返用例 |
 | F22 | Host 无法解析的导入条目被跳过并计入 `droppedImports`，不影响其余条目与 activeThemeId | settings 与 runtime adoption 测试 |
+| F23 | `creatorAgentMode` 提供 `off`/`gesture`/`catalog` 三档，默认 `gesture`；未知值规范化为默认 | schema 与 `creatorAgentModeOf` 测试 |
+| F24 | Host 按 accepted 快照驱动 `dsh-theme-creator` 注册：`off` 不注册，`gesture` 仅用户手势可见，`catalog` 模型可路由；模式翻转先 dispose 再 register，fiber 释放即注销 | `creator.spec.ts` 生命周期测试 |
+| F25 | `lib/validate-theme.js` 输出结构化 JSON：格式失败含错误码，合法文件附对比度报告；用法错误退出 2，校验未过退出 1 | `validate-theme.spec.ts` 正反例与构建产物冒烟 |
+| F26 | 菜单 footer 在 `creatorAgentMode !== 'off'` 时提供「创建自己的主题」；`startSession` 两参签名可用时打开 Cordis 会话并预填 `/dsh-theme-creator `（不自动发送），否则弹出本地化手动输入提示 | `ThemeStudioRow.spec.tsx` 门控与降级测试 |
+| F27 | 插件管理页（`plugins.bundle.config`）以 Menu 选择器写入 `creatorAgentMode`，控件样式与官方设置行一致；settings 离开 `ready` 时控件禁用、菜单收起且回到 `ready` 不自动重开，写入被拒时在选择器旁显示可本地化的保存失败；无该 slot 的宿主（0.1.5、0.1.6-alpha.1）保持已存储或默认档位 | `CreatorConfigSection.spec.tsx` 测试 |
 
 ## Non-functional Requirements
 

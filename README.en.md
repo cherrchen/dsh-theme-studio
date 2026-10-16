@@ -8,13 +8,14 @@
 
 ## What & Why
 
-DSH (DeepSeek Harness) natively offers only three appearance modes — light, dark, and follow-system; this plugin is an out-of-tree extension that modifies no upstream code and injects a "Themes" row into **Settings → General**, widening the color choices to "**8 built-in themes + a Default entry**" with support for importing and exporting custom `dsh-theme.json` theme files.
+DSH (DeepSeek Harness) natively offers only three appearance modes — light, dark, and follow-system; this plugin is an out-of-tree extension that modifies no upstream code and injects a "Themes" row into **Settings → General**, widening the color choices to "**8 built-in themes + a Default entry**", with support for importing and exporting custom `dsh-theme.json` theme files — and an optional Theme Creator skill that lets the model design a palette with you.
 
 The official "Appearance" owns the mode, not the palette, while peer desktop tools have long shipped multiple themes; this plugin brings the same capability to DSH: the Themes row lands between the official "Appearance" and "Font size" rows, its selector mirrors the official Language row dropdown — hover to preview, click to apply.
 
 - **Official Appearance stays in charge**: light / dark / system mode, fonts, and font sizes remain official settings; this plugin only produces token overlays through `ctx.theme.overrideTokens`, while the snapshot and DOM rendering stay with the host.
 - **Preview never persists**: hovering a menu item applies colors temporarily and closing the menu restores them; only a click asks the Host to save, and the choice is restored after restarts.
 - **Absent when absent**: declares `platform:web`, with no dependency on Electron, Node client capabilities, or a Desktop provider, and no model tools or prompt content; with no theme chosen the UI is item-for-item identical to an uninstalled harness.
+- **Creation stays quiet**: the Theme Creator skill answers only the `/dsh-theme-creator` user gesture and stays out of the model catalog by default; the theme menu's "Create your own theme…" opens a Cordis session with the gesture prefilled (never auto-sent), and the result takes effect only after you confirm the import.
 
 Current released version: `v0.1.4`. The user-visible changes of each version live in the [CHANGELOG](./CHANGELOG.en.md); progress and release state live in the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
 
@@ -174,6 +175,12 @@ The footer of the theme menu offers **Import theme** and **Manage themes**:
 
 Imported themes persist in Host settings and join the public catalog — other plugins can discover them through `ctx.themeStudio.catalog` as well.
 
+### Creating your own theme
+
+The theme menu's **Create your own theme…** opens a Cordis session with `/dsh-theme-creator ` prefilled in the input box — never auto-sent, so you can append a short brief before pressing Enter. On older DSH releases the entry instead asks you to type the gesture manually. The Theme Creator skill walks the model through writing a `dsh-theme.json` in the workspace and self-checking it with the bundled validator `node lib/validate-theme.js <file>`; you then confirm the result through **Import theme**.
+
+Creator visibility is controlled by `creatorAgentMode` (switchable on the Plugins management page, default `gesture`): `gesture` answers user gestures only and stays out of the model catalog, `catalog` also lets the model route to it, and `off` disables the feature and hides the entry.
+
 ## Project structure
 
 ```text
@@ -216,7 +223,7 @@ Issues and PRs are welcome:
 
 ## Known limitations
 
-- A theme editor is not implemented: `dsh-theme.json` import/export is supported (see the [file format](./docs/reference/theme-file-format.en.md)), while rename/recolor UI and the Theme Creator remain on the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
+- A theme editor is not implemented: `dsh-theme.json` import/export and the Theme Creator skill are supported (see the [file format](./docs/reference/theme-file-format.en.md)), while a rename/recolor UI remains on the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
 - The contrast check is a diagnostic, not a gate: some built-in palettes fall below threshold and are neither repaired automatically nor blocked from preview or apply; `pnpm contrast:report` is documented in the [token reference](./docs/reference/theme-tokens.md).
 - Preview is hover-driven: keyboard focus on menu items does not preview; press Enter to apply directly.
 - The read-only catalog `ctx.themeStudio.catalog` exists only on the Client, covers builtin and imported themes but not "Default"; it offers no register API or Host RPC, and the imported section follows the settings snapshot — see the [catalog reference](./docs/reference/theme-catalog.md).
