@@ -59,6 +59,27 @@ export interface ThemeStudioSettingsAttachment {
 }
 
 /**
+ * Adapt a subscribe call whose return may not be a disposer. The wrapped
+ * listener is gated so the seam's detach still silences notifications when
+ * the upstream registration cannot be removed; a returned disposer is used
+ * normally.
+ * @param subscribe - upstream `watch`/`on` call.
+ * @returns a `watch` implementation honoring {@link ThemeStudioHostSection}.
+ */
+function gateListener(subscribe: (listener: () => void) => unknown): (listener: () => void) => () => void {
+  return (listener) => {
+    let active = true
+    const stop = subscribe(() => {
+      if (active) listener()
+    })
+    return () => {
+      active = false
+      if (typeof stop === 'function') stop()
+    }
+  }
+}
+
+/**
  * Mark a schema field live when the installed schemastery supports it.
  * Older schemastery builds have no `volatile` method; the field stays plain.
  * @param schema - one field schema.
@@ -95,11 +116,16 @@ export function attachThemeStudioSettings(
       get?: () => unknown
       watch?: (listener: () => void) => (() => void) | void
     } | undefined
+    // Read once into bound locals: inside the section's closures TypeScript
+    // does not keep property narrowing, some scopes legitimately lack watch,
+    // and the scope's own methods may rely on `this`.
+    const scopeGet = scope?.get?.bind(scope)
+    const scopeWatch = scope?.watch?.bind(scope)
     const section: ThemeStudioHostSection | undefined =
-      scope !== undefined && typeof scope.get === 'function' && typeof scope.watch === 'function'
+      typeof scopeGet === 'function' && typeof scopeWatch === 'function'
         ? {
-            get: () => scope.get?.(),
-            watch: (listener) => scope.watch?.(listener) ?? (() => {}),
+            get: () => scopeGet(),
+            watch: gateListener(scopeWatch),
           }
         : undefined
     return { section, dispose: undefined }
@@ -111,7 +137,7 @@ export function attachThemeStudioSettings(
       ? undefined
       : {
           get: () => describe().find(row => row.ns === THEME_STUDIO_SETTINGS_NAMESPACE)?.value,
-          watch: (listener) => ctx.on('settings/document-updated', listener) as () => void,
+          watch: gateListener(listener => ctx.on('settings/document-updated', listener)),
         }
     return { section, dispose }
   }

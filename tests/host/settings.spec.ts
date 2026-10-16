@@ -1,6 +1,7 @@
 import { Context } from '@deepseek-ai/cordis'
 import { describe, expect, it, vi } from 'vitest'
 import { apply, Config, THEME_STUDIO_SETTINGS_NAMESPACE, ThemeStudioSettingsSchema } from '../../src/index.ts'
+import { attachThemeStudioSettings } from '../../src/compat/settings-host.ts'
 
 describe('Theme Studio host settings', () => {
   it('accepts a persisted theme id and the Default null value', () => {
@@ -75,5 +76,43 @@ describe('Theme Studio host settings', () => {
     const fiber = ctx.plugin({ apply })
     await fiber.await()
     await fiber.dispose()
+  })
+
+  it('silences a legacy section watch whose scope returns no disposer', () => {
+    const listeners = new Set<() => void>()
+    const scope = {
+      get: () => ({ creatorAgentMode: 'off' }),
+      // Permitted by the seam type: a watch that registers but resolves void.
+      watch: (listener: () => void) => { listeners.add(listener) },
+    }
+    const attachment = attachThemeStudioSettings(
+      { register: () => scope },
+      ThemeStudioSettingsSchema,
+      { fiber: {}, on: () => undefined },
+    )
+    const seen: number[] = []
+    const detach = attachment.section?.watch(() => { seen.push(1) })
+    for (const listener of [...listeners]) listener()
+    expect(seen).toHaveLength(1)
+    detach?.()
+    for (const listener of [...listeners]) listener()
+    // The upstream listener stays registered, but the gate swallows the call.
+    expect(listeners.size).toBe(1)
+    expect(seen).toHaveLength(1)
+  })
+
+  it('forwards the disposer a legacy scope watch returns', () => {
+    let watched = true
+    const scope = {
+      get: () => ({}),
+      watch: () => () => { watched = false },
+    }
+    const attachment = attachThemeStudioSettings(
+      { register: () => scope },
+      ThemeStudioSettingsSchema,
+      { fiber: {}, on: () => undefined },
+    )
+    attachment.section?.watch(() => {})()
+    expect(watched).toBe(false)
   })
 })
