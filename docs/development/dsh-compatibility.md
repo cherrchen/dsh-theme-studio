@@ -161,7 +161,7 @@ Themes 行改为与官方语言行同款的下拉选择器：selector 按钮（`
 
 | 接缝 | 上游事实 | 插件处理 |
 | --- | --- | --- |
-| `ctx.skills.register` | `SkillRegistration` 与 `register()` 在全部十二个受支持版本可用；`dsh-skill-badge` 是 provider 注册 bundled skill 的上游先例 | Host 以 `ctx.inject(['skills'])` 等待服务；`watchCreatorAgent` 按 accepted `creatorAgentMode` reconcile register/dispose，测试覆盖三档映射与模式翻转 |
+| `ctx.skills.register` | `SkillRegistration` 与 `register()` 在全部十三个受支持版本可用；`dsh-skill-badge` 是 provider 注册 bundled skill 的上游先例 | Host 以 `ctx.inject(['skills'])` 等待服务；`watchCreatorAgent` 按 accepted `creatorAgentMode` reconcile register/dispose，测试覆盖三档映射与模式翻转 |
 | `uiWorkspace.startSession` | `startSession(workspaceId?, options?)` 的两参签名在 `e400349e3a` 引入，首个包含 tag 为 `dsh-v0.2.1-alpha.1`；更早版本只有 `startSession(workspaceId)` | Client 以 `ctx.get('uiWorkspace')` 读可选服务，`startSession.length >= 2` 为能力探测；不满足时「创建自己的主题」降级为本地化手动手势提示 |
 | `settings/document-updated` | 新 transport 的设置变更事件，`ctx.on` 返回 disposer | `settings-host.ts` 的 `{section, dispose}` 附件在新 transport 下以 `describe()` 读值、该事件作 watch；旧 transport 继续包装 namespace scope |
 | `plugins.bundle.config` | keyed slot 由 `ui-plugin-manager` 在 `slot-contract.ts` 声明，首个包含 tag 为 `dsh-v0.1.6-alpha.2`；该包本身也从 0.1.6-alpha.2 起才发布，更早版本既不声明该 slot 也无法安装该包 | `src/compat/plugin-manager-slot.ts` 本地镜像上游 `SlotMap` 条目（owner 结构逐字一致），Client 以 `ctx.slots.inject('plugins.bundle.config', …)` 惰性贡献 `CreatorConfigSection`（key 为包名）；slot 不声明时注册不挂载，宿主保持已存储或默认 `creatorAgentMode` |

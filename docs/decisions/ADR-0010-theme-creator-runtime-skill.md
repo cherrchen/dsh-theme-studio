@@ -29,7 +29,7 @@ Accepted（2026-10-15 需求确认后随 Theme Creator 功能实施）。
 
 | 方案 | 取舍 |
 | --- | --- |
-| 新增第五个 agent preset（vendor 官方 composition） | 需要复制并整体覆盖官方 preset 配置，跨 12 个受支持版本维护 schema 漂移；创作脱离用户当前会话，看不到当前主题；未采用 |
+| 新增第五个 agent preset（vendor 官方 composition） | 需要复制并整体覆盖官方 preset 配置，跨 13 个受支持版本维护 schema 漂移；创作脱离用户当前会话，看不到当前主题；未采用 |
 | 默认注入创作指令到每个会话 | 违背「不默认注入」的明确要求；未采用 |
 | skill 仅 gesture，不做 catalog 模式 | 拒绝模型自动路由的合法需求；`catalog` 保留为显式 opt-in |
 | 一键动作无门控直接调用两参 startSession | 0.1.5–0.2.0 宿主签名只有一参，会静默失败；`Function.length` 探测是结构断言而非版本比较 |
