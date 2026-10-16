@@ -55,7 +55,9 @@ describe('creatorRegistration', () => {
 
   it('embeds the quoted validator command into the skill body', () => {
     const skill = creatorRegistration('gesture', '/tmp/validate-theme.js')
-    expect(skill.content).toContain("node '/tmp/validate-theme.js'")
+    const quoted =
+      process.platform === 'win32' ? '"/tmp/validate-theme.js"' : "'/tmp/validate-theme.js'"
+    expect(skill.content).toContain(`node ${quoted}`)
     expect(skill.content).toContain('dsh-theme.json')
   })
 })
