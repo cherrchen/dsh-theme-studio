@@ -4,8 +4,10 @@
  * 0.1.6-alpha.2; hosts without it keep the stored or default mode.
  */
 import type {} from '../compat/plugin-manager-slot.ts'
-import { useId } from 'react'
+import { useState } from 'react'
+import { Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
+import { ChevronDownIcon } from '../compat/menu-icons.tsx'
 import type { CreatorAgentMode } from '../constants.ts'
 import type { createThemeStudioRowStore } from './store.ts'
 import css from './ThemeStudioRow.module.css'
@@ -29,23 +31,39 @@ const MODES: readonly CreatorAgentMode[] = ['off', 'gesture', 'catalog']
  * @returns the section, or `null` for a non-page view.
  */
 export function CreatorConfigSection({ view, t, useStore, setCreatorMode }: CreatorConfigSectionProps) {
-  const selectId = useId()
+  const [open, setOpen] = useState(false)
   const creatorMode = useStore(s => s.creatorMode)
   const settingsStatus = useStore(s => s.settingsStatus)
   if (view !== 'page') return null
+  const disabled = settingsStatus !== 'ready'
   return (
     <div className={css.creatorField}>
-      <label htmlFor={selectId}>{t('creator.section')}</label>
-      <select
-        id={selectId}
-        value={creatorMode}
-        disabled={settingsStatus !== 'ready'}
-        onChange={(event) => { setCreatorMode(event.target.value as CreatorAgentMode) }}
-      >
-        {MODES.map(mode => (
-          <option key={mode} value={mode}>{t(`creator.label.${mode}`)}</option>
-        ))}
-      </select>
+      <div className={css.creatorTitle}>{t('creator.section')}</div>
+      <Menu
+        open={open && !disabled}
+        onClose={() => { setOpen(false) }}
+        items={MODES.map(mode => ({ id: mode, label: t(`creator.label.${mode}`) }))}
+        selectedId={creatorMode}
+        onSelect={(id) => {
+          setCreatorMode(id as CreatorAgentMode)
+          setOpen(false)
+        }}
+        align="start"
+        portal
+        anchor={(
+          <button
+            type="button"
+            className={css.selector}
+            disabled={disabled}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            onClick={() => { setOpen(v => !v) }}
+          >
+            <span className={css.selectorName}>{t(`creator.label.${creatorMode}`)}</span>
+            <ChevronDownIcon className={css.chevron} />
+          </button>
+        )}
+      />
       <p className={css.creatorDesc}>{t(`creator.mode.${creatorMode}`)}</p>
     </div>
   )

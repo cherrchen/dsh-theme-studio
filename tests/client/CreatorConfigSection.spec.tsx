@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { CreatorConfigSection } from '../../src/client/CreatorConfigSection.tsx'
 import type { CreatorConfigSectionProps } from '../../src/client/CreatorConfigSection.tsx'
 import type { ThemeStudioCard, ThemeStudioRowState } from '../../src/client/store.ts'
@@ -49,19 +49,20 @@ function mount(
 }
 
 describe('CreatorConfigSection', () => {
-  it('renders the stored mode and writes changes through setCreatorMode', () => {
+  it('renders the stored mode on the selector and writes the chosen menu item', () => {
     const b = mount('gesture')
-    const select = screen.getByRole('combobox', { name: 'Theme creator' }) as HTMLSelectElement
-    expect(select.value).toBe('gesture')
-    expect(within(select).getByRole('option', { name: 'Catalog' })).toBeDefined()
-    fireEvent.change(select, { target: { value: 'catalog' } })
+    const pill = screen.getByRole('button', { name: /Gesture/ }) as HTMLButtonElement
+    expect(pill.getAttribute('aria-haspopup')).toBe('menu')
+    fireEvent.click(pill)
+    const catalog = screen.getByRole('menuitem', { name: 'Catalog' })
+    fireEvent.click(catalog)
     expect(b.setCreatorMode).toHaveBeenCalledWith('catalog')
     expect(screen.getByText(/\/dsh-theme-creator/)).toBeDefined()
   })
 
   it.each(['loading', 'unavailable'] as const)('disables the control while settings are %s', (settingsStatus) => {
     mount('gesture', settingsStatus)
-    expect((screen.getByRole('combobox', { name: 'Theme creator' }) as HTMLSelectElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: /Gesture/ }) as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('renders nothing for a non-page view', () => {
