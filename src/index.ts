@@ -48,6 +48,9 @@ export function apply(ctx: Context): void {
     }
   })
   ctx.inject(['skills'], (skillsCtx) => {
-    return watchCreatorAgent(skillsCtx.skills, sections)
+    const warn = (error: unknown): void => {
+      ctx.logger('theme-studio').warn('creator watcher contained a host fault', error)
+    }
+    return watchCreatorAgent(skillsCtx.skills, sections, warn)
   })
 }

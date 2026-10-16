@@ -106,43 +106,87 @@ function isSection(value: unknown): value is Record<string, unknown> {
  * exposes the skill to the user's `/name` gesture only; `catalog` also lists
  * it for model routing. Mode flips dispose and re-register, which publishes a
  * fresh skill catalog to running sessions.
+ *
+ * Every step that touches a host object (section `get`/`watch`, registry
+ * `register`, and the returned disposers) is fault-contained and reported:
+ * `reconcile` runs inside event listeners (`settings/document-updated` or the
+ * section watch), and cordis event dispatch does not isolate listener errors,
+ * so a throwing host service must not escape into the emitter's write path.
+ * A fault leaves the current registration in place — or cleared, if the
+ * register step itself failed — and the next accepted change retries.
  * @param skills - the host skill registry.
  * @param source - the settings section source shared with the settings attach.
+ * @param onError - receives host-side faults; the watcher survives them.
  * @returns the disposer tearing down the watch and any registration.
  */
 export function watchCreatorAgent(
   skills: CreatorSkillRegistry,
   source: CreatorSectionSource,
+  onError?: (error: unknown) => void,
 ): () => void {
   let watched: ThemeStudioHostSection | undefined
   let detach: (() => void) | undefined
   let dispose: (() => void) | undefined
   let current: CreatorAgentMode | 'off' | undefined
 
+  const report = (error: unknown): void => {
+    try {
+      onError?.(error)
+    } catch { /* the reporter must not break the watcher either */ }
+  }
+  const safely = (call: () => void): void => {
+    try {
+      call()
+    } catch (error) {
+      report(error)
+    }
+  }
+
   const reconcile = (): void => {
     const section = source.get()
     if (section !== watched) {
-      detach?.()
+      safely(() => detach?.())
+      detach = undefined
       watched = section
-      detach = section?.watch(reconcile)
+      try {
+        detach = section?.watch(reconcile)
+      } catch (error) {
+        report(error)
+      }
     }
-    const raw = section?.get()
-    const mode: CreatorAgentMode | 'off' = section === undefined
-      ? 'off'
-      : creatorAgentModeOf(isSection(raw) ? raw[CREATOR_AGENT_MODE_FIELD] : undefined)
+    let mode: CreatorAgentMode | 'off'
+    try {
+      const raw = section?.get()
+      mode = section === undefined
+        ? 'off'
+        : creatorAgentModeOf(isSection(raw) ? raw[CREATOR_AGENT_MODE_FIELD] : undefined)
+    } catch (error) {
+      // A failed read keeps the current registration; the next event retries.
+      report(error)
+      return
+    }
     if (mode === current) return
-    dispose?.()
+    safely(() => dispose?.())
     dispose = undefined
-    current = mode
-    if (mode !== 'off') dispose = skills.register(creatorRegistration(mode))
+    current = 'off'
+    if (mode === 'off') return
+    try {
+      dispose = skills.register(creatorRegistration(mode))
+      current = mode
+    } catch (error) {
+      // Nothing is registered; `current` stays 'off' so the next reconcile
+      // retries the register while the stored mode still asks for it.
+      report(error)
+    }
   }
   reconcile()
   const unsubscribe = source.subscribe(reconcile)
   return () => {
     unsubscribe()
-    detach?.()
-    dispose?.()
+    safely(() => detach?.())
+    safely(() => dispose?.())
     watched = undefined
+    detach = undefined
     dispose = undefined
     current = undefined
   }

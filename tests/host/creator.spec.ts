@@ -128,6 +128,58 @@ describe('watchCreatorAgent', () => {
     expect(skills.registered[0]?.invocation.modelInvocable).toBe(false)
     stop()
   })
+
+  it('reports a throwing register and retries on the next reconcile', () => {
+    const skills = registry()
+    skills.register.mockImplementationOnce(() => { throw new Error('registry closed') })
+    const source = createCreatorSectionSource()
+    const { scope, notify } = section({ creatorAgentMode: 'catalog' })
+    source.set(scope)
+    const errors: unknown[] = []
+    const stop = watchCreatorAgent(skills, source, error => { errors.push(error) })
+    expect(errors).toHaveLength(1)
+    expect(skills.register).toHaveBeenCalledOnce()
+    expect(skills.registered).toHaveLength(0)
+
+    // The failed attempt cleared `current`, so the next event retries even
+    // though the stored mode never changed.
+    notify()
+    expect(skills.registered).toHaveLength(1)
+    expect(skills.registered[0]?.invocation.modelInvocable).toBe(true)
+    stop()
+    expect(skills.disposers[0]).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the registration when a section read throws', () => {
+    const skills = registry()
+    const source = createCreatorSectionSource()
+    const { scope, notify } = section({ creatorAgentMode: 'catalog' })
+    source.set(scope)
+    const errors: unknown[] = []
+    const stop = watchCreatorAgent(skills, source, error => { errors.push(error) })
+    expect(skills.registered).toHaveLength(1)
+
+    Object.defineProperty(scope, 'get', { value: () => { throw new Error('scope gone') } })
+    notify()
+    expect(errors).toHaveLength(1)
+    // The existing registration stays in place; nothing is re-registered.
+    expect(skills.disposers[0]).not.toHaveBeenCalled()
+    expect(skills.registered).toHaveLength(1)
+    stop()
+  })
+
+  it('does not let a throwing reporter escape the watcher', () => {
+    const skills = registry()
+    skills.register.mockImplementationOnce(() => { throw new Error('registry closed') })
+    const source = createCreatorSectionSource()
+    source.set(section({ creatorAgentMode: 'gesture' }).scope)
+    const stop = watchCreatorAgent(skills, source, () => { throw new Error('bad reporter') })
+    const { scope, notify } = section({ creatorAgentMode: 'gesture' })
+    source.set(scope)
+    notify()
+    expect(skills.registered).toHaveLength(1)
+    stop()
+  })
 })
 
 describe('host apply creator wiring', () => {
