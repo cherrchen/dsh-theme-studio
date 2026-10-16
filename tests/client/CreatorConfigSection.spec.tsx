@@ -51,18 +51,17 @@ function mount(
 describe('CreatorConfigSection', () => {
   it('renders the stored mode and writes changes through setCreatorMode', () => {
     const b = mount('gesture')
-    const group = screen.getByRole('tablist', { name: 'Theme creator' })
-    expect(within(group).getByRole('tab', { name: 'Gesture' }).getAttribute('aria-selected')).toBe('true')
-    fireEvent.click(within(group).getByRole('tab', { name: 'Catalog' }))
+    const select = screen.getByRole('combobox', { name: 'Theme creator' }) as HTMLSelectElement
+    expect(select.value).toBe('gesture')
+    expect(within(select).getByRole('option', { name: 'Catalog' })).toBeDefined()
+    fireEvent.change(select, { target: { value: 'catalog' } })
     expect(b.setCreatorMode).toHaveBeenCalledWith('catalog')
     expect(screen.getByText(/\/dsh-theme-creator/)).toBeDefined()
   })
 
   it.each(['loading', 'unavailable'] as const)('disables the control while settings are %s', (settingsStatus) => {
     mount('gesture', settingsStatus)
-    for (const tab of within(screen.getByRole('tablist', { name: 'Theme creator' })).getAllByRole('tab')) {
-      expect((tab as HTMLButtonElement).disabled || tab.getAttribute('aria-disabled') === 'true').toBe(true)
-    }
+    expect((screen.getByRole('combobox', { name: 'Theme creator' }) as HTMLSelectElement).disabled).toBe(true)
   })
 
   it('renders nothing for a non-page view', () => {

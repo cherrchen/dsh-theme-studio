@@ -23,8 +23,7 @@ Accepted（2026-10-15 需求确认后随 Theme Creator 功能实施）。
 2. skill 正文随包打包：教模型在工作区写 `dsh-theme.json`、运行 `node lib/validate-theme.js <file>` 迭代到 `ok`、然后引导用户回到 Import 流程确认。不新增模型工具，不改写系统提示。
 3. `lib/validate-theme.js` 作为第三个独立构建入口随包发布，复用 `theme-file.ts` 与 `contrast.ts` 纯函数，输出结构化 JSON 报告；退出码区分用法错误（2）、校验未过（1）与通过（0）。
 4. 一键跳转按能力门控：Client 以 `ctx.get('uiWorkspace')` 读取可选服务，`startSession.length >= 2` 才提供 `startSession(undefined, { agentPreset: 'cordis', prompt: '/dsh-theme-creator ' })`；不满足时该动作弹出本地化提示，让用户自行在会话中输入 `/dsh-theme-creator`。预填是草稿，发送前用户可审阅补充。
-5. `creatorAgentMode` 由插件管理页的分段控件写入：Client 向 `plugins.bundle.config`（key 为本包名，0.1.6-alpha.2 起存在）贡献控件，与 `activeThemeId`/`importedThemes` 共用 durable namespace 与写入队列；无该页的宿主保持已存储或默认档位。模型可见性变化（register/dispose）由 Host 快照 watch 驱动，skill catalog 的 mid-session 刷新由上游注册表负责。
-6. `SegmentedControl` 自 0.1.7-alpha.1 才发布；0.1.5–0.1.6 宿主经 `src/compat/segmented-control.tsx` 结构探测回退到本地 tablist 实现，与 `menu-icons.tsx` 同一适配模式。
+5. `creatorAgentMode` 由插件管理页的下拉控件写入：Client 向 `plugins.bundle.config`（key 为本包名，0.1.6-alpha.2 起存在）贡献控件，与 `activeThemeId`/`importedThemes` 共用 durable namespace 与写入队列；无该页的宿主保持已存储或默认档位。模型可见性变化（register/dispose）由 Host 快照 watch 驱动，skill catalog 的 mid-session 刷新由上游注册表负责。
 
 ## Alternatives Considered
 

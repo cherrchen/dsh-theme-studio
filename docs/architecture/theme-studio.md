@@ -44,7 +44,6 @@ flowchart TD
 | `compat/settings-host.ts` | register/configure 能力探测、volatile 适配、`{section, dispose}` 附件 | 版本字符串驱动分支 |
 | `compat/settings-client.ts` | 两种 transport 的最小结构契约 | 独立 RPC 协议 |
 | `compat/menu-icons.tsx` | ui-primitives 下拉箭头图标探测与本地回退 | 版本字符串分支 |
-| `compat/segmented-control.tsx` | `SegmentedControl` 导出探测（0.1.7-alpha.1+）与本地 tablist 回退 | 版本字符串分支 |
 | `creator/`、`validate-theme.ts` | skill 正文、按 accepted 快照的 register/dispose watcher、校验器纯报告与 CLI 接线 | overlay、设置写入、模型工具 |
 | `client/index.ts` | provider、字典、槽位、runtime/store 组装与启停 | durable authority |
 | `client/presets.ts`、`chrome-tokens.ts` | 八套明暗配色、源 palette 保留与派生语义 token | 修改官方 stylesheets |
