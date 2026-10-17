@@ -26,11 +26,11 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 | 完整文档体系 | Completed，本批次单独提交 | v0.1.4 | [文档补齐](../completed/2026-10-02-documentation-reconstruction.md)、[文档地图](../../README.md) |
 | DSH 0.2.1-alpha.1/alpha.2 与字体正交、保存失败提示 | Completed，本分支实现 | v0.1.4 | [兼容矩阵](../../development/dsh-compatibility.md) |
 | 元数据驱动的多版本矩阵、候选探测与发布复用 | Completed，本分支实现 | v0.1.4；远端跨平台结果由 PR CI 提供 | [兼容矩阵](../../development/dsh-compatibility.md) |
-| `dsh-theme.json` v1 与主题导入/导出、复合 catalog | Completed，本分支实现 | v0.1.5 候选；未打 tag | [导入导出](../completed/2026-10-14-theme-file-import-export.md)、[文件格式](../../reference/theme-file-format.md) |
-| Theme Creator：运行时 skill + `creatorAgentMode` + 一键跳转 + 校验器 | Completed，本分支实现 | v0.1.5 候选；未打 tag | [ADR-0010](../../decisions/ADR-0010-theme-creator-runtime-skill.md)、[设置契约](../../reference/settings-and-package-contract.md) |
-| DSH 0.2.1-alpha.3 至 0.2.1-rc.2 支持 | Completed，PR #10/#12 | v0.1.5 候选；未打 tag、未发 npm；远端跨平台结果由 PR CI 提供 | [兼容矩阵](../../development/dsh-compatibility.md) |
+| `dsh-theme.json` v1 与主题导入/导出、复合 catalog | Completed，本分支实现 | v0.1.5 | [导入导出](../completed/2026-10-14-theme-file-import-export.md)、[文件格式](../../reference/theme-file-format.md) |
+| Theme Creator：运行时 skill + `creatorAgentMode` + 一键跳转 + 校验器 | Completed，本分支实现 | v0.1.5 | [ADR-0010](../../decisions/ADR-0010-theme-creator-runtime-skill.md)、[设置契约](../../reference/settings-and-package-contract.md) |
+| DSH 0.2.1-alpha.3 至 0.2.1-rc.2 支持 | Completed，PR #10/#12 | v0.1.5；远端跨平台结果由 PR CI 与 Release verify 提供 | [兼容矩阵](../../development/dsh-compatibility.md) |
 
-“发布状态”以 tag 与远端产物为准：v0.1.4 于 2026-10-11 打 tag、发布 GitHub Release 并推上 npm（`@dsh-electron/dsh-theme-studio@0.1.4`），Stage 2/3、文档补齐与兼容/发布改进均纳入其中；package.version 已准备为 0.1.5，但尚未创建对应提交/tag，主题文件格式、Theme Creator 与 DSH 0.2.1 新版支持纳入 v0.1.5 候选。每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
+“发布状态”以 tag 与远端产物为准：v0.1.4 于 2026-10-11 打 tag、发布 GitHub Release 并推上 npm（`@dsh-electron/dsh-theme-studio@0.1.4`），Stage 2/3、文档补齐与兼容/发布改进均纳入其中；v0.1.5 于 2026-10-17 打 tag、发布 GitHub Release 并推上 npm `latest`（`@dsh-electron/dsh-theme-studio@0.1.5`），主题文件格式、Theme Creator 与 DSH 0.2.1 新版支持纳入其中。每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
 
 ## Current State
 

@@ -17,7 +17,7 @@ The official "Appearance" owns the mode, not the palette, while peer desktop too
 - **Absent when absent**: declares `platform:web`, with no dependency on Electron, Node client capabilities, or a Desktop provider, and no model tools or prompt content; with no theme chosen the UI is item-for-item identical to an uninstalled harness.
 - **Creation stays quiet**: the Theme Creator skill answers only the `/dsh-theme-creator` user gesture and stays out of the model catalog by default; the theme menu's "Create your own theme…" opens a Cordis session with the gesture prefilled (never auto-sent), and the result takes effect only after you confirm the import.
 
-Current release candidate: `v0.1.5` (not yet tagged or published); the latest published tag remains `v0.1.4`. The `dsh-theme.json` theme file format with import/export, Theme Creator, and DSH 0.2.1-alpha.3 through 0.2.1-rc.2 support are included in this candidate. The user-visible changes of each version live in the [CHANGELOG](./CHANGELOG.en.md); progress and release state live in the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
+Current released version: `v0.1.5`. The user-visible changes of each version live in the [CHANGELOG](./CHANGELOG.en.md); progress and release state live in the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
 
 ## Quick Start
 

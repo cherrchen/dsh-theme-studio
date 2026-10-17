@@ -17,7 +17,7 @@ DSH（DeepSeek Harness）原生只提供浅色 / 深色 / 跟随系统三种外�
 - **不配等于没装**：声明 `platform:web`，不依赖 Electron、Node 客户端能力或 Desktop provider，也不注册模型工具或提示词内容；未选主题时界面与未装插件逐项一致。
 - **创作不打扰**：Theme Creator skill 默认只响应 `/dsh-theme-creator` 用户手势，不进模型目录；主题菜单的「创建自己的主题」会打开 Cordis 会话并预填手势（不自动发送），产物经导入确认后才生效。
 
-当前发布准备目标为 `v0.1.5`（尚未打 tag、未发布）；最近发布 tag 仍为 `v0.1.4`。`dsh-theme.json` 主题文件格式与导入/导出、Theme Creator、DSH 0.2.1-alpha.3 至 0.2.1-rc.2 支持已纳入本次候选内容。各版本的用户可见变更见 [CHANGELOG](./CHANGELOG.md)；进度与发布状态见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
+当前发布版本 `v0.1.5`。各版本的用户可见变更见 [CHANGELOG](./CHANGELOG.md)；进度与发布状态见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
 
 ## 快速开始
 
