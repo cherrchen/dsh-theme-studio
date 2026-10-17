@@ -35,7 +35,7 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 
 runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化（`activeThemeId` + `importedThemes`），官方 Appearance 保留所有权。catalog 在 Client 父 fiber 提供为 builtin+imported 复合目录，settings 子树可停止/重建。主题文件导入/导出/删除走浏览器 file picker 与 Blob 下载，不扩大 portable 权限。对比度默认报告可复现、全内置可计算，但有低于阈值的配对；报告与 UI 认证必须分开。
 
-当前全部受支持 DSH 版本由[兼容契约](../../../src/compat/dsh-version.ts)决定。清单包含 0.2.1-alpha.1 至 0.2.1-alpha.3（0.2.1-alpha.3 于 2026-10-15 提升）；证据见[兼容矩阵](../../development/dsh-compatibility.md)。Theme Creator 已实现：`dsh-theme-creator` skill 由 `creatorAgentMode` 驱动注册（默认 `gesture`，模型目录零占用），菜单一键跳转按 `startSession` 能力门控降级，`lib/validate-theme.js` 提供命令行校验；skill 不新增 agent preset、模型工具或系统提示改写。
+当前全部受支持 DSH 版本由[兼容契约](../../../src/compat/dsh-version.ts)决定。清单包含 0.2.1-alpha.1 至 0.2.1-rc.2（0.2.1-alpha.3 于 2026-10-15 提升，0.2.1-alpha.4 至 0.2.1-rc.2 于 2026-10-17 提升）；证据见[兼容矩阵](../../development/dsh-compatibility.md)。Theme Creator 已实现：`dsh-theme-creator` skill 由 `creatorAgentMode` 驱动注册（默认 `gesture`，模型目录零占用），菜单一键跳转按 `startSession` 能力门控降级，`lib/validate-theme.js` 提供命令行校验；skill 不新增 agent preset、模型工具或系统提示改写。
 
 ## Scope and Non-goals
 

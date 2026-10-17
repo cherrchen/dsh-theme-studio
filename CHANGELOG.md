@@ -12,6 +12,7 @@
 - Themes 菜单新增导入/管理入口：导入经确认对话框写入设置并自动预览，重复 id 由用户选择覆盖或自动生成新 id；管理对话框支持导出与删除导入主题，内置主题也可导出为可回导的 `user.*` 文件。
 - 公共 `ctx.themeStudio.catalog` 升级为 builtin + imported 复合目录（ADR-0009）：`list()`/`get()`/`validate()` 覆盖导入主题，`list()` 在调用时返回冻结快照。
 - 支持 DSH 0.2.1-alpha.3。
+- 支持 DSH 0.2.1-alpha.4、0.2.1-alpha.5、0.2.1-rc.1 与 0.2.1-rc.2。
 - 新增 Theme Creator（ADR-0010）：`dsh-theme-creator` skill 由 `creatorAgentMode` 设置驱动（`off`/`gesture`/`catalog`，默认 `gesture`——只响应 `/dsh-theme-creator` 用户手势、不进模型目录）；skill 指导模型在工作区写出 `dsh-theme.json` 并经随包校验器自检，产物仍由用户经导入流程确认。
 - Themes 菜单新增「创建自己的主题」：在支持两参 `startSession` 的版本上打开 Cordis 会话并预填 `/dsh-theme-creator `（不自动发送）；较早版本降级为手动手势提示。`creatorAgentMode` 在插件管理页（Plugins → Theme Studio）切换；无插件管理页的宿主保持已存储或默认档位。
 - 随包发布 `lib/validate-theme.js` 命令行校验器：`node lib/validate-theme.js <file>` 输出结构化 JSON 格式与对比度报告（通过 0 / 未过 1 / 用法错误 2）。

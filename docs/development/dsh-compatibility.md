@@ -96,6 +96,23 @@ node scripts/run-dsh-matrix.mjs 0.1.7-rc.2 0.2.0-rc.1 0.2.0-rc.2
 
 浏览器旅程脚本修复一处：alpha.3 起 Web 端设置入口收进侧边栏账号菜单（`settings.launcher` 由 `ui-settings-account` 的 AccountMenu 注册，直连 `settings.trigger` 齿轮按钮只在 launcher 缺席时回退渲染），`scripts/smoke-client.mjs` 原先固定点击名为 设置/Settings 的按钮而在 alpha.3 超时。现优先直连按钮、缺席时走 账号菜单/Account menu → 设置/Settings menuitem，两条路径覆盖新旧 shell；首启对话框仍在入口探测后统一关闭。
 
+### 0.2.1-alpha.4 至 0.2.1-rc.2 审查与提升（2026-10-17）
+
+审查来源为本地 `deepseek-harness` 仓库标签 `dsh-v0.2.1-alpha.3` → `dsh-v0.2.1-alpha.4` → `dsh-v0.2.1-alpha.5` → `dsh-v0.2.1-rc.1` → `dsh-v0.2.1-rc.2`，以及 npm 上这些精确版本的已发布包。本插件消费的全部接缝包在该区间 `src/` 无实现变更，仅下表所列。
+
+| 接缝 | 上游变化及风险 | 插件处理 |
+| --- | --- | --- |
+| 宿主加载 | alpha.4 起 `plugin-compatibility.ts` 优先读取插件自身 `engines.dsh`，未声明时沿用原 `@deepseek-ai/dsh*` peer 校验；本插件 `engines` 只声明 `node` | 继续以 peer 精确版本清单表达支持范围，不引入第二份 `engines.dsh` 真源；契约检查不变 |
+| 共享运行时 | alpha.4/alpha.5 沿用 Cordis 4.0.5-alpha.2、Schemastery 3.18.5-alpha.2；rc.1/rc.2 转正式版 Cordis 4.0.5、Schemastery 3.18.5，配套 cordis plugin 与 cosmokit 同步转正式 | peer/dependency 的 `>=` 范围已覆盖正式版；overrides、开发 pin 与 minimumReleaseAgeExclude 随 `upgrade-dsh.mjs` 重钉到 rc.2 |
+| 设置 Host / Client | `packages/settings/settings/src`、`settings-controller`、`ui-settings` 目标区间无实现变更 | 沿用 `src/compat/settings-host.ts` 能力探测与双通道，不新增版本分支 |
+| 主题覆盖 | `ui-theme` 无实现变更；`overrideTokens` 语义不变 | 不新增版本分支；官方 ThemeRuntime 行为矩阵直接加载 rc.2 真实 bundle 复验 |
+| 槽位与渲染 | `ui-slots` 框架无变更；ui-plugin-manager 新增 `plugins.tab` 列表槽位及 `PluginTabProps`，`plugins.bundle.config` keyed slot 契约逐字未变；alpha.5 新增 `conversation.input.model.label` 槽位 | 均为可选新增；本插件消费的槽位契约不变 |
+| remotes 聚合 | 新增 `dsh-plugin-market` remote contribution 与 `plugin-market/changed` 转发事件 | 插件只依赖 `remote` 服务在场，不使用新增导出 |
+| connection、store、locale、ui-primitives、ui-workspace、skill | 目标区间 `src/` 无实现变更 | 既有注入面与能力探测不变 |
+| 设置入口 | ui-settings-account 的 AccountMenu 改用 notice stack；`settings.launcher`/`settings.trigger` 槽位与回退逻辑不变 | smoke-client 的直连按钮/账号菜单双路径继续覆盖新旧 shell |
+
+当前开发基线是 0.2.1-rc.2 / Cordis 4.0.5 / Schemastery 3.18.5。本轮先对四个候选分别在隔离副本执行 `node scripts/run-dsh-matrix.mjs --candidate <version>`，install、`compat:check`（candidate 判定）、lint、typecheck、build、全部单测、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 行为矩阵与真实 CLI profile composition 全部退出 0；提升后重跑全部十七个支持版本，逐命令结果见 [rc.2 提升矩阵](./dsh-compatibility-rc2-results-2026-10-17.json)。运行环境为 macOS arm64、Node 24.18.0、pnpm 11.7.0；本轮未设置 `DSH_BROWSER_E2E`，不声称验证真实浏览器旅程。
+
 ## 元数据驱动的矩阵
 
 2026-10-10 起，Cordis、Schemastery 和配套运行时不再使用脚本里的手写版本表。`scripts/lib/metadata.mjs` 读取被测精确版本的已发布 `dependencies` / `peerDependencies`，只接受能唯一确定的 exact、caret 或 tilde。CI 用 `scripts/list-dsh-releases.mjs` 从同一份清单生成版本轴。`scripts/upgrade-dsh.mjs` 可以改当前 checkout 的 pin，但默认不改 peer 和支持清单；`--admit-candidate` 只给一次性探测使用。每周 upgrade workflow 和 `run-dsh-matrix.mjs --candidate` 都不会提交或发布。
