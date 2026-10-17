@@ -17,7 +17,7 @@ The official "Appearance" owns the mode, not the palette, while peer desktop too
 - **Absent when absent**: declares `platform:web`, with no dependency on Electron, Node client capabilities, or a Desktop provider, and no model tools or prompt content; with no theme chosen the UI is item-for-item identical to an uninstalled harness.
 - **Creation stays quiet**: the Theme Creator skill answers only the `/dsh-theme-creator` user gesture and stays out of the model catalog by default; the theme menu's "Create your own theme…" opens a Cordis session with the gesture prefilled (never auto-sent), and the result takes effect only after you confirm the import.
 
-Current released version: `v0.1.4`. The user-visible changes of each version live in the [CHANGELOG](./CHANGELOG.en.md); progress and release state live in the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
+Current release candidate: `v0.1.5` (not yet tagged or published); the latest published tag remains `v0.1.4`. The `dsh-theme.json` theme file format with import/export, Theme Creator, and DSH 0.2.1-alpha.3 through 0.2.1-rc.2 support are included in this candidate. The user-visible changes of each version live in the [CHANGELOG](./CHANGELOG.en.md); progress and release state live in the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
 
 ## Quick Start
 
@@ -36,7 +36,7 @@ Once it is up, open **Settings → General**: the "Themes" row sits between the 
 
 **Using the plugin**: a Web profile on one of the supported DSH releases — an exact match, not a range; the list lives under [DSH compatibility](#dsh-compatibility). `dsh plugin` handles the install; no local Node toolchain is needed.
 
-**Building from source / contributing**: Node.js `^22.19.0 || >=24`, pnpm `11.7.0` (enable via corepack); the dev-pinned DSH is `0.2.1-alpha.2`.
+**Building from source / contributing**: Node.js `^22.19.0 || >=24`, pnpm `11.7.0` (enable via corepack); the dev-pinned DSH is `0.2.1-rc.2`.
 
 **Platforms**: any environment that runs a supported DSH Web; DeepSeek Harness Desktop integrates this package as a built-in runtime plugin.
 
@@ -91,7 +91,7 @@ pnpm pack @dsh-electron/dsh-theme-studio
 dsh plugin --profile web add ./plugin.tgz
 ```
 
-You can also download `plugin.tgz` from the [GitHub Release assets](https://github.com/cherrchen/dsh-theme-studio/releases/download/v0.1.4/plugin.tgz). Also pre-built, handy for air-gapped or offline delivery.
+You can also download `plugin.tgz` from the [GitHub Release assets](https://github.com/cherrchen/dsh-theme-studio/releases/download/v0.1.5/plugin.tgz). Also pre-built, handy for air-gapped or offline delivery — available only once the matching Release assets exist.
 
 ### Install from GitHub
 
@@ -101,10 +101,10 @@ dsh plugin --profile web add github:cherrchen/dsh-theme-studio
 
 A GitHub install fetches source code and builds it automatically during `add` — no manual build needed — but `allowBuilds` has to name this package itself, as described above.
 
-Pinning a version (e.g. `#v0.1.4`) is recommended so a later push cannot silently change what actually runs:
+Pinning a version (e.g. `#v0.1.5`) is recommended so a later push cannot silently change what actually runs:
 
 ```sh
-dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.4
+dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.5
 ```
 
 ### Install from a local clone

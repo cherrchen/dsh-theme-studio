@@ -6,6 +6,8 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-10-17
+
 ### Added
 
 - Public `dsh-theme.json` v1 theme file format with a packaged JSON Schema (`schemas/dsh-theme.schema.json`): `palette` requires all 13 fields per scheme, optional sparse `overrides` layer over derived tokens; color values are limited to the contrast resolver's supported subset and an omitted `version` defaults to 1.
@@ -93,7 +95,8 @@ First public release of the theme overlay plugin for DSH Web and Desktop.
 - Persist the selected theme on the Host and adapt register/settingsScope and Config/configure/configForms across supported DSH releases; restart the Themes row after the settings service stops and is provided again.
 - Publish standalone Host and Client bundles, TypeScript declarations, and `cordis.patch.yml`, with an explicit DSH compatibility list.
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.1...v0.1.2

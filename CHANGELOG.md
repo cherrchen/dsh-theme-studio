@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-10-17
+
 ### Added
 
 - 公开 `dsh-theme.json` v1 主题文件格式并随包发布 JSON Schema（`schemas/dsh-theme.schema.json`）：`palette` 明暗各 13 字段必填，可选稀疏 `overrides` 叠加在派生 token 之上；色值限对比度 resolver 支持的子集，`version` 可省略默认为 1。
@@ -93,7 +95,8 @@
 - Host 侧持久化当前主题选择，并兼容受支持 DSH 版本间的 register/settingsScope 与 Config/configure/configForms 差异；设置服务停止重供后可重新启动主题行。
 - 发布 standalone Host、Client bundle、TypeScript 声明和 `cordis.patch.yml`，并声明精确的 DSH 兼容版本。
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.1...v0.1.2
