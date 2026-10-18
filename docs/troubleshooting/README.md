@@ -12,5 +12,6 @@ English: [README.en.md](./README.en.md)
 | [DSH 版本与安装树不一致](./unsupported-dsh-release.md) |
 | [对比度报告失败或 unknown](./contrast-report-fails.md) |
 | [构建、打包与发布失败](./build-and-release-failures.md) |
+| [旧宿主拒读新版写入的 Session 日志](./session-log-newer-harness.md) |
 
 [返回文档地图](../README.md)
