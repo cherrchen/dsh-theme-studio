@@ -12,5 +12,6 @@ Diagnose symptoms, causes, solutions, and verification using current code paths 
 | [Unsupported DSH or inconsistent installation](./unsupported-dsh-release.md) |
 | [Contrast failures and unknown results](./contrast-report-fails.md) |
 | [Build, package, and release failures](./build-and-release-failures.md) |
+| [Older hosts refuse session logs written by newer harnesses](./session-log-newer-harness.md) |
 
 [Documentation map](../README.en.md)

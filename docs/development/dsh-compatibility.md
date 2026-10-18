@@ -184,3 +184,7 @@ Themes 行改为与官方语言行同款的下拉选择器：selector 按钮（`
 | `plugins.bundle.config` | keyed slot 由 `ui-plugin-manager` 在 `slot-contract.ts` 声明，首个包含 tag 为 `dsh-v0.1.6-alpha.2`；该包本身也从 0.1.6-alpha.2 起才发布，更早版本既不声明该 slot 也无法安装该包 | `src/compat/plugin-manager-slot.ts` 本地镜像上游 `SlotMap` 条目（owner 结构逐字一致），Client 以 `ctx.slots.inject('plugins.bundle.config', …)` 惰性贡献 `CreatorConfigSection`（key 为包名）；slot 不声明时注册不挂载，宿主保持已存储或默认 `creatorAgentMode` |
 
 验证证据：开发基线 0.2.1-alpha.2 上 `compat:check`、lint、typecheck、build、全部单测通过（含新增 creator/validate-theme/row/CreatorConfigSection 覆盖）；`lib/validate-theme.js` 冒烟覆盖合法文件（exit 0）、格式拒绝（exit 1）与用法错误（exit 2）。本轮未重跑逐版本安装树矩阵——新增接缝全部落在可选服务与结构探测上，不改动既有必需路径；逐版本证据以下一次矩阵批次为准。真实 Cordis 会话中 skill 注入与 `/dsh-theme-creator` 手势的端到端旅程未在本机验证。
+
+## Session 日志的回读边界（2026-10-18）
+
+宿主持久化读路径拒绝解释包含未知必需事件的日志：`dsh-session-persistence` 的 `validateStoredEvents` 对不在 `KNOWN_SESSION_EVENT_TYPES` 且未标 `ignorable` 的事件直接拒绝。`0.2.1-alpha.3` 起写入方新增 `job/registered` / `job/settled` 两个必需事件（后台作业登记，agent 的 bash 调用即产生）；因此凡在 ≥ `0.2.1-alpha.3` 宿主上运行过这类作业的会话，回到 `0.2.1-alpha.2` 及更早版本（含 `0.2.0-rc.2`）打开时，历史加载以 `SESSION_QUERY_PERSISTENCE_FAILED` 失败。这是上游刻意的前向兼容防护，与本插件的支持声明无关——插件不读、不写 Session 日志，宿主该行为不受插件影响。症状与解法见 [troubleshooting 条目](../troubleshooting/session-log-newer-harness.md)。
