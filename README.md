@@ -181,6 +181,18 @@ Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均
 
 创作助手的可见性由 `creatorAgentMode` 控制（插件管理页中可切换，默认 `gesture`）：`gesture` 只响应用户手势、不进模型目录，`catalog` 同时允许模型路由，`off` 完全关闭并隐藏入口。
 
+### 手动创建主题（未发布）
+
+> 仅存在于当前 `feat/user-manul-design` 分支，尚未发布——npm 0.1.5 不包含此功能。
+
+主题菜单底部的 **手动创建主题…** 是独立于 `/dsh-theme-creator` AI 助手的创建入口，只在设置就绪时可用，不受创作助手模式与工作区状态影响：
+
+- 任选内置或已导入主题为基底，填写名称（id 自动生成，可手动修改或点「生成可用 ID」）、作者与描述；切换基底会重建整个草稿（含名称、ID 与 token 编辑）。
+- token 编辑区按前缀分组、默认收起，可按名称搜索；每个 token 提供浅色/深色两个输入，`var()`、`color-mix()` 等表达式按原文保存，基底中不可编辑的 token 原样保留。
+- 对比度诊断只提示不阻止保存；名称、ID、色值必须合法。序列化文本须同时满足 UTF-16 长度与 UTF-8 字节数均不超过 131072 的限制；超限提示最大贡献项。
+- **保存主题** 只新增不覆盖：id 冲突时提示改名或生成新 id；保存经 Host 接受后进入导入主题列表并自动预览，之后可在 **管理主题** 中导出为 `dsh-theme.json`。
+- 草稿保存在主题行的运行内存中：关闭对话框、等待写入或保存被拒后重开内容仍在；进程重启或行卸载后草稿丢失。不提供图形化即时预览，保存后通过预览/应用查看效果。
+
 ## 项目结构
 
 ```text
@@ -223,7 +235,7 @@ Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均
 
 ## 已知限制
 
-- 主题编辑器尚未实现：`dsh-theme.json` 导入/导出与 Theme Creator skill 已支持（见[文件格式](./docs/reference/theme-file-format.md)），改名/改色 UI 仍属规划，见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
+- 手动主题创建已在当前分支实现但未发布（npm 0.1.5 不含，见上文「手动创建主题（未发布）」）；就地编辑、图形化 token 预览与持久草稿仍属规划，见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
 - 对比度校验是诊断而非门禁：部分内置配色低于阈值，不自动修色也不阻止预览或应用；`pnpm contrast:report` 见[token 参考](./docs/reference/theme-tokens.md)。
 - 预览由悬停驱动：键盘聚焦菜单项不触发预览，可直接 Enter 应用。
 - 只读 catalog `ctx.themeStudio.catalog` 只在 Client 提供，含内置与导入主题、不含「默认」项；不提供 register API 或 Host RPC，导入分区随设置快照更新，契约见 [catalog 参考](./docs/reference/theme-catalog.md)。

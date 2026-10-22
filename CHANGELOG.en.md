@@ -6,6 +6,18 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- New **Create theme manually…** entry in the Themes menu (current branch, unreleased): a creation path independent of `/dsh-theme-creator`. Pick a builtin or imported base, edit every editable token's Light/Dark values (collapsed groups, name search, `var()`/`color-mix()` expressions kept verbatim), and save it as an append-only, never-overwriting imported theme that previews automatically once the Host accepts it and can be exported back.
+
+### Changed
+
+- The four public `ThemePreview` fields widened to `string | null`: imported-theme preview samples now resolve in the theme's own compiled token map instead of reusing other themes' colors.
+
+### Fixed
+
+- Imported themes' four-color Mosaic now resolves each sample in that theme's own compiled token map (including `var()`/`color-mix()` expressions); samples that cannot resolve to an opaque color render as a striped placeholder instead of a misleading color.
+
 ## [0.1.5] - 2026-10-17
 
 ### Added

@@ -2,9 +2,30 @@
 
 ## Status
 
-Active，2026-10-22。依据已接受的 [ADR-0011](../../decisions/ADR-0011-manual-theme-editor.md)，在当前 `feat/user-manul-design` 分支按下列顺序实施；尚未发布。
+Completed，2026-10-22。依据已接受的 [ADR-0011](../../decisions/ADR-0011-manual-theme-editor.md)，在 `feat/user-manul-design` 分支完成 Phase 0–4；尚未发布。
 
-进展（2026-10-22）：Phase 0–3 已实施，各阶段窄验证通过（docs:check、对应 vitest 套件、typecheck）。提交因环境署名要求与「不带署名」条件冲突暂缓，各阶段产物以 checkpoint patch 保存在仓库外，尚未形成 commit。
+## Implementation Evidence
+
+实施与复验均发生于 2026-10-22；先前保存在仓库外的阶段 checkpoint 已按以下顺序提交，未添加 Generator 或 Co-authored-by trailer。
+
+| 阶段 | 提交 | 内容与阶段验证 |
+| --- | --- | --- |
+| Phase 0 | `b52f0f7` | ADR、计划与双语索引；docs:check 通过 |
+| Phase 1 | `24c7975` | imported preview 独立解析及占位；4 个 spec 共 102 测试、typecheck、docs:check 通过 |
+| Phase 2 | `3d77375` | editor model、共享 id 校验与双口径大小检查；2 个 spec 共 54 测试、typecheck 通过 |
+| Phase 3 | `61abb7e` | dialog、菜单、Client 注入及 rework；最终 3 个 spec 共 68 测试、typecheck 通过 |
+| Phase 4 | 本计划归档所在提交 | 需求、架构、参考、双语 README/CHANGELOG、最终复验证据与计划归档 |
+
+## Final Verification
+
+环境：macOS arm64、Node v24.18.0、pnpm 11.7.0。
+
+- `pnpm verify:all` 完整通过：compat:check、lint、typecheck、build、全量单测（349 passed、1 个预期 legacy-provider skip）、token 审计、verify:package、smoke:theme、smoke:compose、docs:check。
+- `verify:package` 实际完成 tarball 内容检查、全新安装后 Host 入口加载、validator CLI 三种退出码（用法 2 / 非法 1 / 合法 0）；`smoke:theme` 的官方 ThemeRuntime 集成用例 25 项通过，`smoke:compose` 在隔离 web profile 中用真实 DSH CLI 安装 tarball 并确认官方 ui-theme 保留。
+- 初次联网运行因默认 npm 缓存写权限失败；改用临时可写 `npm_config_cache` 后完整重跑通过，没有修改本机缓存权限。
+- 兼容矩阵已完整通过 5 个版本：`0.1.5-rc.2`、`0.1.5-rc.3`、`0.1.6-alpha.1`、`0.1.6-alpha.2`、`0.2.1-alpha.3`；每版均包含隔离安装、兼容检查、lint、typecheck、build、test、docs、token 审计、tarball 与官方 runtime/CLI profile 冒烟。其余矩阵任务按用户 2026-10-22 的后续指示停止，不能视为十七版本矩阵通过。逐命令结果及未完成版本见[本轮证据](../../development/dsh-compatibility-manual-editor-results-2026-10-22.json)。
+- 按用户 2026-10-22 的后续指示，真实浏览器验证暂缓。此前尝试曾遇到 Chromium 安装未完成及 macOS 沙箱启动限制，后一次浏览器旅程在用户指示时停止；均不计为浏览器通过。未完成真实浏览器中的手动编辑、持久化、导出回导及视觉检查；Linux/Windows 验证亦未运行。
+- 归档后再次执行 docs:check 与 git diff --check；不推送、不发布。
 
 ## Goal
 
@@ -14,7 +35,7 @@ Active，2026-10-22。依据已接受的 [ADR-0011](../../decisions/ADR-0011-man
 
 技术评审已决定保留 palette+overrides 模型、仅新建不覆盖、手动入口不依赖 AI 能力、草稿仅存内存。需求细节及替代方案由 ADR-0011 负责，本计划只维护实施顺序、设计接缝与验收证据。
 
-## Current State
+## Current State（实施前基线）
 
 - `theme-file.ts` 已提供严格对象校验、编译、序列化和去重；id 校验目前为私有函数，需共享而不复制规则。
 - `compileThemeFile` 的 preview 仍从 palette 四字段生成，不能反映 overrides，需先独立修正。

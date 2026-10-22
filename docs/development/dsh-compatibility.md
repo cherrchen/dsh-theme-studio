@@ -188,3 +188,9 @@ Themes 行改为与官方语言行同款的下拉选择器：selector 按钮（`
 ## Session 日志的回读边界（2026-10-18）
 
 宿主持久化读路径拒绝解释包含未知必需事件的日志：`dsh-session-persistence` 的 `validateStoredEvents` 对不在 `KNOWN_SESSION_EVENT_TYPES` 且未标 `ignorable` 的事件直接拒绝。`0.2.1-alpha.3` 起写入方新增 `job/registered` / `job/settled` 两个必需事件（后台作业登记，agent 的 bash 调用即产生）；因此凡在 ≥ `0.2.1-alpha.3` 宿主上运行过这类作业的会话，回到 `0.2.1-alpha.2` 及更早版本（含 `0.2.0-rc.2`）打开时，历史加载以 `SESSION_QUERY_PERSISTENCE_FAILED` 失败。这是上游刻意的前向兼容防护，与本插件的支持声明无关——插件不读、不写 Session 日志，宿主该行为不受插件影响。症状与解法见 [troubleshooting 条目](../troubleshooting/session-log-newer-harness.md)。
+
+## 手动主题编辑器复验（2026-10-22）
+
+在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，当前开发基线 `0.2.1-rc.2` 的 `pnpm verify:all` 完整通过（349 passed、1 个预期 legacy-provider skip），包含全新 tarball 安装、校验器、官方 ThemeRuntime 与真实 CLI web profile 冒烟。默认 npm 缓存写权限失败后，改用临时可写缓存重跑通过，未改变开发 pin 或支持清单。
+
+隔离矩阵已完整通过 `0.1.5-rc.2`、`0.1.5-rc.3`、`0.1.6-alpha.1`、`0.1.6-alpha.2`、`0.2.1-alpha.3`，逐命令结果和未完成版本见[本轮矩阵证据](./dsh-compatibility-manual-editor-results-2026-10-22.json)。剩余矩阵与真实浏览器验证按用户后续指示暂缓，已停止任务；不声称全十七版本或浏览器通过，亦未运行 Linux/Windows 验证。实施提交及本轮范围见[已完成计划](../plans/completed/2026-10-22-manual-theme-editor.md)。

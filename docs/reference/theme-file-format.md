@@ -79,6 +79,12 @@ Current，v1。本文是主题文件格式的唯一真源；解析器实现见 [
 - 存储的原始文件对象位于 `theme-studio.importedThemes`（见[设置契约](./settings-and-package-contract.md)），Host schema 只做宽松结构校验；严格解析在 Client，无法读取的条目被跳过并计入 `droppedImports`。
 - 导出的文件名是 `<id>.dsh-theme.json`；导入主题原样回写其存储文件，内置主题导出时 id 改写为 `user.<短名>` 以便回导。
 
+## 手动创建（当前分支，未发布）
+
+[手动编辑器](../decisions/ADR-0011-manual-theme-editor.md) 仍生成 v1 的 palette+overrides：palette 复制基底，面内修改写对称差异，面外已有 overrides 保留。不新增格式版本或 durable 字段，保存只追加到既有 `importedThemes`，占用 id 不覆盖。
+
+保存前先按导出格式序列化；文本 UTF-16 长度和 UTF-8 字节数均须不超过 `THEME_FILE_MAX_LENGTH`（131072）。这分别覆盖 `parseThemeFile` 的字符限制和 file picker 的 `File.size` 限制；仅通过对象形状校验不足以保证导出可回导。草稿、逐字段校验与验收见[需求](../requirements/theme-studio.md)。
+
 ## 命令行校验器
 
 `lib/validate-theme.js` 随包发布（第三构建入口，在 `files` 清单内但不在 `exports` 中，以文件路径取用），供 Theme Creator skill 与用户手工校验使用：

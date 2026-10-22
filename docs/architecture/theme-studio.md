@@ -2,7 +2,7 @@
 
 ## Background
 
-Current，2026-10-15 更新 Theme Creator 与 `creatorAgentMode`。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，计划中的主题编辑器不属于已实现组件。
+Current，2026-10-22 更新手动主题编辑器（当前分支，未发布）。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，实施和验证状态见[编辑器计划](../plans/completed/2026-10-22-manual-theme-editor.md)。
 
 ## Goals and Non-goals
 
@@ -32,6 +32,9 @@ flowchart TD
   Catalog --> Contrast[纯 sRGB 对比度校验]
   Row --> FileIO[theme-file / theme-import / download]
   FileIO --> Runtime
+  Row --> Editor[ThemeEditorDialog / row 内存草稿]
+  Editor --> Model[theme-editor 校验与差异 source]
+  Model --> FileIO
   Row --> UW[uiWorkspace.startSession 能力门控]
   UW --> Session[Cordis 会话 预填 /dsh-theme-creator]
 ```
@@ -50,6 +53,8 @@ flowchart TD
 | `client/catalog.ts` | `BuiltinPresetRegistry` 冻结静态分区；`ThemeStudioRegistry` 复合 imported 分区、快照、订阅与回写源 | 注册/编辑第三方主题 |
 | `client/theme-file.ts` | `dsh-theme.json` v1 解析/校验/编译/序列化、存储条目解析、id 冲突生成 | Host 持久化、对比度计算 |
 | `client/theme-import.ts`、`download.ts` | 导入决策/持久化/预览编排、Blob 下载 | 文件系统访问、UI 组件 |
+| `client/theme-editor.ts` | 基底快照、动态编辑面、slug、对称 diff、面外保留、序列化大小与候选校验 | DOM、设置写入、新持久字段 |
+| `ThemeEditorDialog.tsx` | 受控草稿、基底选择、分组/搜索、逐字段错误和对比度摘要 | 就地覆盖、图形预览、持久草稿 |
 | `client/adapter.ts` | per-scheme map → per-token light/dark 值对 | 对比度认证、公共文件 schema |
 | `client/font-boundary.ts` | 安装 overlay 前去掉官方字体变量 | 字体设置 UI、字号和字体列表写入 |
 | `client/runtime.ts` | active/preview、Host adoption、双字段写队列、imported 分区同步、状态与监听器 | CSS 呈现 |
@@ -68,6 +73,8 @@ flowchart TD
 
 内置 Palette 含 13 个人工字段。`tokens()` 将其映射为基本 token 并与 `deriveChrome()` 合并，随后 preset 工厂冻结配色、preview 与源 `palette`（导出 `dsh-theme.json` 的真源）。catalog 构造时再做防御性复制，确保传入列表后续变更不影响 runtime。adapter 确认两种模式 token 键相同且值为字符串，转成 `ThemeTokenOverrides`。导入主题经 `compileThemeFile` 走同一 `deriveChrome` 路径：13 字段 palette 展开后叠加 `overrides` 稀疏 token。
 
+imported 的四色样本从各 scheme 的完整编译 map 解析，不再直接读 palette。展示转换复用 sRGB resolver、只在输出颜色时舍入；无法独立求值的样本为 `ThemePreview` 的 `null`，Mosaic 显示斜纹占位，绝不交给当前页面解析 `var()`。这不改变对比度精度，也不改变 builtin 工厂。
+
 ```text
 Official Light / Dark / System
         ↓
@@ -85,6 +92,12 @@ ThemeSnapshot → ThemePresenter → DOM
 Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`；registry 的 imported 分区替换同样触发 store 的 `setCards` 投影。槽位注入组件时绑定 actions 并立即同步当前快照。下拉交互调用 runtime facade：悬停以整个 `menuitem` 行为单位——document 级 `mouseover`/`mouseout` 委托解析指针所在行，带 `data-ts-theme` 标记的行内任一位置（含 padding 与图标间隙）都走 previewTheme；落到无标记的行（footer 动作）、分隔线、组标签或菜单外，以及菜单关闭、选中 footer 动作都走 cancelPreview，选中主题走 activateTheme/restoreDefault。Apply 乐观更新 active 层并异步调用 Host.set。写入队列按 `{field, value}` 串行：`activeThemeId` 与 `importedThemes` 各自合并未发出的值且互不阻塞；进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行与创作助手控件显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
 
 导入数据流：隐藏 file input 读文件 → `inspectThemeFile` 校验并附对比度摘要（计入在途写入的 id 冲突）→ Modal 确认（重复 id 时先经三选对话框）→ `saveImportedTheme` 以 `editableImportedSources()` 为合并基准写入 `importedThemes`（在途请求优先，否则 accepted 原始数组，无法解析的条目逐字保留）→ Host 采纳后 imported 分区替换 → `previewWhenImported` 等待 runtime 结算并核对 accepted 源文件后，对更新过的 id 触发 transient preview。确认前会按 catalog 与在途写入重查 id：已过期仍判冲突则回到三选对话框，`append` 兜底走 keep-both 改名，不写持久重复 id。导出走 `sourceOf` 原样回写（imported）或 `themeFileForPreset` 重建（builtin，id 改写为 `user.` 前缀）。删除激活的导入主题不写 `activeThemeId`——由 adoption 期的 unknown-id 修复回落 Default。
+
+### 手动创建
+
+Themes footer 的手动入口仅受 settings ready 门控，不读 AI 能力。row 保存草稿，对话框只展示/更新受控状态；`createEditorDraft` 经 Client 注入读取 catalog 基底及经校验的 source，`editorTakenIds` 合并 catalog 与 runtime 最新 editable 原始数组的 id。UI 不直接读取 Cordis 服务，runtime/store/catalog 无新增编辑职责。
+
+token 初值保持编译字符串；`theme-editor` 保留 palette，以纯派生 map 作 diff 基准并保留面外 overrides。提交前重查 id、序列化检查两个上限、整体校验，继而复用 `saveImportedTheme(source, 'append')` → Host accepted snapshot → imported 分区/card 投影 → `previewWhenImported`。关闭请求窗口不代表保存成功；草稿不自动清空，拒绝后可重开重试，进程/row 生命周期结束才丢失。切换基底重建整个草稿；本阶段没有 replace 分支、实时 overlay 或新增 durable 字段。
 
 ### Theme Creator
 

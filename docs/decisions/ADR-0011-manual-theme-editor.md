@@ -98,3 +98,7 @@ Accepted（2026-10-21 初稿；同日经两轮技术评审修订及最终复核�
 ## Related Documents
 
 [dsh-theme.json 文件格式](../reference/theme-file-format.md)、[token 目录](../reference/theme-tokens.md)、[设置与包契约](../reference/settings-and-package-contract.md)、[ADR-0005](./ADR-0005-derived-chrome-and-static-white.md)（派生 chrome 与保留白）、[ADR-0006](./ADR-0006-contrast-diagnostics-scope.md)（对比度仅诊断）、[ADR-0009](./ADR-0009-dynamic-imported-theme-catalog.md)（imported 分区语义）、[ADR-0010](./ADR-0010-theme-creator-runtime-skill.md)（既有 skill 创作路径）、[路线图](../plans/active/2026-10-02-theme-studio-roadmap.md)。
+
+## Implementation Status
+
+2026-10-22：本 ADR 的方案已按 [实施计划](../plans/completed/2026-10-22-manual-theme-editor.md) Phase 0–4 落地于 `feat/user-manul-design` 分支，并按计划拆分提交。完整 `pnpm verify:all` 已通过；具体命令、兼容矩阵和验证边界见该计划。剩余矩阵与真实浏览器验证按用户后续指示暂缓，尚未发布。历史决策文本保持不变。

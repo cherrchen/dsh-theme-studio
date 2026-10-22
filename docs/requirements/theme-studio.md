@@ -2,7 +2,7 @@
 
 ## Status
 
-Current，2026-10-02 依据当前实现与提交历史追溯整理。本文记录已经实施的行为和明确延后的方向，不假定存在未提供的原始 PRD。
+Current，2026-10-02 依据当前实现与提交历史追溯整理；2026-10-22 增补 ADR-0011 手动创建功能（当前分支，未发布）。本文记录已经实施的行为和明确延后的方向，不假定存在未提供的原始 PRD。
 
 ## Background
 
@@ -19,10 +19,11 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 7. 提供公开的 `dsh-theme.json` 文件格式，支持导入、导出、管理与持久化用户主题。
 8. 保持独立构建、公开声明、可打包发布与受测版本兼容契约。
 9. 提供可选的 Theme Creator 能力：经用户手势唤起 skill 产出主题文件，默认不进入模型目录。
+10. 提供独立于 AI 能力的手动创建表单，以现有主题为基底生成同格式的新主题。
 
 ## Non-goals
 
-当前不提供第三方主题注册 API、主题编辑器、远程主题库或网络拉取。不新增模型工具、不改写系统提示、不替代官方 ThemePresenter；Theme Creator 的产出仍需用户经现有导入流程确认后才进入 durable settings，skill 自身不安装 overlay、不写设置。不为本包添加 Electron、preload、Desktop provider、Node 客户端能力或文件/网络授权——导入导出仅通过浏览器 file picker 与 Blob 下载完成，`lib/validate-theme.js` 是由用户在会话中显式运行的校验工具而非插件运行时能力。后续方向在[路线图](../plans/active/2026-10-02-theme-studio-roadmap.md)维护，未设定发布版本或交付日期。
+当前不提供第三方主题注册 API、主题就地编辑、编辑器内实时 overlay/图形预览、持久草稿、远程主题库或网络拉取。不新增模型工具、不改写系统提示、不替代官方 ThemePresenter；Theme Creator 的产出仍需用户经现有导入流程确认后才进入 durable settings，skill 自身不安装 overlay、不写设置。不为本包添加 Electron、preload、Desktop provider、Node 客户端能力或文件/网络授权——导入导出仅通过浏览器 file picker 与 Blob 下载完成，`lib/validate-theme.js` 是由用户在会话中显式运行的校验工具而非插件运行时能力。后续方向在[路线图](../plans/active/2026-10-02-theme-studio-roadmap.md)维护，未设定发布版本或交付日期。
 
 ## Functional Requirements
 
@@ -55,6 +56,13 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 | F25 | `lib/validate-theme.js` 输出结构化 JSON：格式失败含错误码，合法文件附对比度报告；用法错误退出 2，校验未过退出 1 | `validate-theme.spec.ts` 正反例与构建产物冒烟 |
 | F26 | 菜单 footer 在 `creatorAgentMode !== 'off'` 时提供「创建自己的主题」；`startSession` 两参签名可用时打开 Cordis 会话并预填 `/dsh-theme-creator `（不自动发送），否则弹出本地化手动输入提示 | `ThemeStudioRow.spec.tsx` 门控与降级测试 |
 | F27 | 插件管理页（`plugins.bundle.config`）以 Menu 选择器写入 `creatorAgentMode`，控件样式与官方设置行一致；settings 离开 `ready` 时控件禁用、菜单收起且回到 `ready` 不自动重开，写入被拒时在选择器旁显示可本地化的保存失败；无该 slot 的宿主（0.1.5、0.1.6-alpha.1）保持已存储或默认档位 | `CreatorConfigSection.spec.tsx` 测试 |
+| F28 | 「手动创建主题…」独立于 skill，仅在 settings ready 时可用；基底任选内置或已导入主题，保存仅新建 | `ThemeStudioRow.spec.tsx`、`apply.client.spec.ts` |
+| F29 | 编辑面从 preset 编译键集派生（当前每 scheme 145 个），按前缀折叠、懒渲染并可搜索；两侧字段有可见明暗标签、错误关联及定位 | `theme-editor.spec.ts`、`ThemeEditorDialog.spec.tsx`、CSS 编译测试 |
+| F30 | palette 原样拷贝；以不含 overrides 的派生 token 为差异基准，任一侧变化写入对称键；面外 overrides 原样保留，仅改名复制保持两侧完整 token map 等价 | `theme-editor.spec.ts` |
+| F31 | name 必填；id 自动 slug/去重且可手改，复用完整 id 校验；输入与确认均查 catalog/在途写入，占用只改名或返回编辑，不提供覆盖 | editor、dialog、Row 与 Client 注入测试 |
+| F32 | 色值按 `checkColorSyntax` 校验并保留表达式原文；保存前序列化检查 UTF-16 长度与 UTF-8 字节上限，再整体回环校验；错误阻塞并指向可编辑字段或全局来源 | editor 的边界、中文多字节、回导测试与 dialog 错误定位测试 |
+| F33 | 草稿由 row 内存持有，关闭、在途写入与 Host 拒绝后重开保留；settings 非 ready 禁止保存；对比度摘要仅诊断，failed/unknown 不阻塞 | dialog、Row 重试旅程与 Client 拒绝采纳测试 |
+| F34 | imported 色块从各 scheme 的完整编译 token map 解析为独立颜色；无法求值或需 backdrop 的透明值用 `null` 占位，不受当前页面变量影响、不阻止使用 | `theme-file.spec.ts`、`contrast.spec.ts`、Row 占位测试 |
 
 ## Non-functional Requirements
 

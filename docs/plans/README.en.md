@@ -7,7 +7,7 @@ The roadmap owns progress and release state; completed plans preserve scope, imp
 | Document |
 | --- |
 | [Roadmap and progress ledger](./active/2026-10-02-theme-studio-roadmap.md) |
-| [Manual theme editor Phase 1](./active/2026-10-22-manual-theme-editor.md) |
+| [Manual theme editor Phase 1](./completed/2026-10-22-manual-theme-editor.md) |
 | [Stage 1 overlays and settings UI](./completed/2026-08-26-stage-1-theme-overlays.md) |
 | [DSH migration, settings repair, and first release](./completed/2026-09-25-dsh-settings-and-compatibility.md) |
 | [Official plugin registration](./completed/2026-09-27-official-plugin-registration.md) |
