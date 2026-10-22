@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { baseAliasTokens, deriveChrome } from '../../src/client/chrome-tokens.ts'
 import { BUILTIN_PRESETS } from '../../src/client/presets.ts'
 import {
-  checkThemeEditorSize, createThemeEditorDraft, editorTokenGroups, editorTokenNames, themeEditorId,
-  validateThemeEditor, type ThemeEditorDraft,
+  checkThemeEditorSize, createThemeEditorDraft, editorTokenCategories, editorTokenGroups, editorTokenNames,
+  themeEditorId, validateThemeEditor, type ThemeEditorDraft,
 } from '../../src/client/theme-editor.ts'
+import { en, zh, type ThemeStudioKey } from '../../src/client/locales.ts'
 import {
   compileThemeFile, parseThemeFile, serializeThemeFile, validateThemeFileData, THEME_FILE_MAX_LENGTH,
   type DshThemeFile,
@@ -56,6 +57,30 @@ describe('editor token surface', () => {
     }
     expect(groups.map(group => group.prefix)).toContain('--dsw-alias-')
     expect(groups.map(group => group.prefix)).toContain('--shiki-token-')
+  })
+
+  it('exposes a two-level category tree covering each editable token exactly once', () => {
+    const categories = editorTokenCategories()
+    expect(categories.map(cat => cat.prefix)).toEqual([
+      '--dsw-alias', '--dsw-specific', '--dsw-static', '--shiki-token', '--dsw-focus', '--dsw-menu',
+    ])
+    const flat = categories.flatMap(cat => cat.groups.flatMap(group => group.tokens))
+    expect(new Set(flat)).toEqual(new Set(editorTokenNames()))
+    expect(flat).toHaveLength(editorTokenNames().length)
+    for (const cat of categories) {
+      for (const group of cat.groups) {
+        expect(group.tokens.length).toBeGreaterThan(0)
+        for (const token of group.tokens) expect(token.startsWith(group.prefix)).toBe(true)
+      }
+    }
+  })
+
+  it('provides a bilingual usage note for every editable token', () => {
+    for (const name of editorTokenNames()) {
+      const key = `token.${name}` as ThemeStudioKey
+      expect(zh[key]?.trim().length).toBeGreaterThan(0)
+      expect(en[key]?.trim().length).toBeGreaterThan(0)
+    }
   })
 })
 

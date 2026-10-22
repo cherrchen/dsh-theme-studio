@@ -2,7 +2,7 @@
 
 ## Background
 
-Current，2026-10-22 更新手动主题编辑器（当前分支，未发布）。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，实施和验证状态见[编辑器计划](../plans/completed/2026-10-22-manual-theme-editor.md)。
+Current，2026-10-22 更新手动主题编辑器与其两栏界面重设计（当前分支，未发布）。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，实施和验证状态见[编辑器计划](../plans/completed/2026-10-22-manual-theme-editor.md)。
 
 ## Goals and Non-goals
 
@@ -54,7 +54,7 @@ flowchart TD
 | `client/theme-file.ts` | `dsh-theme.json` v1 解析/校验/编译/序列化、存储条目解析、id 冲突生成 | Host 持久化、对比度计算 |
 | `client/theme-import.ts`、`download.ts` | 导入决策/持久化/预览编排、Blob 下载 | 文件系统访问、UI 组件 |
 | `client/theme-editor.ts` | 基底快照、动态编辑面、slug、对称 diff、面外保留、序列化大小与候选校验 | DOM、设置写入、新持久字段 |
-| `ThemeEditorDialog.tsx` | 受控草稿、基底选择、分组/搜索、逐字段错误和对比度摘要 | 就地覆盖、图形预览、持久草稿 |
+| `ThemeEditorDialog.tsx`、`ColorValueField.tsx`、`token-descriptions.ts` | 受控草稿、基底选择、两栏布局与顶部通栏摘要、两级分类/搜索、逐字段错误；字面色/表达式双模式色值输入（色块、调色板、`color-mix` 拼装）；逐 token 双语用途说明 | 就地覆盖、整主题实时预览、持久草稿 |
 | `client/adapter.ts` | per-scheme map → per-token light/dark 值对 | 对比度认证、公共文件 schema |
 | `client/font-boundary.ts` | 安装 overlay 前去掉官方字体变量 | 字体设置 UI、字号和字体列表写入 |
 | `client/runtime.ts` | active/preview、Host adoption、双字段写队列、imported 分区同步、状态与监听器 | CSS 呈现 |
@@ -98,6 +98,8 @@ Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `syn
 Themes footer 的手动入口仅受 settings ready 门控，不读 AI 能力。row 保存草稿，对话框只展示/更新受控状态；`createEditorDraft` 经 Client 注入读取 catalog 基底及经校验的 source，`editorTakenIds` 合并 catalog 与 runtime 最新 editable 原始数组的 id。UI 不直接读取 Cordis 服务，runtime/store/catalog 无新增编辑职责。
 
 token 初值保持编译字符串；`theme-editor` 保留 palette，以纯派生 map 作 diff 基准并保留面外 overrides。提交前重查 id、序列化检查两个上限、整体校验，继而复用 `saveImportedTheme(source, 'append')` → Host accepted snapshot → imported 分区/card 投影 → `previewWhenImported`。关闭请求窗口不代表保存成功；草稿不自动清空，拒绝后可重开重试，进程/row 生命周期结束才丢失。切换基底重建整个草稿；本阶段没有 replace 分支、实时 overlay 或新增 durable 字段。
+
+对话框界面为左右两栏：左栏基底与元信息，右栏独立滚动的 token 面板，窄屏退回单栏；顶部通栏集中渲染校验错误（点击定位字段）与对比度摘要。token 面板由两级过滤驱动——一级类别（如 `--dsw-alias`）单选决定族，二级分组多选（`Menu` 的 `selectedIds`，含全选/清空）决定展示哪些组；组头折叠、懒渲染输入，搜索在选中组内过滤。每个 token 名下显示本地化用途说明，`token-descriptions.ts` 的双语表并入 locales 字典（`token.--…` 键）。色值字段由 `ColorValueField` 统一渲染：按当前值自动分派字面色/表达式模式并可手动切换；字面色给内嵌色块与调色板 popover（基底 palette 解析色 + 标准色、`input[type=color]` 取色与 hex 预览，经 `useAnchoredPosition`/`MenuSurface` 锚定并 portal）；表达式保留原文编辑，色块按当前草稿同 scheme 完整 token map 解析、不可求值用斜纹占位，附结构化 `color-mix(in srgb, A P%, B)` 拼装器，拼装或取色写回才改写草稿，未触碰的表达式保存原文。
 
 ### Theme Creator
 

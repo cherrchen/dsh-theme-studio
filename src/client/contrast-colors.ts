@@ -185,6 +185,48 @@ export function resolvePreviewColor(value: string, tokens: Tokens): string | nul
   }
 }
 
+/**
+ * Display-only resolution for editor swatches: same sRGB subset as
+ * {@link resolvePreviewColor}, but keeps alpha so translucent values paint
+ * honestly (over a checkerboard) instead of collapsing to "unknown".
+ */
+export function resolveCssColor(value: string, tokens: Tokens): string | null {
+  try {
+    const color = resolve(value, tokens)
+    const channel = (n: number): number => Math.round(n * 255)
+    const alpha = Math.round(color.a * 1000) / 1000
+    return `rgba(${channel(color.r)}, ${channel(color.g)}, ${channel(color.b)}, ${alpha})`
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Parse the flat `color-mix(in srgb, A P%, B)` shape the editor's mix builder
+ * writes. Returns null for anything else (unweighted stops, weights on B,
+ * non-srgb) so the builder only rewrites values it fully represents.
+ */
+export function parseColorMix(value: string): { color: string; percent: number; withColor: string } | null {
+  const body = /^color-mix\((.*)\)$/i.exec(value.trim())?.[1]
+  if (body === undefined) return null
+  let args: string[]
+  try {
+    args = split(body)
+  } catch {
+    return null
+  }
+  if (args.length !== 3 || args[0]?.toLowerCase() !== 'in srgb') return null
+  const weight = /\s+([\d.]+)%$/.exec(args[1]!)
+  if (!weight) return null
+  const percent = Number.parseFloat(weight[1]!)
+  if (!Number.isFinite(percent) || percent < 0 || percent > 100) return null
+  if (/\s+[\d.]+%$/.test(args[2]!)) return null
+  const color = args[1]!.slice(0, weight.index).trim()
+  const withColor = args[2]!.trim()
+  if (color === '' || withColor === '') return null
+  return { color, percent, withColor }
+}
+
 function over(front: Color, back: Color): Color {
   const a = front.a + back.a * (1 - front.a)
   const component = (key: 'r' | 'g' | 'b'): number => a === 0 ? 0

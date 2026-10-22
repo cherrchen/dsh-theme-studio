@@ -191,20 +191,104 @@
 }
 
 .editorDialog.editorDialog {
-  width: min(760px, 100%);
+  width: min(1100px, 100%);
   max-height: 100%;
 }
 
 .editorBody {
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
-.editorFields {
+/* Pin the banner and give each column its own scroll: the primitive's body
+ * wrapper is the last div inside .content, so it must shrink to the dialog. */
+.editorBody > div:last-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.editorShell {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.editorBanner {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 34%;
+  overflow-y: auto;
+}
+
+.editorColumns {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+.editorMeta {
+  flex: 0 0 272px;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 16px;
+  border-right: 0.5px solid var(--dsw-alias-border-l2);
+}
+
+.editorPanel {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editorToolbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.editorDropdown {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 10px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-1);
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-primary);
+  cursor: pointer;
+}
+
+.editorDropdown:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.editorDropdownName {
+  min-width: 0;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .editorBody :focus-visible {
@@ -253,6 +337,11 @@
   color: var(--dsw-alias-label-primary);
 }
 
+.editorSearch {
+  flex: 1;
+  min-width: 120px;
+}
+
 .editorErrors {
   display: flex;
   flex-direction: column;
@@ -279,7 +368,8 @@
 }
 
 .editorScroll {
-  max-height: 320px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -316,10 +406,19 @@
 }
 
 .tokenRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 6px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+}
+
+.tokenHead {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
 .tokenName {
@@ -327,7 +426,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 11px;
-  color: var(--dsw-alias-label-caption);
+  color: var(--dsw-alias-label-secondary);
+}
+
+.tokenDesc {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-dimmed);
+}
+
+.tokenFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
 }
 
 .tokenValue {
@@ -354,8 +465,227 @@
   color: var(--dsw-alias-label-primary);
 }
 
-@media (max-width: 600px) {
-  .tokenRow {
+.colorField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.colorRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.colorRow > input {
+  flex: 1;
+}
+
+/* Checkerboard base so translucent previews stay honest; the fill span
+ * paints the resolved color and the hatched span marks unresolvable ones. */
+.colorSwatch {
+  flex: none;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  overflow: hidden;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: 3px;
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #b8b8b8 25%, transparent 25%),
+    linear-gradient(-45deg, #b8b8b8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #b8b8b8 75%),
+    linear-gradient(-45deg, transparent 75%, #b8b8b8 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+
+.swatchFill,
+.swatchUnknown {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.swatchUnknown {
+  background: repeating-linear-gradient(45deg, #ffffff 0 2px, #000000 2px 4px);
+}
+
+.colorMode,
+.colorAction {
+  flex: none;
+  padding: 2px 6px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 10px;
+  line-height: 16px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.colorMode:hover,
+.colorAction:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.colorMode:disabled,
+.colorAction:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mixBuilder {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.mixField,
+.mixPercent {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mixField {
+  flex: 1 1 130px;
+}
+
+.mixPercent {
+  flex: none;
+}
+
+.mixLabel {
+  flex: none;
+  font-size: 10px;
+  color: var(--dsw-alias-label-caption);
+}
+
+.mixField input {
+  flex: 1;
+  min-width: 56px;
+  font: inherit;
+  font-size: 11px;
+  padding: 2px 4px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+}
+
+.mixPercent input {
+  width: 56px;
+  font: inherit;
+  font-size: 11px;
+  padding: 2px 4px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+}
+
+.mixTransparent {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.palettePop {
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 244px;
+  padding: 10px;
+}
+
+.palettePreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.paletteValue {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.palettePicker {
+  width: 100%;
+  height: 28px;
+  padding: 0 2px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+.paletteGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.paletteChip {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  overflow: hidden;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #b8b8b8 25%, transparent 25%),
+    linear-gradient(-45deg, #b8b8b8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #b8b8b8 75%),
+    linear-gradient(-45deg, transparent 75%, #b8b8b8 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+
+.paletteChip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .editorColumns {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .editorMeta {
+    flex: none;
+    max-height: 40%;
+    padding-right: 0;
+    border-right: none;
+    border-bottom: 0.5px solid var(--dsw-alias-border-l2);
+    padding-bottom: 10px;
+  }
+
+  .tokenFields {
     grid-template-columns: minmax(0, 1fr);
   }
 

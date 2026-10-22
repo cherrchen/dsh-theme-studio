@@ -1,5 +1,7 @@
 /** `settings.theme-studio` namespace dictionaries for the Themes row. */
 
+import { TOKEN_DESCRIPTIONS_EN, TOKEN_DESCRIPTIONS_ZH } from './token-descriptions.ts'
+
 export const NS = 'settings.theme-studio'
 
 /** Simplified Chinese dictionary (the key-set source of truth). */
@@ -95,6 +97,26 @@ export const zh = {
   'editor.error.idTaken': '主题 ID 已被占用：{detail}。请改名或生成新 ID。',
   'editor.error.tooLarge': '主题文件整体过大，最大贡献项：{detail}。请精简后重试。',
   'editor.emptySearch': '没有匹配的 token。',
+  'editor.meta': '主题信息',
+  'editor.tokens': 'Token 设计',
+  'editor.category': '分类',
+  'editor.groupsSelected': '已选 {selected}/{total} 组',
+  'editor.groupsEmpty': '未选择分组',
+  'editor.selectAll': '全选',
+  'editor.selectNone': '清空',
+  'editor.color.swatch': '颜色预览',
+  'editor.color.noPreview': '无法预览此颜色',
+  'editor.color.palette': '调色板',
+  'editor.color.mode.literal': '色值',
+  'editor.color.mode.expression': '表达式',
+  'editor.color.mode.switch': '切换输入方式',
+  'editor.color.build': '拼装 color-mix',
+  'editor.mix.color': '颜色',
+  'editor.mix.with': '混合目标',
+  'editor.mix.percent': '占比 %',
+  'editor.mix.transparent': '透明',
+  'editor.mix.apply': '应用',
+  ...TOKEN_DESCRIPTIONS_ZH,
 } satisfies Record<string, string>
 
 /** The settings.theme-studio namespace key union. */
@@ -193,6 +215,26 @@ export const en = {
   'editor.error.idTaken': 'The theme id is taken: {detail}. Rename it or generate a new id.',
   'editor.error.tooLarge': 'The theme file is too large overall (largest contribution: {detail}). Reduce the content and try again.',
   'editor.emptySearch': 'No matching tokens.',
+  'editor.meta': 'Theme info',
+  'editor.tokens': 'Token design',
+  'editor.category': 'Category',
+  'editor.groupsSelected': '{selected}/{total} groups',
+  'editor.groupsEmpty': 'No groups selected',
+  'editor.selectAll': 'Select all',
+  'editor.selectNone': 'Clear',
+  'editor.color.swatch': 'Color preview',
+  'editor.color.noPreview': 'Cannot preview this color',
+  'editor.color.palette': 'Palette',
+  'editor.color.mode.literal': 'Color',
+  'editor.color.mode.expression': 'Expr',
+  'editor.color.mode.switch': 'Switch input mode',
+  'editor.color.build': 'Build color-mix',
+  'editor.mix.color': 'Color',
+  'editor.mix.with': 'Mix with',
+  'editor.mix.percent': 'Percent %',
+  'editor.mix.transparent': 'Transparent',
+  'editor.mix.apply': 'Apply',
+  ...TOKEN_DESCRIPTIONS_EN,
 } satisfies Record<ThemeStudioKey, string>
 
 /**

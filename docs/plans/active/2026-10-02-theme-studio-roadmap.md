@@ -47,7 +47,7 @@ runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化（
 
 | 方向 | 开始前需解决的契约 | 验收要求 |
 | --- | --- | --- |
-| 主题编辑器 Phase 2+（就地编辑、图形化 token 预览/样张、持久草稿等） | Phase 1 手动创建表单已由 [completed 计划](../completed/2026-10-22-manual-theme-editor.md) 完成（ADR-0011）；后续阶段需另行评估激活中主题重装、preview API 与草稿持久化契约 | 不回退 palette+overrides 模型；编辑结果可导出回导 |
+| 主题编辑器 Phase 2+（就地编辑、持久草稿等） | Phase 1 手动创建表单已由 [completed 计划](../completed/2026-10-22-manual-theme-editor.md) 完成（ADR-0011）；当前分支已实现编辑器界面重设计——两栏布局、顶部通栏摘要、两级分类过滤、逐 token 双语说明与字面色/表达式色值输入组件（未发布，并入 Phase 1 未发布批次）；就地编辑、激活中主题重装与草稿持久化仍需另行评估 | 不回退 palette+overrides 模型；编辑结果可导出回导 |
 | 配色可读性改进 | 对标 palette 身份、具体语义配对、视觉影响与变更范围 | 用实际报告和真实 UI 决定修正，不默认把所有品牌色都当普通文本 |
 | 设置写入错误呈现 | 已在 0.2.1 兼容批次实现：accepted snapshot 回收敛，并显示可重试的保存失败 | 不再作为未实施项 |
 | 明暗 Mosaic 与真实 UI 验证 | 色块跟随模式、浏览器场景、实际 backdrop、跨平台宿主 | 截图、真实 profile 磁盘旅程、unload/reload 与可访问性测试 |

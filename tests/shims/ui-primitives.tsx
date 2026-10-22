@@ -4,7 +4,7 @@
  * package cannot load under vitest; per-branch adapter coverage lives in
  * tests/client/menu-icons.spec.tsx through module mocks.
  */
-import { useEffect, useRef, type ReactNode } from 'react'
+import { forwardRef, useEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react'
 
 /** MenuItem-like row the row passes to Menu. */
 interface ShimMenuItem {
@@ -30,6 +30,7 @@ interface ShimMenuProps {
   items?: readonly ShimMenuEntry[]
   footer?: readonly ShimMenuEntry[]
   selectedId?: string
+  selectedIds?: readonly string[]
   onSelect?: (id: string) => void
   onClose?: () => void
   align?: string
@@ -47,26 +48,28 @@ function isStructural(entry: ShimMenuEntry): entry is ShimMenuStructural {
   return (entry as ShimMenuStructural).type === 'separator' || (entry as ShimMenuStructural).type === 'label'
 }
 
-function MenuRow({ entry, selectedId, onSelect }: {
+function MenuRow({ entry, selectedId, selectedIds, onSelect }: {
   entry: ShimMenuEntry
   selectedId?: string
+  selectedIds?: readonly string[]
   onSelect?: (id: string) => void
 }) {
   if (isStructural(entry)) {
     if (entry.type === 'separator') return <hr key={entry.id} role="separator" />
     return <div role="presentation" data-menu-label>{entry.text}</div>
   }
+  const selected = entry.id === selectedId || selectedIds?.includes(entry.id) === true
   return (
     <button
       type="button"
       role="menuitem"
       disabled={entry.disabled === true}
-      aria-selected={entry.id === selectedId}
+      aria-selected={selected}
       onClick={() => onSelect?.(entry.id)}
     >
       {entry.icon}
       {entry.label}
-      {entry.id === selectedId ? <span aria-hidden="true" data-check /> : null}
+      {selected ? <span aria-hidden="true" data-check /> : null}
     </button>
   )
 }
@@ -76,7 +79,7 @@ function MenuRow({ entry, selectedId, onSelect }: {
  * Mirrors the close paths the row relies on — pointerdown outside the
  * anchor/list subtree and Escape both call onClose.
  */
-export function Menu({ open, anchor, items = [], footer = [], selectedId, onSelect, onClose }: ShimMenuProps) {
+export function Menu({ open, anchor, items = [], footer = [], selectedId, selectedIds, onSelect, onClose }: ShimMenuProps) {
   const rootRef = useRef<HTMLSpanElement>(null)
   useEffect(() => {
     if (!open || onClose === undefined) return
@@ -101,7 +104,7 @@ export function Menu({ open, anchor, items = [], footer = [], selectedId, onSele
       {open ? (
         <div role="menu">
           {items.map(entry => (
-            <MenuRow key={entry.id} entry={entry} selectedId={selectedId} onSelect={onSelect} />
+            <MenuRow key={entry.id} entry={entry} selectedId={selectedId} selectedIds={selectedIds} onSelect={onSelect} />
           ))}
           {footer.length > 0 ? (
             <div data-menu-footer>
@@ -161,6 +164,57 @@ export function Modal({ open, onClose, title, children, footer }: {
       {footer !== undefined && footer !== null ? <div data-modal-footer>{footer}</div> : null}
     </div>
   )
+}
+
+/**
+ * MenuSurface contract double: a plain div forwarding ref and div props;
+ * the real surface's portal backing has no test-visible behavior.
+ */
+export const MenuSurface = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  function MenuSurface(props, ref) {
+    return <div ref={ref} {...props} />
+  },
+)
+
+/**
+ * useAnchoredPosition contract double: jsdom cannot measure an anchor, so the
+ * shim reports a stable origin position while open like the real hook would
+ * after its first measured frame.
+ */
+export function useAnchoredPosition(options: {
+  open: boolean
+  anchorRef: RefObject<HTMLElement | null>
+  panelRef: RefObject<HTMLElement | null>
+  side?: string
+  align?: string
+  gap: number
+  margin: number
+}): CSSProperties | null {
+  return options.open ? { top: 0, left: 0 } : null
+}
+
+/**
+ * useDismissOnOutsidePointer contract double: same outside-pointerdown
+ * close the real hook performs, counting the portaled panel as inside.
+ */
+export function useDismissOnOutsidePointer(
+  root: RefObject<HTMLElement | null>,
+  open: boolean,
+  setOpen: (open: boolean) => void,
+  portal?: RefObject<HTMLElement | null>,
+): void {
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (event: Event) => {
+      const target = event.target
+      if (!(target instanceof Node)) return
+      if (root.current?.contains(target) === true) return
+      if (portal?.current?.contains(target) === true) return
+      setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => { document.removeEventListener('pointerdown', onPointerDown) }
+  }, [root, open, setOpen, portal])
 }
 
 /** IconChevronDownOutlineRegular look-alike carrying the native artwork. */

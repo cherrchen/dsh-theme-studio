@@ -59,6 +59,50 @@ export function editorTokenGroups(): readonly { prefix: string; tokens: readonly
   return [...groups.entries()].map(([prefix, tokens]) => Object.freeze({ prefix, tokens: Object.freeze(tokens) }))
 }
 
+export interface EditorTokenGroup {
+  /** Three-segment prefix, shown with a trailing dash when every member extends it. */
+  readonly prefix: string
+  readonly display: string
+  readonly tokens: readonly string[]
+}
+
+export interface EditorTokenCategory {
+  /** Two-segment family prefix such as `--dsw-alias`. */
+  readonly prefix: string
+  readonly groups: readonly EditorTokenGroup[]
+}
+
+/** Category order shown in the editor; families not listed keep declaration order after these. */
+const CATEGORY_ORDER: readonly string[] = ['--dsw-alias', '--dsw-specific', '--dsw-static', '--shiki-token']
+
+export function editorTokenCategories(): readonly EditorTokenCategory[] {
+  const categories = new Map<string, Map<string, string[]>>()
+  for (const name of SURFACE_TOKENS) {
+    const segments = name.split('-').filter(segment => segment !== '')
+    const category = `--${segments.slice(0, 2).join('-')}`
+    const group = `--${segments.slice(0, 3).join('-')}`
+    let groups = categories.get(category)
+    if (groups === undefined) categories.set(category, groups = new Map())
+    const bucket = groups.get(group)
+    if (bucket === undefined) groups.set(group, [name])
+    else bucket.push(name)
+  }
+  const rank = (prefix: string): number => {
+    const index = CATEGORY_ORDER.indexOf(prefix)
+    return index === -1 ? CATEGORY_ORDER.length : index
+  }
+  return [...categories.entries()]
+    .sort(([a], [b]) => rank(a) - rank(b))
+    .map(([prefix, groups]) => Object.freeze({
+      prefix,
+      groups: Object.freeze([...groups.entries()].map(([group, tokens]) => Object.freeze({
+        prefix: group,
+        display: tokens.every(token => token.startsWith(`${group}-`)) ? `${group}-` : group,
+        tokens: Object.freeze(tokens),
+      }))),
+    }))
+}
+
 export function themeEditorId(name: string, existing: ReadonlySet<string>): string {
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
   const base = `${USER_THEME_ID_PREFIX}${slug === '' ? 'theme' : slug}`.slice(0, 64)

@@ -33,7 +33,7 @@ describe('Theme Studio CSS module injection', () => {
     const css = result.code.toString()
     expect(classes.editorDialog).toMatch(/_editorDialog$/)
     expect(css).toContain(classes.editorDialog)
-    expect(css).toContain('min(760px')
+    expect(css).toContain('min(1100px')
     expect(css).toContain('overflow-y:auto')
     expect(css).toContain(classes.row)
     expect(css).not.toContain('.module.css')

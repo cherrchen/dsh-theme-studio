@@ -671,7 +671,7 @@ describe('ThemeStudioRow', () => {
     fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Drafty' } })
     fireEvent.change(within(dialog).getByLabelText('Theme ID'), { target: { value: 'user.drafty-x' } })
     fireEvent.change(within(dialog).getByLabelText('Description'), { target: { value: 'Still mine' } })
-    fireEvent.click(within(dialog).getByRole('button', { name: /^--dsw-alias-/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /^--dsw-alias-bg- \(15\)/ }))
     fireEvent.change(within(dialog).getByLabelText('Light: --dsw-alias-bg-base'), { target: { value: '#000011' } })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save theme' }))
     expect(b.saveImportedTheme).toHaveBeenCalledOnce()
