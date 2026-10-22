@@ -106,7 +106,7 @@ function describeValue(value: unknown): string {
   return Array.isArray(value) ? 'array' : 'object'
 }
 
-function readId(value: unknown): ThemeFileError | null {
+export function readId(value: unknown): ThemeFileError | null {
   if (typeof value !== 'string' || !ID_PATTERN.test(value)) {
     return { code: 'invalid-id', path: 'id', detail: describeValue(value) }
   }
