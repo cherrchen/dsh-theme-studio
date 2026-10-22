@@ -5,7 +5,7 @@
  */
 import type {} from '../compat/plugin-manager-slot.ts'
 import { useEffect, useState } from 'react'
-import { Menu } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import { ChevronDownIcon } from '../compat/menu-icons.tsx'
 import { CREATOR_AGENT_MODES, type CreatorAgentMode } from '../constants.ts'
@@ -58,9 +58,8 @@ export function CreatorConfigSection({ view, t, useStore, setCreatorMode }: Crea
         align="start"
         portal
         anchor={(
-          <button
-            type="button"
-            className={css.selector}
+          <Button
+            className={css.selector ?? ''}
             disabled={disabled}
             aria-haspopup="menu"
             aria-expanded={expanded}
@@ -70,7 +69,7 @@ export function CreatorConfigSection({ view, t, useStore, setCreatorMode }: Crea
               {ready ? t(`creator.label.${creatorMode}`) : t(`creator.${settingsStatus}`)}
             </span>
             <ChevronDownIcon className={css.chevron} />
-          </button>
+          </Button>
         )}
       />
       {saveError ? <p className={css.alert} role="alert">{t('status.saveFailed')}</p> : null}

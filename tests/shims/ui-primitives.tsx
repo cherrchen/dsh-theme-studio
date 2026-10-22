@@ -119,19 +119,52 @@ export function Menu({ open, anchor, items = [], footer = [], selectedId, select
   )
 }
 
-/** Button contract double: a plain button honoring disabled and className. */
-export function Button({ children, onClick, disabled, variant, size, className }: {
-  children?: ReactNode
-  onClick?: () => void
-  disabled?: boolean
+/**
+ * Button contract double: a plain button forwarding ref and the rest of the
+ * native attributes (aria, id, title) the real component passes through.
+ */
+export const Button = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: string
   size?: string
+  icon?: ReactNode
+}>(function Button({ variant, size, icon, ...rest }, ref) {
+  return (
+    <button ref={ref} type="button" data-variant={variant} data-size={size} {...rest}>
+      {icon}
+      {rest.children}
+    </button>
+  )
+})
+
+/**
+ * Input contract double: the real wrap > input structure, so className lands
+ * on the wrapper while native attributes and the ref reach the input.
+ */
+export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & {
+  icon?: ReactNode
+}>(function Input({ icon, className, ...rest }, ref) {
+  return (
+    <span className={className}>
+      {icon}
+      <input ref={ref} {...rest} />
+    </span>
+  )
+})
+
+/** Checkbox contract double: same label > input + span structure. */
+export function Checkbox({ checked, onChange, label, disabled, title, className }: {
+  checked: boolean
+  onChange: (next: boolean) => void
+  label: string
+  disabled?: boolean
+  title?: string
   className?: string
 }) {
   return (
-    <button type="button" disabled={disabled === true} data-variant={variant} data-size={size} className={className} onClick={onClick}>
-      {children}
-    </button>
+    <label className={className} title={title}>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={event => onChange(event.target.checked)} />
+      <span>{label}</span>
+    </label>
   )
 }
 

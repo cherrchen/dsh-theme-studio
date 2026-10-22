@@ -319,15 +319,37 @@
   align-items: center;
 }
 
-.editorIdRow input {
+.editorIdInput {
   flex: 1;
   min-width: 0;
 }
 
-.editorField input,
-.editorField select,
-.editorField textarea,
-.editorSearch {
+/* The base-theme dropdown anchor keeps the same bordered control chrome the
+ * metadata fields had as a native select. */
+.editorSelect {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 32px;
+  font: inherit;
+  font-size: 13px;
+  padding: 0 8px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.editorSelect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editorField textarea {
   font: inherit;
   font-size: 13px;
   padding: 4px 8px;
@@ -479,8 +501,9 @@
   min-width: 0;
 }
 
-.colorRow > input {
+.colorInput {
   flex: 1;
+  min-width: 0;
 }
 
 /* Checkerboard base so translucent previews stay honest; the fill span
@@ -514,30 +537,8 @@
   background: repeating-linear-gradient(45deg, #ffffff 0 2px, #000000 2px 4px);
 }
 
-.colorMode,
-.colorAction {
+.colorRow > button {
   flex: none;
-  padding: 2px 6px;
-  border: 0.5px solid var(--dsw-alias-border-l2);
-  border-radius: var(--dsw-radius-xs, 4px);
-  background: var(--dsw-alias-bg-layer-1);
-  color: var(--dsw-alias-label-secondary);
-  font: inherit;
-  font-size: 10px;
-  line-height: 16px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.colorMode:hover,
-.colorAction:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
-}
-
-.colorMode:disabled,
-.colorAction:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .mixBuilder {
@@ -573,27 +574,23 @@
   color: var(--dsw-alias-label-caption);
 }
 
-.mixField input {
+.mixInput {
   flex: 1;
   min-width: 56px;
-  font: inherit;
-  font-size: 11px;
-  padding: 2px 4px;
-  border: 0.5px solid var(--dsw-alias-border-l2);
-  border-radius: var(--dsw-radius-xs, 4px);
-  background: var(--dsw-alias-bg-layer-1);
-  color: var(--dsw-alias-label-primary);
+  height: 24px;
+  padding: 0 6px;
 }
 
-.mixPercent input {
+.mixPercentInput {
   width: 56px;
-  font: inherit;
+  flex: none;
+  height: 24px;
+  padding: 0 6px;
+}
+
+.mixInput input,
+.mixPercentInput input {
   font-size: 11px;
-  padding: 2px 4px;
-  border: 0.5px solid var(--dsw-alias-border-l2);
-  border-radius: var(--dsw-radius-xs, 4px);
-  background: var(--dsw-alias-bg-layer-1);
-  color: var(--dsw-alias-label-primary);
 }
 
 .mixTransparent {

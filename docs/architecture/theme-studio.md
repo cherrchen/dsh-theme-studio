@@ -46,7 +46,7 @@ flowchart TD
 | `src/index.ts`、`settings.ts` | Host 注册/Config、导出 schema 与默认值 | UI、浏览器服务、主题呈现 |
 | `compat/settings-host.ts` | register/configure 能力探测、volatile 适配、`{section, dispose}` 附件 | 版本字符串驱动分支 |
 | `compat/settings-client.ts` | 两种 transport 的最小结构契约 | 独立 RPC 协议 |
-| `compat/menu-icons.tsx` | ui-primitives 下拉箭头图标探测与本地回退 | 版本字符串分支 |
+| `compat/menu-icons.tsx`、`compat/ui-atoms.tsx` | ui-primitives 版本差异的结构探测与本地回退（chevron 图标、`MenuSurface`、`Checkbox`——后两者 0.1.7 才发布） | 版本字符串分支 |
 | `creator/`、`validate-theme.ts` | skill 正文、按 accepted 快照的 register/dispose watcher、校验器纯报告与 CLI 接线 | overlay、设置写入、模型工具 |
 | `client/index.ts` | provider、字典、槽位、runtime/store 组装与启停 | durable authority |
 | `client/presets.ts`、`chrome-tokens.ts` | 八套明暗配色、源 palette 保留与派生语义 token | 修改官方 stylesheets |
@@ -99,7 +99,7 @@ Themes footer 的手动入口仅受 settings ready 门控，不读 AI 能力。r
 
 token 初值保持编译字符串；`theme-editor` 保留 palette，以纯派生 map 作 diff 基准并保留面外 overrides。提交前重查 id、序列化检查两个上限、整体校验，继而复用 `saveImportedTheme(source, 'append')` → Host accepted snapshot → imported 分区/card 投影 → `previewWhenImported`。关闭请求窗口不代表保存成功；草稿不自动清空，拒绝后可重开重试，进程/row 生命周期结束才丢失。切换基底重建整个草稿；本阶段没有 replace 分支、实时 overlay 或新增 durable 字段。
 
-对话框界面为左右两栏：左栏基底与元信息，右栏独立滚动的 token 面板，窄屏退回单栏；顶部通栏集中渲染校验错误（点击定位字段）与对比度摘要。token 面板由两级过滤驱动——一级类别（如 `--dsw-alias`）单选决定族，二级分组多选（`Menu` 的 `selectedIds`，含全选/清空）决定展示哪些组；组头折叠、懒渲染输入，搜索在选中组内过滤。每个 token 名下显示本地化用途说明，`token-descriptions.ts` 的双语表并入 locales 字典（`token.--…` 键）。色值字段由 `ColorValueField` 统一渲染：按当前值自动分派字面色/表达式模式并可手动切换；字面色给内嵌色块与调色板 popover（基底 palette 解析色 + 标准色、`input[type=color]` 取色与 hex 预览，经 `useAnchoredPosition`/`MenuSurface` 锚定并 portal）；表达式保留原文编辑，色块按当前草稿同 scheme 完整 token map 解析、不可求值用斜纹占位，附结构化 `color-mix(in srgb, A P%, B)` 拼装器，拼装或取色写回才改写草稿，未触碰的表达式保存原文。
+对话框界面为左右两栏：左栏基底与元信息，右栏独立滚动的 token 面板，窄屏退回单栏；顶部通栏集中渲染校验错误（点击定位字段）与对比度摘要。通用控件复用 ui-primitives——`Input` 承载全部单行文本/搜索/数值框，`Button` 承载动作与下拉锚点，`Menu` 承载基底选择与两级过滤，`Checkbox`/`MenuSurface` 经 `compat/ui-atoms.tsx` 在缺少导出的宿主上回退；`textarea`、色卡、调色板取色器与文件输入等无对应原语的自绘件保持原生。token 面板由两级过滤驱动——一级类别（如 `--dsw-alias`）单选决定族，二级分组多选（`Menu` 的 `selectedIds`，含全选/清空）决定展示哪些组；组头折叠、懒渲染输入，搜索在选中组内过滤。每个 token 名下显示本地化用途说明，`token-descriptions.ts` 的双语表并入 locales 字典（`token.--…` 键）。色值字段由 `ColorValueField` 统一渲染：按当前值自动分派字面色/表达式模式并可手动切换；字面色给内嵌色块与调色板 popover（基底 palette 解析色 + 标准色、`input[type=color]` 取色与 hex 预览，经 `useAnchoredPosition`/`MenuSurface` 锚定并 portal）；表达式保留原文编辑，色块按当前草稿同 scheme 完整 token map 解析、不可求值用斜纹占位，附结构化 `color-mix(in srgb, A P%, B)` 拼装器，拼装或取色写回才改写草稿，未触碰的表达式保存原文。
 
 ### Theme Creator
 

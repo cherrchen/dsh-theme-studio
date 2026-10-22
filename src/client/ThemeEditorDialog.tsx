@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Menu, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, Input, Menu, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import { ChevronDownIcon } from '../compat/menu-icons.tsx'
 import { formatLocale, type ThemeStudioKey } from './locales.ts'
@@ -44,6 +44,7 @@ export function ThemeEditorDialog({
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(
     () => new Set(categories[0]?.groups[0] === undefined ? [] : [categories[0].groups[0].prefix]),
   )
+  const [baseOpen, setBaseOpen] = useState(false)
   const [catOpen, setCatOpen] = useState(false)
   const [grpOpen, setGrpOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -192,6 +193,12 @@ export function ThemeEditorDialog({
     { id: ACTION_ALL, label: t('editor.selectAll') },
     { id: ACTION_NONE, label: t('editor.selectNone') },
   ]
+  const baseItems: MenuEntry[] = draft === null ? [] : [
+    ...(bases.some(base => base.id === draft.baseId)
+      ? []
+      : [{ id: draft.baseId, label: draft.base.name, disabled: true }]),
+    ...bases.map(base => ({ id: base.id, label: base.name })),
+  ]
 
   return (
     <Modal
@@ -252,25 +259,37 @@ export function ThemeEditorDialog({
             <div className={css.editorMeta}>
               <div className={css.editorField}>
                 <label className={css.editorLabel} htmlFor="ts-editor-base">{t('editor.base')}</label>
-                <select
-                  id="ts-editor-base"
-                  disabled={!settingsReady}
-                  value={draft.baseId}
-                  onChange={(event) => {
-                    const next = createDraft(event.target.value)
+                <Menu
+                  open={baseOpen}
+                  onClose={() => { setBaseOpen(false) }}
+                  items={baseItems}
+                  selectedId={draft.baseId}
+                  onSelect={(id) => {
+                    const next = createDraft(id)
                     if (next !== undefined) update(next)
+                    setBaseOpen(false)
                   }}
-                >
-                  {bases.some(base => base.id === draft.baseId) ? null : (
-                    <option value={draft.baseId} disabled>{draft.base.name}</option>
+                  align="start"
+                  portal
+                  anchor={(
+                    <Button
+                      id="ts-editor-base"
+                      className={css.editorSelect ?? ''}
+                      disabled={!settingsReady}
+                      aria-haspopup="menu"
+                      aria-expanded={baseOpen}
+                      onClick={() => { setBaseOpen(open => !open) }}
+                    >
+                      <span className={css.editorDropdownName}>{draft.base.name}</span>
+                      <ChevronDownIcon className={css.chevron} />
+                    </Button>
                   )}
-                  {bases.map(base => <option key={base.id} value={base.id}>{base.name}</option>)}
-                </select>
+                />
                 <p className={css.editorHelp}>{t('editor.baseHelp')}</p>
               </div>
               <div className={css.editorField}>
                 <label className={css.editorLabel} htmlFor="ts-editor-name">{t('editor.name')}</label>
-                <input
+                <Input
                   id="ts-editor-name"
                   ref={registerField('name')}
                   value={draft.name}
@@ -291,9 +310,10 @@ export function ThemeEditorDialog({
               <div className={css.editorField}>
                 <label className={css.editorLabel} htmlFor="ts-editor-id">{t('editor.id')}</label>
                 <div className={css.editorIdRow}>
-                  <input
+                  <Input
                     id="ts-editor-id"
                     ref={registerField('id')}
+                    className={css.editorIdInput ?? ''}
                     value={draft.id}
                     disabled={!settingsReady}
                     aria-invalid={invalid.has('id') || undefined}
@@ -317,7 +337,7 @@ export function ThemeEditorDialog({
               </div>
               <div className={css.editorField}>
                 <label className={css.editorLabel} htmlFor="ts-editor-author">{t('editor.author')}</label>
-                <input
+                <Input
                   id="ts-editor-author"
                   ref={registerField('author')}
                   value={draft.author}
@@ -355,9 +375,8 @@ export function ThemeEditorDialog({
                   align="start"
                   portal
                   anchor={(
-                    <button
-                      type="button"
-                      className={css.editorDropdown}
+                    <Button
+                      className={css.editorDropdown ?? ''}
                       aria-haspopup="menu"
                       aria-expanded={catOpen}
                       aria-label={t('editor.category')}
@@ -365,7 +384,7 @@ export function ThemeEditorDialog({
                     >
                       <span className={css.editorDropdownName}>{activeCategory?.prefix}</span>
                       <ChevronDownIcon className={css.chevron} />
-                    </button>
+                    </Button>
                   )}
                 />
                 <Menu
@@ -386,9 +405,8 @@ export function ThemeEditorDialog({
                   align="start"
                   portal
                   anchor={(
-                    <button
-                      type="button"
-                      className={css.editorDropdown}
+                    <Button
+                      className={css.editorDropdown ?? ''}
                       aria-haspopup="menu"
                       aria-expanded={grpOpen}
                       onClick={() => { setGrpOpen(open => !open) }}
@@ -399,12 +417,12 @@ export function ThemeEditorDialog({
                           : formatLocale(t('editor.groupsSelected'), { selected: checked.size, total: activeCategory?.groups.length ?? 0 })}
                       </span>
                       <ChevronDownIcon className={css.chevron} />
-                    </button>
+                    </Button>
                   )}
                 />
-                <input
+                <Input
                   type="search"
-                  className={css.editorSearch}
+                  className={css.editorSearch ?? ''}
                   value={search}
                   aria-label={t('editor.search')}
                   placeholder={t('editor.search')}

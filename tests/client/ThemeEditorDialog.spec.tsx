@@ -222,8 +222,8 @@ describe('ThemeEditorDialog', () => {
   it('resets the draft when the base changes', () => {
     const b = mountDialog()
     fireEvent.change(nameInput(), { target: { value: 'Edited' } })
-    const select = within(dialog()).getByLabelText('Base theme')
-    fireEvent.change(select, { target: { value: 'dsh-theme-studio.nordic' } })
+    fireEvent.click(within(dialog()).getByLabelText('Base theme'))
+    fireEvent.click(within(dialog()).getByRole('menuitem', { name: 'Nordic' }))
     expect(b.draft().baseId).toBe('dsh-theme-studio.nordic')
     expect(nameInput().value).toBe('')
     expandGroup('--dsw-alias-bg-')
@@ -231,14 +231,17 @@ describe('ThemeEditorDialog', () => {
       .toBe(BUILTIN_PRESETS.find(p => p.id === 'dsh-theme-studio.nordic')!.tokens.light['--dsw-alias-bg-base'])
   })
 
-  it('keeps a removed base selectable as a disabled verbatim option', () => {
+  it('keeps a removed base shown as a disabled verbatim option', () => {
     const draft = { ...oceanDraft(), baseId: 'user.gone' }
     mountDialog({ draft, bases: BASES })
-    const select = within(dialog()).getByLabelText('Base theme') as HTMLSelectElement
-    const option = [...select.options].find(entry => entry.value === 'user.gone')!
-    expect(option.disabled).toBe(true)
-    expect(option.textContent).toBe('Ocean')
-    expect(select.value).toBe('user.gone')
+    const anchor = within(dialog()).getByLabelText('Base theme')
+    expect(anchor.textContent).toContain('Ocean')
+    fireEvent.click(anchor)
+    const oceans = within(dialog()).getAllByRole('menuitem', { name: 'Ocean' })
+    const verbatim = oceans.find(item => item.getAttribute('disabled') !== null)!
+    expect(verbatim).toBeDefined()
+    expect(verbatim.getAttribute('aria-selected')).toBe('true')
+    expect(oceans).toHaveLength(2)
   })
 
   it('reports unknown contrast pairs without blocking save', () => {

@@ -291,9 +291,8 @@ export function ThemeStudioRow({
         portal
         closeOnPointerLeave
         anchor={(
-          <button
-            type="button"
-            className={css.selector}
+          <Button
+            className={css.selector ?? ''}
             aria-haspopup="menu"
             aria-expanded={open}
             onClick={() => {
@@ -306,7 +305,7 @@ export function ThemeStudioRow({
             <Mosaic preview={activeCard?.preview.light ?? DEFAULT_PREVIEW.light} />
             <span className={css.selectorName} title={activeName}>{activeName}</span>
             <ChevronDownIcon className={css.chevron} />
-          </button>
+          </Button>
         )}
       />
       <div className={css.live} role="status" aria-live="polite">

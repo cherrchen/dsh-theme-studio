@@ -8,7 +8,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { MenuSurface, useAnchoredPosition, useDismissOnOutsidePointer } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, Input, useAnchoredPosition, useDismissOnOutsidePointer } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Checkbox, MenuSurface } from '../compat/ui-atoms.tsx'
 import { parseColorMix, resolveCssColor, resolvePreviewColor } from './contrast-colors.ts'
 import { type ThemeStudioKey } from './locales.ts'
 import css from './ThemeStudioRow.module.css'
@@ -132,8 +133,9 @@ export function ColorValueField({
     <div className={css.colorField} ref={root}>
       <div className={css.colorRow}>
         <Swatch resolved={resolved} t={t} />
-        <input
+        <Input
           ref={inputRef}
+          className={css.colorInput ?? ''}
           value={value}
           aria-label={`${schemeLabel}: ${token}`}
           aria-invalid={invalid || undefined}
@@ -141,39 +143,39 @@ export function ColorValueField({
           disabled={disabled}
           onChange={event => onChange(event.target.value)}
         />
-        <button
-          type="button"
-          className={css.colorMode}
+        <Button
+          variant="outline"
+          size="sm"
           title={t('editor.color.mode.switch')}
           aria-label={`${t('editor.color.mode.switch')}: ${schemeLabel}: ${token}`}
           disabled={disabled}
           onClick={switchMode}
         >
           {t(mode === 'literal' ? 'editor.color.mode.literal' : 'editor.color.mode.expression')}
-        </button>
+        </Button>
         {mode === 'literal' ? (
-          <button
+          <Button
             ref={anchor}
-            type="button"
-            className={css.colorAction}
+            variant="outline"
+            size="sm"
             aria-label={`${t('editor.color.palette')}: ${schemeLabel}: ${token}`}
             aria-expanded={paletteOpen}
             disabled={disabled}
             onClick={() => { setPaletteOpen(open => !open) }}
           >
             {t('editor.color.palette')}
-          </button>
+          </Button>
         ) : (
-          <button
-            type="button"
-            className={css.colorAction}
+          <Button
+            variant="outline"
+            size="sm"
             aria-label={`${t('editor.color.build')}: ${schemeLabel}: ${token}`}
             aria-expanded={buildOpen}
             disabled={disabled}
             onClick={toggleBuilder}
           >
             {t('editor.color.build')}
-          </button>
+          </Button>
         )}
       </div>
       {mode === 'expression' && buildOpen ? (
@@ -181,7 +183,8 @@ export function ColorValueField({
           <label className={css.mixField}>
             <span className={css.mixLabel}>{t('editor.mix.color')}</span>
             <Swatch resolved={mixColorResolved} t={t} />
-            <input
+            <Input
+              className={css.mixInput ?? ''}
               value={mix.color}
               aria-label={`${t('editor.mix.color')}: ${schemeLabel}: ${token}`}
               disabled={disabled}
@@ -190,10 +193,11 @@ export function ColorValueField({
           </label>
           <label className={css.mixPercent}>
             <span className={css.mixLabel}>{t('editor.mix.percent')}</span>
-            <input
+            <Input
               type="number"
               min={0}
               max={100}
+              className={css.mixPercentInput ?? ''}
               value={mix.percent}
               aria-label={`${t('editor.mix.percent')}: ${schemeLabel}: ${token}`}
               disabled={disabled}
@@ -203,32 +207,31 @@ export function ColorValueField({
           <label className={css.mixField}>
             <span className={css.mixLabel}>{t('editor.mix.with')}</span>
             <Swatch resolved={mixWithResolved} t={t} />
-            <input
+            <Input
+              className={css.mixInput ?? ''}
               value={mix.withColor}
               aria-label={`${t('editor.mix.with')}: ${schemeLabel}: ${token}`}
               disabled={disabled}
               onChange={event => setMix(current => ({ ...current, withColor: event.target.value }))}
             />
           </label>
-          <label className={css.mixTransparent}>
-            <input
-              type="checkbox"
-              checked={mixTransparent}
-              disabled={disabled}
-              onChange={event => {
-                setMix(current => ({ ...current, withColor: event.target.checked ? 'transparent' : '#ffffff' }))
-              }}
-            />
-            {t('editor.mix.transparent')}
-          </label>
-          <button
-            type="button"
-            className={css.colorAction}
+          <Checkbox
+            className={css.mixTransparent ?? ''}
+            checked={mixTransparent}
+            disabled={disabled}
+            label={t('editor.mix.transparent')}
+            onChange={(next) => {
+              setMix(current => ({ ...current, withColor: next ? 'transparent' : '#ffffff' }))
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
             disabled={disabled}
             onClick={applyMix}
           >
             {t('editor.mix.apply')}
-          </button>
+          </Button>
         </div>
       ) : null}
       {paletteOpen ? createPortal(
