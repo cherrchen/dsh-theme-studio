@@ -29,6 +29,7 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 | `dsh-theme.json` v1 与主题导入/导出、复合 catalog | Completed，本分支实现 | v0.1.5 | [导入导出](../completed/2026-10-14-theme-file-import-export.md)、[文件格式](../../reference/theme-file-format.md) |
 | Theme Creator：运行时 skill + `creatorAgentMode` + 一键跳转 + 校验器 | Completed，本分支实现 | v0.1.5 | [ADR-0010](../../decisions/ADR-0010-theme-creator-runtime-skill.md)、[设置契约](../../reference/settings-and-package-contract.md) |
 | DSH 0.2.1-alpha.3 至 0.2.1-rc.2 支持 | Completed，PR #10/#12 | v0.1.5；远端跨平台结果由 PR CI 与 Release verify 提供 | [兼容矩阵](../../development/dsh-compatibility.md) |
+| 手动主题编辑器 Phase 1 | Active，实施中 | 未发布 | [实施计划](./2026-10-22-manual-theme-editor.md)、[ADR-0011](../../decisions/ADR-0011-manual-theme-editor.md) |
 
 “发布状态”以 tag 与远端产物为准：v0.1.4 于 2026-10-11 打 tag、发布 GitHub Release 并推上 npm（`@dsh-electron/dsh-theme-studio@0.1.4`），Stage 2/3、文档补齐与兼容/发布改进均纳入其中；v0.1.5 于 2026-10-17 打 tag、发布 GitHub Release 并推上 npm `latest`（`@dsh-electron/dsh-theme-studio@0.1.5`），主题文件格式、Theme Creator 与 DSH 0.2.1 新版支持纳入其中。每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
 
@@ -46,7 +47,7 @@ runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化（
 
 | 方向 | 开始前需解决的契约 | 验收要求 |
 | --- | --- | --- |
-| 主题编辑器 | `dsh-theme.json` 之上新增改名/改色 UI 的契约与持久化路径 | 不回退 palette+overrides 模型；编辑结果可导出回导 |
+| 主题编辑器 Phase 2+（就地编辑、图形化 token 预览/样张、持久草稿等） | Phase 1 手动创建表单已由 [active 计划](./2026-10-22-manual-theme-editor.md) 承接（ADR-0011）；后续阶段需另行评估激活中主题重装、preview API 与草稿持久化契约 | 不回退 palette+overrides 模型；编辑结果可导出回导 |
 | 配色可读性改进 | 对标 palette 身份、具体语义配对、视觉影响与变更范围 | 用实际报告和真实 UI 决定修正，不默认把所有品牌色都当普通文本 |
 | 设置写入错误呈现 | 已在 0.2.1 兼容批次实现：accepted snapshot 回收敛，并显示可重试的保存失败 | 不再作为未实施项 |
 | 明暗 Mosaic 与真实 UI 验证 | 色块跟随模式、浏览器场景、实际 backdrop、跨平台宿主 | 截图、真实 profile 磁盘旅程、unload/reload 与可访问性测试 |

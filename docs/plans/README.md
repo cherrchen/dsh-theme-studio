@@ -7,6 +7,7 @@ English: [README.en.md](./README.en.md)
 | 文档 |
 | --- |
 | [路线图与进度总账](./active/2026-10-02-theme-studio-roadmap.md) |
+| [手动主题编辑器 Phase 1](./active/2026-10-22-manual-theme-editor.md) |
 | [Stage 1 主题覆盖与设置 UI](./completed/2026-08-26-stage-1-theme-overlays.md) |
 | [DSH 迁移、设置修复与初次发布](./completed/2026-09-25-dsh-settings-and-compatibility.md) |
 | [官方插件注册调整](./completed/2026-09-27-official-plugin-registration.md) |
