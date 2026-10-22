@@ -4,7 +4,9 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { ThemeStudioRow } from '../../src/client/ThemeStudioRow.tsx'
 import type { ThemeStudioRowComponentProps } from '../../src/client/ThemeStudioRow.tsx'
 import type { ThemeStudioCard, ThemeStudioRowState } from '../../src/client/store.ts'
-import { DEFAULT_PREVIEW } from '../../src/client/presets.ts'
+import { DEFAULT_PREVIEW, BUILTIN_PRESETS } from '../../src/client/presets.ts'
+import { createThemeEditorDraft } from '../../src/client/theme-editor.ts'
+import { compileThemeFile, validateThemeFileData } from '../../src/client/theme-file.ts'
 import { en } from '../../src/client/locales.ts'
 import { bindSnapshotSelector } from '../harness.ts'
 
@@ -103,6 +105,32 @@ function mount(
   const removeImportedTheme = vi.fn()
   const exportTheme = vi.fn()
   const startThemeCreation = vi.fn(() => true)
+  const createEditorDraft = vi.fn((baseId: string) => {
+    if (baseId === 'user.ocean') {
+      const parsed = validateThemeFileData({
+        version: 1, id: 'user.ocean', name: 'Ocean',
+        palette: {
+          light: {
+            bgBase: '#f4f8fb', bgLayer1: '#ffffff', bgLayer2: '#eef3f7', bgOverlay: '#ffffff',
+            borderL1: '#d7e0e8', borderL2: '#c3d0da', brand: '#2b6cb0',
+            labelPrimary: '#1b2a3a', labelSecondary: '#51606f',
+            error: '#b3282d', success: '#22793d', warn: '#975a16', sidebar: '#eef3f7',
+          },
+          dark: {
+            bgBase: '#101820', bgLayer1: '#1a2430', bgLayer2: '#223040', bgOverlay: '#101820',
+            borderL1: '#2c3c4e', borderL2: '#3a4d63', brand: '#63a4d8',
+            labelPrimary: '#e6edf3', labelSecondary: '#9fb0bf',
+            error: '#f0838a', success: '#6cc596', warn: '#e0b56a', sidebar: '#1a2430',
+          },
+        },
+      })
+      if (!parsed.ok) return undefined
+      return createThemeEditorDraft(compileThemeFile(parsed.file), parsed.file)
+    }
+    const preset = BUILTIN_PRESETS.find(entry => entry.id === baseId)
+    return preset === undefined ? undefined : createThemeEditorDraft(preset)
+  })
+  const editorTakenIds = vi.fn((): string[] => [])
   const props: ThemeStudioRowComponentProps = {
     useSessions: (() => undefined) as never,
     useWorkspaces: (() => undefined) as never,
@@ -118,9 +146,11 @@ function mount(
     removeImportedTheme,
     exportTheme,
     startThemeCreation,
+    createEditorDraft,
+    editorTakenIds,
   }
   render(<ThemeStudioRow {...props} />)
-  return { store, previewTheme, activateTheme, cancelPreview, inspectThemeFile, importIdTaken, saveImportedTheme, removeImportedTheme, exportTheme, startThemeCreation }
+  return { store, previewTheme, activateTheme, cancelPreview, inspectThemeFile, importIdTaken, saveImportedTheme, removeImportedTheme, exportTheme, startThemeCreation, createEditorDraft, editorTakenIds }
 }
 
 function selector(name = 'Default') {
@@ -575,6 +605,134 @@ describe('ThemeStudioRow', () => {
     expect(cell.style.background).toBe(before)
     document.body.style.removeProperty('--dsw-alias-bg-base')
     document.body.style.removeProperty('--dsw-alias-label-primary')
+  })
+
+  it('offers the manual editor while creatorMode is off and the host has no skill catalog', () => {
+    mount(CARDS, 'off', false)
+    fireEvent.click(selector())
+    expect(option('Create theme manually…')).toBeDefined()
+    expect(option('Create theme manually…').getAttribute('disabled')).toBeNull()
+    expect(screen.queryByRole('menuitem', { name: 'Create your own theme…' })).toBeNull()
+  })
+
+  it.each(['loading', 'unavailable'] as const)('disables the manual editor entry while settings are %s', (settingsStatus) => {
+    const b = mount()
+    act(() => {
+      b.store.actions.sync({ ...b.store.getSnapshot(), settingsStatus, revision: 1 })
+    })
+    fireEvent.click(selector())
+    expect(option('Create theme manually…').getAttribute('disabled')).not.toBeNull()
+  })
+
+  it('cancels the preview and opens the editor dialog for the applied theme', () => {
+    const b = mount()
+    act(() => {
+      b.store.actions.sync({ ...b.store.getSnapshot(), activeThemeId: 'dsh-theme-studio.nordic', revision: 1 })
+    })
+    fireEvent.click(selector('Nordic'))
+    fireEvent.mouseEnter(within(option('Graphite')).getByText('Graphite'))
+    expect(b.previewTheme).toHaveBeenCalledWith('dsh-theme-studio.graphite')
+    fireEvent.click(option('Create theme manually…'))
+    expect(b.cancelPreview).toHaveBeenCalled()
+    expect(screen.getByRole('dialog')).toBeDefined()
+    expect(b.createEditorDraft).toHaveBeenCalledWith('dsh-theme-studio.nordic')
+  })
+
+  it('falls back to the first non-default card as the editor base', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.click(option('Create theme manually…'))
+    expect(b.createEditorDraft).toHaveBeenCalledWith('dsh-theme-studio.graphite')
+  })
+
+  it('saves a manually created theme through the append path only', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.click(option('Create theme manually…'))
+    const dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Ocean Copy' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save theme' }))
+    expect(b.saveImportedTheme).toHaveBeenCalledOnce()
+    const [source, mode] = b.saveImportedTheme.mock.calls[0]! as [Record<string, unknown>, string]
+    expect(mode).toBe('append')
+    expect(source['id']).toBe('user.ocean-copy')
+    expect(source['name']).toBe('Ocean Copy')
+    expect(source['version']).toBe(1)
+    expect(source['palette']).toBeDefined()
+    expect(b.startThemeCreation).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('keeps the full draft through close, a pending collision, and a rejected save retry', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.click(option('Create theme manually…'))
+    let dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Drafty' } })
+    fireEvent.change(within(dialog).getByLabelText('Theme ID'), { target: { value: 'user.drafty-x' } })
+    fireEvent.change(within(dialog).getByLabelText('Description'), { target: { value: 'Still mine' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: /^--dsw-alias-/ }))
+    fireEvent.change(within(dialog).getByLabelText('Light: --dsw-alias-bg-base'), { target: { value: '#000011' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save theme' }))
+    expect(b.saveImportedTheme).toHaveBeenCalledOnce()
+    const source = b.saveImportedTheme.mock.calls[0]![0] as Record<string, unknown>
+    expect(source['id']).toBe('user.drafty-x')
+    expect((source['overrides'] as Record<string, Record<string, string>>)['light']['--dsw-alias-bg-base']).toBe('#000011')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    b.editorTakenIds.mockReturnValue(['user.drafty-x'])
+    act(() => {
+      b.store.actions.sync({ ...b.store.getSnapshot(), saveError: true, revision: 1 })
+    })
+    fireEvent.click(selector())
+    fireEvent.click(option('Create theme manually…'))
+    dialog = screen.getByRole('dialog')
+    expect((within(dialog).getByLabelText('Name') as HTMLInputElement).value).toBe('Drafty')
+    expect((within(dialog).getByLabelText('Theme ID') as HTMLInputElement).value).toBe('user.drafty-x')
+    expect((within(dialog).getByLabelText('Description') as HTMLTextAreaElement).value).toBe('Still mine')
+    expect((within(dialog).getByLabelText('Light: --dsw-alias-bg-base') as HTMLInputElement).value).toBe('#000011')
+    expect(dialog.textContent).toContain('could not be saved')
+    expect(within(dialog).getByRole('button', { name: 'Save theme' }).getAttribute('disabled')).not.toBeNull()
+    b.editorTakenIds.mockReturnValue([])
+    act(() => {
+      b.store.actions.sync({ ...b.store.getSnapshot(), saveError: false, revision: 2 })
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    fireEvent.click(selector())
+    fireEvent.click(option('Create theme manually…'))
+    dialog = screen.getByRole('dialog')
+    expect((within(dialog).getByLabelText('Name') as HTMLInputElement).value).toBe('Drafty')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save theme' }))
+    expect(b.saveImportedTheme).toHaveBeenCalledTimes(2)
+    expect(b.saveImportedTheme.mock.calls[1]![0]).toEqual(source)
+    expect(b.saveImportedTheme.mock.calls[1]![1]).toBe('append')
+  })
+
+  it('keeps editor content open and blocks saving while settings transition away', () => {
+    const b = mount()
+    fireEvent.click(selector())
+    fireEvent.click(option('Create theme manually…'))
+    const dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Held' } })
+    act(() => {
+      b.store.actions.sync({ ...b.store.getSnapshot(), settingsStatus: 'loading', revision: 1 })
+    })
+    expect(screen.getByRole('dialog')).toBeDefined()
+    expect((within(dialog).getByLabelText('Name') as HTMLInputElement).value).toBe('Held')
+    expect(within(dialog).getByRole('button', { name: 'Save theme' }).getAttribute('disabled')).not.toBeNull()
+  })
+
+  it('edits an imported theme as the base and saves its palette', () => {
+    const b = mount([...CARDS, IMPORTED_CARD])
+    fireEvent.click(selector())
+    fireEvent.click(option('Create theme manually…'))
+    const dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('Base theme'), { target: { value: 'user.ocean' } })
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Ocean Two' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save theme' }))
+    expect(b.saveImportedTheme).toHaveBeenCalledOnce()
+    const source = b.saveImportedTheme.mock.calls[0]![0] as Record<string, unknown>
+    expect(source['id']).toBe('user.ocean-two')
+    expect((source['palette'] as { light: { bgBase: string } }).light.bgBase).toBe('#f4f8fb')
   })
 
   it('hides the create-theme action while creatorMode is off', () => {

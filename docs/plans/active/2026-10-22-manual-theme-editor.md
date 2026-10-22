@@ -4,6 +4,8 @@
 
 Active，2026-10-22。依据已接受的 [ADR-0011](../../decisions/ADR-0011-manual-theme-editor.md)，在当前 `feat/user-manul-design` 分支按下列顺序实施；尚未发布。
 
+进展（2026-10-22）：Phase 0–3 已实施，各阶段窄验证通过（docs:check、对应 vitest 套件、typecheck）。提交因环境署名要求与「不带署名」条件冲突暂缓，各阶段产物以 checkpoint patch 保存在仓库外，尚未形成 commit。
+
 ## Goal
 
 在 Themes 菜单提供独立的手动创建入口，基于内置或已导入主题编辑全部 preset token，生成可导出回导的 v1 主题文件，通过既有 imported 持久化链路保存。

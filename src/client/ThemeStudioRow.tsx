@@ -20,6 +20,8 @@ import { DEFAULT_PREVIEW } from './presets.ts'
 import { THEME_FILE_MAX_LENGTH } from './theme-file.ts'
 import type { ImportResolution, ThemeFileInspection } from './theme-import.ts'
 import type { ThemeFileError } from './theme-file.ts'
+import { ThemeEditorDialog } from './ThemeEditorDialog.tsx'
+import type { ThemeEditorDraft } from './theme-editor.ts'
 import type { ThemeStudioCard } from './store.ts'
 import type { ThemePreview } from './types.ts'
 import type { createThemeStudioRowStore } from './store.ts'
@@ -52,6 +54,8 @@ export interface ThemeStudioRowInjected {
    * @returns `true` when the session opened; `false` asks the row to show the manual hint.
    */
   startThemeCreation: () => boolean
+  createEditorDraft: (baseId: string) => ThemeEditorDraft | undefined
+  editorTakenIds: () => readonly string[]
 }
 
 /** Full component props: runtime share + store share + locale seat + injected face. */
@@ -76,6 +80,7 @@ const DEFAULT_ITEM_ID = 'default'
 const ACTION_IMPORT = 'theme-studio:import'
 const ACTION_MANAGE = 'theme-studio:manage'
 const ACTION_CREATE = 'theme-studio:create'
+const ACTION_MANUAL = 'theme-studio:manual-create'
 
 type ImportOk = Extract<ThemeFileInspection, { ok: true }>
 
@@ -85,6 +90,7 @@ type DialogState =
   | { kind: 'duplicate'; inspection: ImportOk }
   | { kind: 'manage' }
   | { kind: 'creator' }
+  | { kind: 'editor' }
 
 /**
  * Render the Themes row.
@@ -94,7 +100,7 @@ type DialogState =
 export function ThemeStudioRow({
   t, useStore, previewTheme, activateTheme, cancelPreview,
   inspectThemeFile, importIdTaken, saveImportedTheme, removeImportedTheme, exportTheme,
-  startThemeCreation,
+  startThemeCreation, createEditorDraft, editorTakenIds,
 }: ThemeStudioRowComponentProps) {
   const cards = useStore(s => s.cards)
   const activeThemeId = useStore(s => s.activeThemeId)
@@ -107,6 +113,7 @@ export function ThemeStudioRow({
   const creatorAvailable = useStore(s => s.creatorAvailable)
   const [open, setOpen] = useState(false)
   const [dialog, setDialog] = useState<DialogState | null>(null)
+  const [draft, setDraft] = useState<ThemeEditorDraft | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   // A host that unmounts the row while the menu is open (e.g. an Escape that
   // closes the whole Settings surface before Menu's own onClose runs) must
@@ -212,6 +219,18 @@ export function ThemeStudioRow({
   }
 
   const manageCards = cards.filter(card => card.id !== null)
+  const editorBases = manageCards.map(card => ({ id: card.id as string, name: cardName(card, t) }))
+
+  const openEditor = (): void => {
+    if (draft === null) {
+      const active = activeThemeId !== null && cards.some(card => card.id === activeThemeId) ? activeThemeId : undefined
+      const baseId = active ?? cards.find(card => card.id !== null)?.id ?? undefined
+      const next = baseId === undefined ? undefined : createEditorDraft(baseId)
+      if (next === undefined) return
+      setDraft(next)
+    }
+    setDialog({ kind: 'editor' })
+  }
 
   return (
     <div className={css.row}>
@@ -244,13 +263,14 @@ export function ThemeStudioRow({
         items={menuItems}
         selectedId={activeThemeId ?? DEFAULT_ITEM_ID}
         onSelect={(id) => {
-          if (id === ACTION_IMPORT || id === ACTION_MANAGE || id === ACTION_CREATE) {
+          if (id === ACTION_IMPORT || id === ACTION_MANAGE || id === ACTION_CREATE || id === ACTION_MANUAL) {
             // Action rows close the menu through setOpen, bypassing Menu's
             // onClose; drop a still-active preview like the other close paths.
             cancelPreview()
             if (settingsReady) {
               if (id === ACTION_IMPORT) fileInput.current?.click()
               else if (id === ACTION_MANAGE) setDialog({ kind: 'manage' })
+              else if (id === ACTION_MANUAL) openEditor()
               else if (!startThemeCreation()) setDialog({ kind: 'creator' })
             }
           }
@@ -265,6 +285,7 @@ export function ThemeStudioRow({
           ...(creatorMode !== 'off' && creatorAvailable ? [
             { id: ACTION_CREATE, label: <span className={css.itemLabel}>{t('action.create')}</span>, disabled: !settingsReady },
           ] : []),
+          { id: ACTION_MANUAL, label: <span className={css.itemLabel}>{t('action.manualCreate')}</span>, disabled: !settingsReady },
         ]}
         align="end"
         portal
@@ -403,6 +424,24 @@ export function ThemeStudioRow({
           <p className={css.modalText}>{t('creator.body')}</p>
         ) : null}
       </Modal>
+
+      <ThemeEditorDialog
+        open={dialog?.kind === 'editor'}
+        draft={draft}
+        onDraftChange={setDraft}
+        bases={editorBases}
+        createDraft={createEditorDraft}
+        takenIds={editorTakenIds}
+        settingsReady={settingsReady}
+        saveError={saveError}
+        onSave={(source) => {
+          if (!settingsReady) return
+          saveImportedTheme(source, 'append')
+          closeDialog()
+        }}
+        onClose={closeDialog}
+        t={t}
+      />
     </div>
   )
 }

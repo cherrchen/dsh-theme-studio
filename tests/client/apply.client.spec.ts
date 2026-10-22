@@ -5,7 +5,10 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
 import type { ThemeStudioSettings } from '../../src/constants.ts'
 import { apply, inject, SETTINGS_NS } from '../../src/client/index.ts'
+import { ThemeStudioRegistry } from '../../src/client/catalog.ts'
 import { ThemeStudioRow } from '../../src/client/ThemeStudioRow.tsx'
+import { validateThemeEditor } from '../../src/client/theme-editor.ts'
+import { parseThemeFile, serializeThemeFile } from '../../src/client/theme-file.ts'
 import { ACTIVE_SOURCE, PREVIEW_SOURCE } from '../../src/client/runtime.ts'
 import { stubLocale, stubSettingsScope, stubSlots, type StubSlots } from '../harness.ts'
 import type { createThemeStudioRowStore } from '../../src/client/store.ts'
@@ -276,6 +279,125 @@ describe('Theme Studio client apply', () => {
     await fiber.await()
     await fiber.dispose()
     expect(b.slots.entries()).toHaveLength(0)
+  })
+
+  it('serves editor drafts with taken ids covering pending and accepted sources', async () => {
+    const ocean = {
+      version: 1, id: 'user.ocean', name: 'Ocean',
+      palette: {
+        light: {
+          bgBase: '#f4f8fb', bgLayer1: '#ffffff', bgLayer2: '#eef3f7', bgOverlay: '#ffffff',
+          borderL1: '#d7e0e8', borderL2: '#c3d0da', brand: '#2b6cb0',
+          labelPrimary: '#1b2a3a', labelSecondary: '#51606f',
+          error: '#b3282d', success: '#22793d', warn: '#975a16', sidebar: '#eef3f7',
+        },
+        dark: {
+          bgBase: '#101820', bgLayer1: '#1a2430', bgLayer2: '#223040', bgOverlay: '#101820',
+          borderL1: '#2c3c4e', borderL2: '#3a4d63', brand: '#63a4d8',
+          labelPrimary: '#e6edf3', labelSecondary: '#9fb0bf',
+          error: '#f0838a', success: '#6cc596', warn: '#e0b56a', sidebar: '#1a2430',
+        },
+      },
+      overrides: {
+        light: { '--dsh-custom-var': '#123456', '--dsw-alias-brand-primary': '#0000ff' },
+        dark: { '--dsh-custom-var': '#654321', '--dsw-alias-brand-primary': '#00ffff' },
+      },
+    }
+    const ctx = new Context()
+    ctx.provide('locale', stubLocale())
+    const overlay = fakeTheme()
+    ctx.provide('theme', overlay.theme)
+    const host = stubSettingsScope<ThemeStudioSettings>()
+    host.publish({ status: 'ready', value: { activeThemeId: null, importedThemes: [ocean] }, revision: 1, writable: true })
+    let holdWrites = false
+    const heldCalls: Array<() => void> = []
+    host.set.mockImplementation((field: string, next: unknown) => {
+      const apply = (): void => {
+        const snap = host.scope.getSnapshot()
+        host.publish({
+          status: 'ready',
+          value: { ...(snap.value ?? {}), [field]: next },
+          revision: (snap.revision ?? 0) + 1,
+          writable: true,
+        })
+      }
+      if (holdWrites) {
+        return new Promise<void>((resolve) => {
+          heldCalls.push(() => { apply(); resolve() })
+        })
+      }
+      apply()
+      return Promise.resolve()
+    })
+    ctx.provide('settingsScope', { bind: () => host.scope } as never)
+    ctx.provide('connection', { isLoopback: true } as never)
+    ctx.provide('remote', { $on: () => () => {} } as never)
+    const slots = stubSlots({ declared: ['settings.general.item'] })
+    ctx.provide('slots', slots)
+    const plugin = ctx.plugin({ inject: [...inject], apply })
+    await plugin.await()
+    await settle(ctx)
+
+    const { face } = faceOf(slots)
+    expect(face.editorTakenIds()).toContain('user.ocean')
+    expect(face.editorTakenIds()).toContain(GRAPHITE)
+    const draft = face.createEditorDraft('user.ocean')
+    expect(draft).toBeDefined()
+    expect(draft?.baseId).toBe('user.ocean')
+    expect(face.createEditorDraft('user.missing')).toBeUndefined()
+    const result = validateThemeEditor({ ...draft!, name: 'Ocean Copy', id: 'user.ocean-copy' }, new Set(face.editorTakenIds()))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const overrides = result.source['overrides'] as { light: Record<string, string> }
+    expect(overrides.light['--dsh-custom-var']).toBe('#123456')
+    expect(overrides.light['--dsw-alias-brand-primary']).toBe('#0000ff')
+
+    holdWrites = true
+    face.saveImportedTheme(result.source, 'append')
+    expect(face.editorTakenIds()).toContain('user.ocean-copy')
+    expect(ctx.themeStudio.catalog.get('user.ocean-copy')).toBeUndefined()
+
+    holdWrites = false
+    for (const releaseCall of heldCalls.splice(0)) releaseCall()
+    await settle(ctx)
+    expect(ctx.themeStudio.catalog.get('user.ocean-copy')?.name).toBe('Ocean Copy')
+    const { instance } = faceOf(slots)
+    expect(instance.getSnapshot().cards.some(card => card.id === 'user.ocean-copy')).toBe(true)
+    expect(instance.getSnapshot().previewThemeId).toBe('user.ocean-copy')
+    const registry = ctx.themeStudio.catalog as ThemeStudioRegistry
+    const reparsed = parseThemeFile(serializeThemeFile(registry.sourceOf('user.ocean-copy')!))
+    expect(reparsed.ok).toBe(true)
+    await plugin.dispose()
+  })
+
+  it('leaves the accepted catalog unchanged when the host rejects the create write', async () => {
+    const ctx = new Context()
+    ctx.provide('locale', stubLocale())
+    ctx.provide('theme', fakeTheme().theme)
+    const host = stubSettingsScope<ThemeStudioSettings>()
+    host.publish({ status: 'ready', value: { activeThemeId: null, importedThemes: [] }, revision: 1, writable: true })
+    ctx.provide('settingsScope', { bind: () => host.scope } as never)
+    ctx.provide('connection', { isLoopback: true } as never)
+    ctx.provide('remote', { $on: () => () => {} } as never)
+    const slots = stubSlots({ declared: ['settings.general.item'] })
+    ctx.provide('slots', slots)
+    const plugin = ctx.plugin({ inject: [...inject], apply })
+    await plugin.await()
+    await settle(ctx)
+
+    const { face } = faceOf(slots)
+    const draft = face.createEditorDraft(GRAPHITE)!
+    const result = validateThemeEditor({ ...draft, name: 'Rejected', id: 'user.rejected' }, new Set(face.editorTakenIds()))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    host.set.mockImplementation(() => Promise.resolve(false))
+    face.saveImportedTheme(result.source, 'append')
+    await settle(ctx)
+    expect(ctx.themeStudio.catalog.get('user.rejected')).toBeUndefined()
+    const { instance } = faceOf(slots)
+    expect(instance.getSnapshot().saveError).toBe(true)
+    expect(instance.getSnapshot().cards.some(card => card.id === 'user.rejected')).toBe(false)
+    await plugin.dispose()
   })
 
   it('gates the creator entry on the remote.skills namespace', async () => {

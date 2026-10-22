@@ -22,6 +22,8 @@ import { createThemeStudioRowStore, type ThemeStudioCard } from './store.ts'
 import {
   exportThemeById, importIdTaken, inspectThemeFile, previewWhenImported, removeImportedTheme, saveImportedTheme,
 } from './theme-import.ts'
+import { createThemeEditorDraft, themeEditorId } from './theme-editor.ts'
+import { validateThemeFileData, type DshThemeFile } from './theme-file.ts'
 import { ThemeStudioRow, type ThemeStudioRowInjected } from './ThemeStudioRow.tsx'
 import { CreatorConfigSection, type CreatorConfigInjected } from './CreatorConfigSection.tsx'
 
@@ -172,6 +174,13 @@ function start(ctx: ClientContext, probe: ClientContext, host: ThemeSettingsHost
   }
   ctx.effect(() => runtime.subscribe(sync), 'theme-studio: store projection')
   ctx.effect(() => registry.subscribe(sync), 'theme-studio: imported themes projection')
+  const takenIds = (): readonly string[] => [
+    ...registry.list().map(preset => preset.id),
+    ...(runtime.editableImportedSources() ?? []).flatMap((entry): string[] => {
+      const id = typeof entry === 'object' && entry !== null ? (entry as Record<string, unknown>)['id'] : undefined
+      return typeof id === 'string' ? [id] : []
+    }),
+  ]
   const injected = (actions: BoundActions<typeof store>): ThemeStudioRowInjected => {
     bound = actions
     sync()
@@ -202,6 +211,20 @@ function start(ctx: ClientContext, probe: ClientContext, host: ThemeSettingsHost
           return false
         }
       },
+      createEditorDraft: (baseId) => {
+        const preset = registry.get(baseId)
+        if (preset === undefined) return undefined
+        const source = registry.sourceOf(baseId)
+        let file: DshThemeFile | undefined
+        if (source !== undefined) {
+          const parsed = validateThemeFileData(source)
+          if (!parsed.ok) return undefined
+          file = parsed.file
+        }
+        const draft = createThemeEditorDraft(preset, file)
+        return { ...draft, id: themeEditorId('', new Set(takenIds())) }
+      },
+      editorTakenIds: () => takenIds(),
     }
   }
   ctx.effect(() => ctx.slots.inject('settings.general.item', () => ctx.slots.register({

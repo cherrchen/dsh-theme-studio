@@ -190,6 +190,180 @@
   color: var(--dsw-alias-state-error-primary);
 }
 
+.editorDialog.editorDialog {
+  width: min(760px, 100%);
+  max-height: 100%;
+}
+
+.editorBody {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.editorFields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.editorBody :focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: -1px;
+}
+
+.editorField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.editorLabel {
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.editorHelp {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-label-caption);
+}
+
+.editorIdRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.editorIdRow input {
+  flex: 1;
+  min-width: 0;
+}
+
+.editorField input,
+.editorField select,
+.editorField textarea,
+.editorSearch {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 8px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+}
+
+.editorErrors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.editorErrorList {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.errorLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--dsw-alias-state-error-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: left;
+}
+
+.editorScroll {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+}
+
+.editorGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.editorGroupHeader {
+  display: flex;
+  align-items: center;
+  padding: 4px 6px;
+  border: none;
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.editorTokens {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tokenRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.tokenName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  color: var(--dsw-alias-label-caption);
+}
+
+.tokenValue {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tokenScheme {
+  font-size: 10px;
+  color: var(--dsw-alias-label-caption);
+}
+
+.tokenValue input {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 6px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+}
+
+@media (max-width: 600px) {
+  .tokenRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .editorIdRow {
+    flex-wrap: wrap;
+  }
+}
+
 /* Plugins-page creator field, matching the settings rows' title + selector. */
 .creatorField {
   display: flex;
