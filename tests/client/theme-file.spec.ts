@@ -185,7 +185,11 @@ describe('dsh-theme.json v1 parser', () => {
     const rebuilt = compileThemeFile(reparsed.file)
     expect(rebuilt.tokens.light).toEqual(preset.tokens.light)
     expect(rebuilt.tokens.dark).toEqual(preset.tokens.dark)
-    expect(rebuilt.preview).toEqual(preset.preview)
+    const lowered = (preview: typeof preset.preview.light) => Object.fromEntries(
+      Object.entries(preview).map(([key, value]) => [key, value?.toLowerCase()]),
+    )
+    expect(lowered(rebuilt.preview.light)).toEqual(lowered(preset.preview.light))
+    expect(lowered(rebuilt.preview.dark)).toEqual(lowered(preset.preview.dark))
   })
 
   it('serializes a stored source verbatim so import→export round-trips', () => {
@@ -227,6 +231,104 @@ describe('dsh-theme.json v1 parser', () => {
     const stored = parseStoredThemeFiles([validFile({ id: 'user.moss', name: 'Moss' }), poisoned])
     expect(stored.dropped).toBe(1)
     expect(stored.entries.map(entry => entry.preset.id)).toEqual(['user.moss'])
+  })
+})
+
+describe('compiled theme preview', () => {
+  function compile(over: Record<string, unknown> = {}) {
+    const parsed = validateThemeFileData(validFile(over))
+    if (!parsed.ok) throw new Error('fixture did not parse')
+    return compileThemeFile(parsed.file)
+  }
+
+  it('resolves each sample from the compiled tokens so overrides change the mosaic', () => {
+    const preset = compile({
+      overrides: {
+        light: {
+          '--dsw-alias-bg-base': '#000001',
+          '--dsw-alias-bg-layer-1': '#000002',
+          '--dsw-alias-label-primary': '#000003',
+          '--dsw-alias-brand-primary': '#000004',
+        },
+        dark: {
+          '--dsw-alias-bg-base': '#100001',
+          '--dsw-alias-bg-layer-1': '#100002',
+          '--dsw-alias-label-primary': '#100003',
+          '--dsw-alias-brand-primary': '#100004',
+        },
+      },
+    })
+    expect(preset.preview.light).toEqual({
+      background: '#000001', surface: '#000002', foreground: '#000003', accent: '#000004',
+    })
+    expect(preset.preview.dark).toEqual({
+      background: '#100001', surface: '#100002', foreground: '#100003', accent: '#100004',
+    })
+    expect(Object.isFrozen(preset.preview)).toBe(true)
+    expect(Object.isFrozen(preset.preview.light)).toBe(true)
+    expect(Object.isFrozen(preset.preview.dark)).toBe(true)
+  })
+
+  it('follows var() references to out-of-surface tokens and nested mixes per scheme', () => {
+    const preset = compile({
+      overrides: {
+        light: {
+          '--dsw-alias-bg-base': 'var(--dsw-alias-bg-layer-1)',
+          '--dsw-alias-brand-primary': 'var(--dsh-custom-accent)',
+          '--dsh-custom-accent': 'color-mix(in srgb, color-mix(in srgb, #000000, #ffffff), #ff0000)',
+        },
+        dark: {
+          '--dsw-alias-bg-base': 'var(--dsw-alias-bg-layer-1)',
+          '--dsw-alias-brand-primary': 'var(--dsh-custom-accent)',
+          '--dsh-custom-accent': '#003366',
+        },
+      },
+    })
+    expect(preset.preview.light.background).toBe('#ffffff')
+    expect(preset.preview.light.accent).toBe('#bf4040')
+    expect(preset.preview.dark.background).toBe('#1a2430')
+    expect(preset.preview.dark.accent).toBe('#003366')
+  })
+
+  it('marks missing, cyclic, and translucent samples as null placeholders', () => {
+    const preset = compile({
+      overrides: {
+        light: {
+          '--dsw-alias-bg-base': 'var(--dsh-absent)',
+          '--dsw-alias-bg-layer-1': 'var(--dsh-loop)',
+          '--dsh-loop': 'var(--dsw-alias-bg-layer-1)',
+          '--dsw-alias-label-primary': 'rgba(255, 255, 255, 0.5)',
+        },
+        dark: {
+          '--dsw-alias-bg-base': 'transparent',
+          '--dsw-alias-bg-layer-1': 'var(--dsh-loop)',
+          '--dsh-loop': 'var(--dsw-alias-bg-layer-1)',
+          '--dsw-alias-label-primary': '#fff8',
+        },
+      },
+    })
+    expect(preset.preview.light).toEqual({
+      background: null, surface: null, foreground: null, accent: '#2b6cb0',
+    })
+    expect(preset.preview.dark).toEqual({
+      background: null, surface: null, foreground: null, accent: '#63a4d8',
+    })
+  })
+
+  it('never leaves var()/color-mix() source text in a rendered preview sample', () => {
+    const preset = compile({
+      overrides: {
+        light: { '--dsw-alias-brand-primary': 'color-mix(in srgb, var(--dsw-alias-bg-base) 30%, #ffffff)' },
+        dark: { '--dsw-alias-brand-primary': 'var(--dsw-alias-label-primary)' },
+      },
+    })
+    for (const scheme of [preset.preview.light, preset.preview.dark]) {
+      for (const value of Object.values(scheme)) {
+        if (value !== null) expect(value).toMatch(/^#[0-9a-f]{6}$/)
+      }
+    }
+    expect(preset.preview.light.accent).toBe('#fcfdfe')
+    expect(preset.preview.dark.accent).toBe('#e6edf3')
   })
 })
 

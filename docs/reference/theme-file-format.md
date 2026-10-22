@@ -52,7 +52,7 @@ Current，v1。本文是主题文件格式的唯一真源；解析器实现见 [
 
 `palette` 的 13 个字段为 `bgBase`、`bgLayer1`、`bgLayer2`、`bgOverlay`、`borderL1`、`borderL2`、`brand`、`labelPrimary`、`labelSecondary`、`error`、`success`、`warn`、`sidebar`，与 builtin preset 的 [ChromePalette](./theme-tokens.md) 一致。`deriveChrome()` 把 palette 展开为完整 token 面，`overrides` 叠加在派生结果之上。
 
-顶层不允许 `palette`、`overrides` 之外的未知字段（例如 `preview` 会被拒绝——四色样本从 palette 派生）。嵌套对象同样拒绝多余字段。
+顶层不允许 `palette`、`overrides` 之外的未知字段（例如 `preview` 会被拒绝——四色样本由编译后 token map 解析得到，无法解析为独立颜色时记为 `null` 占位）。嵌套对象同样拒绝多余字段。
 
 ## 色值语法
 

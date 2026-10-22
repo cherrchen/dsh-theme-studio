@@ -174,6 +174,17 @@ export function checkColorSyntax(value: string): boolean {
   }
 }
 
+export function resolvePreviewColor(value: string, tokens: Tokens): string | null {
+  try {
+    const color = resolve(value, tokens)
+    if (color.a !== 1) return null
+    const channel = (n: number): string => Math.round(n * 255).toString(16).padStart(2, '0')
+    return `#${channel(color.r)}${channel(color.g)}${channel(color.b)}`
+  } catch {
+    return null
+  }
+}
+
 function over(front: Color, back: Color): Color {
   const a = front.a + back.a * (1 - front.a)
   const component = (key: 'r' | 'g' | 'b'): number => a === 0 ? 0

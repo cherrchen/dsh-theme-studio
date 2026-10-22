@@ -106,6 +106,10 @@
   display: block;
 }
 
+.mosaicUnknown {
+  background: repeating-linear-gradient(45deg, #ffffff 0 2px, #000000 2px 4px);
+}
+
 .live {
   position: absolute;
   width: 1px;

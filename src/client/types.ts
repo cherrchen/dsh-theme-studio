@@ -5,13 +5,13 @@ import type { ChromePalette } from './chrome-tokens.ts'
 /** Four-color chip shown on a theme card. */
 export interface ThemePreview {
   /** Card mosaic background. */
-  readonly background: string
+  readonly background: string | null
   /** Card mosaic raised surface. */
-  readonly surface: string
+  readonly surface: string | null
   /** Card mosaic foreground sample. */
-  readonly foreground: string
+  readonly foreground: string | null
   /** Card mosaic accent sample. */
-  readonly accent: string
+  readonly accent: string | null
 }
 
 /** Stage 1 token names already declared by ThemeRuntime. */

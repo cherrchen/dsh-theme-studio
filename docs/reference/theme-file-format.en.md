@@ -52,7 +52,7 @@ Current, v1. This document is the single source of truth for the theme file form
 
 The 13 `palette` fields are `bgBase`, `bgLayer1`, `bgLayer2`, `bgOverlay`, `borderL1`, `borderL2`, `brand`, `labelPrimary`, `labelSecondary`, `error`, `success`, `warn` and `sidebar`, matching the builtin [ChromePalette](./theme-tokens.md). `deriveChrome()` expands the palette into the full token surface; `overrides` apply on top of the derived result.
 
-Unknown top-level fields are rejected (for example `preview` is refused — the four-color mosaic is derived from the palette). Nested objects likewise reject extra fields.
+Unknown top-level fields are rejected (for example `preview` is refused — the four-color mosaic is resolved from the compiled token map, and a sample that cannot be resolved to a standalone color is recorded as a `null` placeholder). Nested objects likewise reject extra fields.
 
 ## Color syntax
 

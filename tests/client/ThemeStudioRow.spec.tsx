@@ -544,6 +544,39 @@ describe('ThemeStudioRow', () => {
     expect(nordicRow.textContent).not.toContain('Cool blue palette.')
   })
 
+  it('renders an unresolvable imported sample as a marked placeholder, not a color', () => {
+    const unresolved: ThemeStudioCard = {
+      ...IMPORTED_CARD,
+      preview: {
+        light: { background: null, surface: '#ffffff', foreground: '#1b2a3a', accent: '#2b6cb0' },
+        dark: { background: null, surface: '#1a2430', foreground: '#e6edf3', accent: '#63a4d8' },
+      },
+    }
+    mount([...CARDS, unresolved])
+    fireEvent.click(selector())
+    const cells = option('Ocean').querySelectorAll('div[aria-hidden="true"] span')
+    expect(cells).toHaveLength(4)
+    expect(cells[0]!.getAttribute('data-ts-unresolved')).not.toBeNull()
+    expect((cells[0] as HTMLElement).style.background).toBe('')
+    expect(cells[1]!.getAttribute('data-ts-unresolved')).toBeNull()
+    expect((cells[1] as HTMLElement).style.background).not.toBe('')
+  })
+
+  it('keeps rendered chips on resolved literals when document CSS variables change', () => {
+    mount([...CARDS, IMPORTED_CARD])
+    fireEvent.click(selector())
+    const cell = option('Ocean').querySelector('div[aria-hidden="true"] span') as HTMLElement
+    const before = cell.style.background
+    expect(before).not.toBe('')
+    expect(before).not.toContain('var(')
+    expect(before).not.toContain('color-mix(')
+    document.body.style.setProperty('--dsw-alias-bg-base', '#112233')
+    document.body.style.setProperty('--dsw-alias-label-primary', '#112233')
+    expect(cell.style.background).toBe(before)
+    document.body.style.removeProperty('--dsw-alias-bg-base')
+    document.body.style.removeProperty('--dsw-alias-label-primary')
+  })
+
   it('hides the create-theme action while creatorMode is off', () => {
     mount(CARDS, 'off')
     fireEvent.click(selector())

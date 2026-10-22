@@ -410,10 +410,11 @@ export function ThemeStudioRow({
 function Mosaic({ preview }: { preview: ThemePreview }) {
   return (
     <div className={css.mosaic} aria-hidden="true">
-      <span style={{ background: preview.background }} />
-      <span style={{ background: preview.surface }} />
-      <span style={{ background: preview.foreground }} />
-      <span style={{ background: preview.accent }} />
+      {[preview.background, preview.surface, preview.foreground, preview.accent].map((color, index) => (
+        color === null
+          ? <span key={index} className={css.mosaicUnknown} data-ts-unresolved />
+          : <span key={index} style={{ background: color }} />
+      ))}
     </div>
   )
 }
