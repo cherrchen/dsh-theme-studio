@@ -42,9 +42,6 @@ export function ThemeEditorDialog({
   const [checked, setChecked] = useState<ReadonlySet<string>>(
     () => new Set(categories[0]?.groups.map(group => group.prefix) ?? []),
   )
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(
-    () => new Set(categories[0]?.groups[0] === undefined ? [] : [categories[0].groups[0].prefix]),
-  )
   const [baseOpen, setBaseOpen] = useState(false)
   const [catOpen, setCatOpen] = useState(false)
   const [grpOpen, setGrpOpen] = useState(false)
@@ -87,7 +84,7 @@ export function ThemeEditorDialog({
     setPendingFocus(null)
     element.focus()
     if (typeof element.scrollIntoView === 'function') element.scrollIntoView({ block: 'nearest' })
-  }, [pendingFocus, expanded, search, checked, category, draft])
+  }, [pendingFocus, search, checked, category, draft])
 
   const activeCategory = categories.find(cat => cat.prefix === category) ?? categories[0]
 
@@ -100,7 +97,6 @@ export function ThemeEditorDialog({
       if (owner !== undefined && group !== undefined) {
         setCategory(owner.prefix)
         setChecked(current => new Set(current).add(group.prefix))
-        setExpanded(current => new Set(current).add(group.prefix))
       }
       setSearch('')
     }
@@ -112,19 +108,16 @@ export function ThemeEditorDialog({
     if (next === undefined) return
     setCategory(next.prefix)
     setChecked(new Set(next.groups.map(group => group.prefix)))
-    setExpanded(new Set(next.groups[0] === undefined ? [] : [next.groups[0].prefix]))
     setSearch('')
   }
 
   const toggleGroup = (prefix: string): void => {
-    const adding = !checked.has(prefix)
     setChecked(current => {
       const next = new Set(current)
       if (next.has(prefix)) next.delete(prefix)
       else next.add(prefix)
       return next
     })
-    if (adding) setExpanded(current => new Set(current).add(prefix))
   }
 
   const submit = (): void => {
@@ -177,10 +170,10 @@ export function ThemeEditorDialog({
   }, [draft])
 
   const query = search.trim().toLowerCase()
-  const visibleGroups = (activeCategory?.groups ?? [])
+  const visibleTokens = (activeCategory?.groups ?? [])
     .filter(group => checked.has(group.prefix))
-    .map(group => ({ ...group, tokens: group.tokens.filter(token => token.toLowerCase().includes(query)) }))
-    .filter(group => group.tokens.length > 0)
+    .flatMap(group => group.tokens)
+    .filter(token => token.toLowerCase().includes(query))
 
   const categoryItems: MenuEntry[] = categories.map(cat => ({
     id: cat.prefix,
@@ -431,75 +424,47 @@ export function ThemeEditorDialog({
                 />
               </div>
               <div className={css.editorScroll}>
-                {visibleGroups.length === 0 ? <p className={css.modalText}>{t('editor.emptySearch')}</p> : null}
-                {visibleGroups.map((group) => {
-                  const isOpen = query !== '' || expanded.has(group.prefix)
-                  const panelId = `ts-editor-group-${group.prefix}`
+                {visibleTokens.length === 0 ? <p className={css.modalText}>{t('editor.emptySearch')}</p> : null}
+                {visibleTokens.map((token) => {
+                  const description = hasTokenDescription(token) ? t(`token.${token}` as ThemeStudioKey) : ''
                   return (
-                    <div key={group.prefix} className={css.editorGroup}>
-                      <button
-                        type="button"
-                        className={css.editorGroupHeader}
-                        aria-expanded={isOpen}
-                        aria-controls={panelId}
-                        onClick={() => {
-                          setExpanded(current => {
-                            const next = new Set(current)
-                            if (next.has(group.prefix)) next.delete(group.prefix)
-                            else next.add(group.prefix)
-                            return next
-                          })
-                        }}
-                      >
-                        {group.display} ({group.tokens.length})
-                      </button>
-                      {isOpen ? (
-                        <div id={panelId} className={css.editorTokens}>
-                          {group.tokens.map((token) => {
-                            const description = hasTokenDescription(token) ? t(`token.${token}` as ThemeStudioKey) : ''
-                            return (
-                              <div key={token} className={css.tokenRow}>
-                                <div className={css.tokenHead}>
-                                  <span className={css.tokenName} title={token}>{token}</span>
-                                  {description === '' ? null : <span className={css.tokenDesc}>{description}</span>}
-                                </div>
-                                <div className={css.tokenFields}>
-                                  {SCHEMES.map((scheme) => {
-                                    const path = `overrides.${scheme}.${token}`
-                                    return (
-                                      <label key={scheme} className={css.tokenValue}>
-                                        <span className={css.tokenScheme}>{t(`editor.scheme.${scheme}` as ThemeStudioKey)}</span>
-                                        <ColorValueField
-                                          key={`${draft.baseId}:${scheme}:${token}`}
-                                          value={draft.values[scheme][token] ?? ''}
-                                          tokens={resolveMaps[scheme]}
-                                          swatches={swatchLists[scheme]}
-                                          schemeLabel={t(`editor.scheme.${scheme}` as ThemeStudioKey)}
-                                          token={token}
-                                          disabled={!settingsReady}
-                                          invalid={invalid.has(path)}
-                                          describedBy={describedBy(path)}
-                                          inputRef={registerField(path)}
-                                          onChange={(next) => {
-                                            update({
-                                              ...draft,
-                                              values: {
-                                                ...draft.values,
-                                                [scheme]: { ...draft.values[scheme], [token]: next },
-                                              },
-                                            })
-                                          }}
-                                          t={t}
-                                        />
-                                      </label>
-                                    )
-                                  })}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      ) : null}
+                    <div key={token} className={css.tokenRow}>
+                      <div className={css.tokenHead}>
+                        <span className={css.tokenName} title={token}>{token}</span>
+                        {description === '' ? null : <span className={css.tokenDesc}>{description}</span>}
+                      </div>
+                      <div className={css.tokenFields}>
+                        {SCHEMES.map((scheme) => {
+                          const path = `overrides.${scheme}.${token}`
+                          return (
+                            <div key={scheme} className={css.tokenValue} role="group" aria-label={t(`editor.scheme.${scheme}` as ThemeStudioKey)}>
+                              <span className={css.tokenScheme}>{t(`editor.scheme.${scheme}` as ThemeStudioKey)}</span>
+                              <ColorValueField
+                                key={`${draft.baseId}:${scheme}:${token}`}
+                                value={draft.values[scheme][token] ?? ''}
+                                tokens={resolveMaps[scheme]}
+                                swatches={swatchLists[scheme]}
+                                schemeLabel={t(`editor.scheme.${scheme}` as ThemeStudioKey)}
+                                token={token}
+                                disabled={!settingsReady}
+                                invalid={invalid.has(path)}
+                                describedBy={describedBy(path)}
+                                inputRef={registerField(path)}
+                                onChange={(next) => {
+                                  update({
+                                    ...draft,
+                                    values: {
+                                      ...draft.values,
+                                      [scheme]: { ...draft.values[scheme], [token]: next },
+                                    },
+                                  })
+                                }}
+                                t={t}
+                              />
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
                   )
                 })}

@@ -401,32 +401,6 @@
   border-radius: var(--dsw-radius-xs, 4px);
 }
 
-.editorGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.editorGroupHeader {
-  display: flex;
-  align-items: center;
-  padding: 4px 6px;
-  border: none;
-  border-radius: var(--dsw-radius-xs, 4px);
-  background: var(--dsw-alias-bg-layer-2);
-  color: var(--dsw-alias-label-secondary);
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.editorTokens {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 .tokenRow {
   display: flex;
   flex-direction: column;
@@ -494,16 +468,59 @@
   min-width: 0;
 }
 
-.colorRow {
+.colorTrigger {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  width: 100%;
   min-width: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.colorInput {
+.colorTrigger:hover,
+.colorTrigger[aria-expanded="true"] {
+  border-color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.colorTrigger:focus-visible,
+.colorTabs button:focus-visible,
+.paletteChip:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+.colorTrigger[aria-invalid="true"] {
+  border-color: var(--dsw-alias-state-error-primary);
+}
+
+.colorTrigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.colorDisplay {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+}
+
+.colorMode {
+  flex: none;
+  font-size: 10px;
+  color: var(--dsw-alias-label-secondary);
 }
 
 /* Checkerboard base so translucent previews stay honest; the fill span
@@ -535,10 +552,6 @@
 
 .swatchUnknown {
   background: repeating-linear-gradient(45deg, #ffffff 0 2px, #000000 2px 4px);
-}
-
-.colorRow > button {
-  flex: none;
 }
 
 .mixBuilder {
@@ -607,18 +620,26 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 244px;
+  width: 300px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 32px);
+  box-sizing: border-box;
+  overflow-y: auto;
   padding: 10px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: 0 8px 24px #00000026;
 }
 
-.palettePreview {
+.paletteHeader {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 0;
 }
 
-.paletteValue {
+.paletteToken {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -626,6 +647,50 @@
   white-space: nowrap;
   font-size: 11px;
   color: var(--dsw-alias-label-secondary);
+}
+
+.colorTabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.colorTabs button {
+  flex: 1;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.colorTabs button[aria-selected="true"] {
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: 0 1px 3px #0000001a;
+}
+
+.colorTabPanel,
+.pickerValue {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pickerValue {
+  gap: 4px;
+}
+
+.pickerValue input {
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
 }
 
 .palettePicker {

@@ -83,12 +83,20 @@ function mountDialog(options: MountOptions = {}) {
 }
 
 function dialog() {
-  return screen.getByRole('dialog')
+  return screen.getByRole('dialog', { name: 'Create theme manually' })
 }
 
-function expandGroup(prefix: string) {
-  const header = within(dialog()).getByRole('button', { name: new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) })
-  fireEvent.click(header)
+function editColor(label: string): HTMLInputElement {
+  fireEvent.click(within(dialog()).getByRole('button', { name: label }))
+  return screen.getByRole('textbox', { name: `Color value: ${label}` }) as HTMLInputElement
+}
+
+function picker() {
+  return screen.getByRole('dialog', { name: /^Edit color:/ })
+}
+
+function closePicker() {
+  fireEvent.click(within(picker()).getByRole('button', { name: 'Close' }))
 }
 
 function nameInput() {
@@ -133,8 +141,7 @@ describe('ThemeEditorDialog', () => {
 
   it('marks an illegal color on the field and disables save', () => {
     const b = mountDialog()
-    expandGroup('--dsw-alias-bg-')
-    const field = within(dialog()).getByLabelText('Light: --dsw-alias-bg-base') as HTMLInputElement
+    const field = editColor('Light: --dsw-alias-bg-base')
     fireEvent.change(field, { target: { value: 'hsl(0 0% 0%)' } })
     expect(field.getAttribute('aria-invalid')).toBe('true')
     expect(dialog().textContent).toContain('overrides.light.--dsw-alias-bg-base')
@@ -143,14 +150,23 @@ describe('ThemeEditorDialog', () => {
     expect(b.onSave).not.toHaveBeenCalled()
   })
 
-  it('renders token inputs lazily and reaches the surface through search and categories', () => {
+  it('shows selected tokens in a flat list and filters them through search and categories', () => {
     mountDialog()
     const names = editorTokenNames()
     expect(names).toHaveLength(145)
-    // Only the default-expanded first group renders before interaction.
+    // Every selected group renders immediately, with token rows sharing one list.
     expect(within(dialog()).getAllByLabelText(/^Light: --dsw-alias-label-/)).toHaveLength(13)
-    expect(within(dialog()).queryAllByLabelText(/^Light: --dsw-alias-bg-/)).toHaveLength(0)
+    const fields = within(dialog()).getAllByLabelText(/^Light: --dsw-alias-/)
+    expect(fields).toHaveLength(103)
+    const list = fields[0]!.closest('[role="group"]')!.parentElement!.parentElement!.parentElement!
+    expect(list.children).toHaveLength(103)
+    for (const field of fields) {
+      expect(field.closest('[role="group"]')!.parentElement!.parentElement!.parentElement).toBe(list)
+    }
     const search = within(dialog()).getByLabelText('Search tokens')
+    fireEvent.change(search, { target: { value: 'BG-BASE' } })
+    expect(within(dialog()).getAllByLabelText(/^Light: --/)).toHaveLength(1)
+    expect(within(dialog()).getByLabelText('Light: --dsw-alias-bg-base')).not.toBeNull()
     fireEvent.change(search, { target: { value: '-' } })
     expect(within(dialog()).getAllByLabelText(/^Light: --dsw-alias-/)).toHaveLength(103)
     expect(within(dialog()).getAllByLabelText(/^Dark: --dsw-alias-/)).toHaveLength(103)
@@ -164,9 +180,10 @@ describe('ThemeEditorDialog', () => {
 
   it('keeps raw var() and color-mix() expressions in the inputs', () => {
     mountDialog()
-    const field = within(dialog()).getByLabelText('Light: --dsw-alias-label-shimmer') as HTMLInputElement
+    const field = editColor('Light: --dsw-alias-label-shimmer')
     expect(field.value).toContain('color-mix(')
-    const varField = within(dialog()).getByLabelText('Light: --dsw-alias-label-primary-dimmed') as HTMLInputElement
+    closePicker()
+    const varField = editColor('Light: --dsw-alias-label-primary-dimmed')
     fireEvent.change(varField, { target: { value: 'var(--dsh-custom)' } })
     expect(varField.value).toBe('var(--dsh-custom)')
   })
@@ -174,10 +191,10 @@ describe('ThemeEditorDialog', () => {
   it('saves a valid draft and reports informational contrast counts', () => {
     const b = mountDialog()
     fireEvent.change(nameInput(), { target: { value: 'Low Contrast' } })
-    const light = within(dialog()).getByLabelText('Light: --dsw-alias-label-primary') as HTMLInputElement
-    const dark = within(dialog()).getByLabelText('Dark: --dsw-alias-label-primary') as HTMLInputElement
-    fireEvent.change(light, { target: { value: '#faf9f5' } })
-    fireEvent.change(dark, { target: { value: '#1f1e1d' } })
+    fireEvent.change(editColor('Light: --dsw-alias-label-primary'), { target: { value: '#faf9f5' } })
+    closePicker()
+    fireEvent.change(editColor('Dark: --dsw-alias-label-primary'), { target: { value: '#1f1e1d' } })
+    closePicker()
     expect(dialog().textContent).toContain('fall below the contrast threshold')
     const save = within(dialog()).getByRole('button', { name: 'Save theme' })
     expect(save.getAttribute('disabled')).toBeNull()
@@ -226,8 +243,7 @@ describe('ThemeEditorDialog', () => {
     fireEvent.click(within(dialog()).getByRole('menuitem', { name: 'Nordic' }))
     expect(b.draft().baseId).toBe('dsh-theme-studio.nordic')
     expect(nameInput().value).toBe('')
-    expandGroup('--dsw-alias-bg-')
-    expect((within(dialog()).getByLabelText('Light: --dsw-alias-bg-base') as HTMLInputElement).value)
+    expect(within(dialog()).getByLabelText('Light: --dsw-alias-bg-base').getAttribute('title'))
       .toBe(BUILTIN_PRESETS.find(p => p.id === 'dsh-theme-studio.nordic')!.tokens.light['--dsw-alias-bg-base'])
   })
 
@@ -247,9 +263,9 @@ describe('ThemeEditorDialog', () => {
   it('reports unknown contrast pairs without blocking save', () => {
     const b = mountDialog()
     fireEvent.change(nameInput(), { target: { value: 'Ghost Link' } })
-    expandGroup('--dsw-alias-link')
     for (const scheme of ['Light', 'Dark']) {
-      fireEvent.change(within(dialog()).getByLabelText(`${scheme}: --dsw-alias-link`), { target: { value: 'var(--dsh-missing)' } })
+      fireEvent.change(editColor(`${scheme}: --dsw-alias-link`), { target: { value: 'var(--dsh-missing)' } })
+      closePicker()
     }
     expect(dialog().textContent).toContain('could not be evaluated')
     fireEvent.click(within(dialog()).getByRole('button', { name: 'Save theme' }))
@@ -259,14 +275,18 @@ describe('ThemeEditorDialog', () => {
   it('jumps an error link to a filtered-out field and keeps its value', () => {
     mountDialog()
     fireEvent.change(nameInput(), { target: { value: 'X' } })
-    expandGroup('--dsw-alias-bg-')
-    const field = within(dialog()).getByLabelText('Light: --dsw-alias-bg-base') as HTMLInputElement
+    const field = editColor('Light: --dsw-alias-bg-base')
     fireEvent.change(field, { target: { value: 'hsl(0 0% 0%)' } })
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Category' }))
+    fireEvent.click(within(dialog()).getByRole('menuitem', { name: /^--shiki-token / }))
+    fireEvent.click(within(dialog()).getByRole('button', { name: /8\/8 groups/ }))
+    fireEvent.click(within(dialog()).getByRole('menuitem', { name: 'Clear' }))
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'No groups selected' }))
     fireEvent.change(within(dialog()).getByLabelText('Search tokens'), { target: { value: 'zzz' } })
     fireEvent.click(within(dialog()).getByRole('button', { name: /overrides\.light\.--dsw-alias-bg-base/ }))
     expect((within(dialog()).getByLabelText('Search tokens') as HTMLInputElement).value).toBe('')
     expect(document.activeElement).toBe(within(dialog()).getByLabelText('Light: --dsw-alias-bg-base'))
-    expect((document.activeElement as HTMLInputElement).value).toBe('hsl(0 0% 0%)')
+    expect(document.activeElement?.getAttribute('title')).toBe('hsl(0 0% 0%)')
   })
 
   it('gives same-path errors unique ids and joins them in aria-describedby', () => {
@@ -285,7 +305,6 @@ describe('ThemeEditorDialog', () => {
     const ids = [...dialog().querySelectorAll('[id^="ts-editor-error-"]')].map(el => el.id)
     expect(new Set(ids).size).toBe(ids.length)
     expect(ids.length).toBeGreaterThan(1)
-    expandGroup('--dsw-alias-bg-')
     const field = within(dialog()).getByLabelText('Light: --dsw-alias-bg-base')
     expect((field.getAttribute('aria-describedby') ?? '').split(' ').length).toBeGreaterThan(1)
   })
@@ -293,13 +312,12 @@ describe('ThemeEditorDialog', () => {
   it('shows a localized usage note under each token name', () => {
     mountDialog()
     expect(dialog().textContent).toContain('Primary text color for body copy and titles.')
-    expandGroup('--dsw-alias-bg-')
     expect(dialog().textContent).toContain('Base page background: the bottom-most canvas.')
   })
 
   it('filters token groups through the level-2 multi-select dropdown', () => {
     mountDialog()
-    // The default label group is expanded; unchecking it removes its rows.
+    // Unchecking a selected group removes its rows immediately.
     expect(within(dialog()).getAllByLabelText(/^Light: --dsw-alias-label-/)).toHaveLength(13)
     fireEvent.click(within(dialog()).getByRole('button', { name: /18\/18 groups/ }))
     fireEvent.click(within(dialog()).getByRole('menuitem', { name: /^--dsw-alias-label- / }))
@@ -309,72 +327,88 @@ describe('ThemeEditorDialog', () => {
     expect(within(dialog()).getByRole('button', { name: 'No groups selected' })).not.toBeNull()
     expect(within(dialog()).queryAllByLabelText(/^Light: --/)).toHaveLength(0)
     fireEvent.click(within(dialog()).getByRole('menuitem', { name: 'Select all' }))
-    fireEvent.change(within(dialog()).getByLabelText('Search tokens'), { target: { value: '-' } })
     expect(within(dialog()).getAllByLabelText(/^Light: --dsw-alias-/)).toHaveLength(103)
   })
 
-  it('detects literal vs expression fields and toggles the input mode', () => {
-    mountDialog()
-    // --dsw-alias-label-primary is a literal hex in the default base.
-    const literalField = within(dialog()).getByLabelText('Light: --dsw-alias-label-primary') as HTMLInputElement
-    expect(literalField.value).toBe('#141413')
-    const literalRow = literalField.closest('label')!
-    expect(within(literalRow as HTMLElement).getByRole('button', { name: /^Palette:/ })).not.toBeNull()
-    // --dsw-alias-label-shimmer is a color-mix expression.
-    const exprField = within(dialog()).getByLabelText('Light: --dsw-alias-label-shimmer') as HTMLInputElement
-    const exprRow = exprField.closest('label')!
-    expect(within(exprRow as HTMLElement).getByRole('button', { name: /^Build color-mix:/ })).not.toBeNull()
-    // Switching the literal field to expression mode swaps the action button.
-    fireEvent.click(within(literalRow as HTMLElement).getByRole('button', { name: /^Switch input mode:/ }))
-    expect(within(literalRow as HTMLElement).getByRole('button', { name: /^Build color-mix:/ })).not.toBeNull()
-    // Switching an opaque expression back to literal mode pre-fills the hex.
-    const deepField = within(dialog()).getByLabelText('Light: --dsw-alias-label-deep-diving') as HTMLInputElement
-    const deepRow = deepField.closest('label') as HTMLElement
-    fireEvent.click(within(deepRow).getByRole('button', { name: /^Switch input mode:/ }))
-    expect(deepField.value).toMatch(/^#[\da-f]{6}$/i)
-    expect(within(deepRow).getByRole('button', { name: /^Palette:/ })).not.toBeNull()
+  it('opens compact fields in the matching tab and preserves expressions when tabs change', () => {
+    const b = mountDialog()
+    const literal = within(dialog()).getByRole('button', { name: 'Light: --dsw-alias-label-primary' })
+    expect(literal.textContent).toContain('#141413')
+    expect(literal.textContent).toContain('RGB')
+    expect(literal.closest('[role="group"]')!.querySelector('input')).toBeNull()
+    fireEvent.click(literal)
+    expect(within(picker()).getByRole('tab', { name: 'RGB' }).getAttribute('aria-selected')).toBe('true')
+    closePicker()
+    const field = editColor('Light: --dsw-alias-label-shimmer')
+    const original = field.value
+    expect(original).toContain('color-mix(')
+    expect(within(picker()).getByRole('tab', { name: 'color-mix' }).getAttribute('aria-selected')).toBe('true')
+    fireEvent.click(within(picker()).getByRole('tab', { name: 'RGB' }))
+    expect(picker().querySelector('input[type="color"]')).not.toBeNull()
+    fireEvent.click(within(picker()).getByRole('tab', { name: 'color-mix' }))
+    closePicker()
+    expect(b.draft().values.light['--dsw-alias-label-shimmer']).toBe(original)
+    expect(within(dialog()).getByLabelText('Light: --dsw-alias-label-shimmer').getAttribute('title')).toBe(original)
   })
 
-  it('opens the palette popover with a picker and writes swatch clicks back', () => {
+  it('writes picker and palette changes back to the compact preview', () => {
     mountDialog()
-    const field = within(dialog()).getByLabelText('Light: --dsw-alias-label-primary') as HTMLInputElement
-    fireEvent.click(within(field.closest('label') as HTMLElement).getByRole('button', { name: /^Palette:/ }))
-    const pop = document.querySelector('[role="group"][aria-label="Palette"]')!
-    expect(pop).not.toBeNull()
-    expect(pop.querySelector('input[type="color"]')).not.toBeNull()
-    fireEvent.click(within(pop as HTMLElement).getByRole('button', { name: '#D97757' }))
-    expect(field.value).toBe('#D97757')
-    // Unresolvable previews still keep the raw expression usable.
-    const shimmer = within(dialog()).getByLabelText('Light: --dsw-alias-label-shimmer') as HTMLInputElement
-    expect(shimmer.value).toContain('color-mix(')
+    editColor('Light: --dsw-alias-label-primary')
+    const color = picker().querySelector('input[type="color"]')!
+    fireEvent.change(color, { target: { value: '#123456' } })
+    expect(within(dialog()).getByLabelText('Light: --dsw-alias-label-primary').getAttribute('title')).toBe('#123456')
+    fireEvent.click(within(picker()).getByRole('button', { name: '#D97757' }))
+    expect(screen.queryByRole('dialog', { name: /^Edit color:/ })).toBeNull()
+    expect(within(dialog()).getByLabelText('Light: --dsw-alias-label-primary').getAttribute('title')).toBe('#D97757')
   })
 
-  it('returns focus to the palette trigger when Escape closes the portaled panel', () => {
+  it('returns focus to the compact trigger on Escape and supports keyboard tabs', () => {
     mountDialog()
-    const field = within(dialog()).getByLabelText('Light: --dsw-alias-label-primary')
-    const trigger = within(field.closest('label') as HTMLElement).getByRole('button', { name: /^Palette:/ })
+    const trigger = within(dialog()).getByRole('button', { name: 'Light: --dsw-alias-label-primary' })
     fireEvent.click(trigger)
-    const pop = screen.getByRole('group', { name: 'Palette' })
-    const picker = pop.querySelector('input[type="color"]') as HTMLInputElement
-    picker.focus()
-    fireEvent.keyDown(picker, { key: 'Escape' })
-    expect(screen.queryByRole('group', { name: 'Palette' })).toBeNull()
+    const rgb = within(picker()).getByRole('tab', { name: 'RGB' })
+    expect(document.activeElement).toBe(rgb)
+    fireEvent.keyDown(rgb, { key: 'ArrowRight' })
+    const mix = within(picker()).getByRole('tab', { name: 'color-mix' })
+    expect(document.activeElement).toBe(mix)
+    expect(mix.getAttribute('aria-selected')).toBe('true')
+    fireEvent.keyDown(mix, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: /^Edit color:/ })).toBeNull()
+    expect(document.activeElement).toBe(trigger)
+    expect(dialog()).not.toBeNull()
+    fireEvent.click(trigger)
+    const close = within(picker()).getByRole('button', { name: 'Close' })
+    close.focus()
+    fireEvent.keyDown(close, { key: 'Tab', shiftKey: true })
+    expect(screen.queryByRole('dialog', { name: /^Edit color:/ })).toBeNull()
     expect(document.activeElement).toBe(trigger)
   })
 
-  it('builds a color-mix expression from the structured editor', () => {
+  it('dismisses outside the picker and keeps only the focused color editor open', () => {
     mountDialog()
-    const field = within(dialog()).getByLabelText('Light: --dsw-alias-label-shimmer') as HTMLInputElement
-    const row = field.closest('label') as HTMLElement
-    fireEvent.click(within(row).getByRole('button', { name: /^Build color-mix:/ }))
-    // The builder parses the existing fade(color, 30) expression.
-    const percent = within(row).getByLabelText(/^Percent %/) as HTMLInputElement
+    editColor('Light: --dsw-alias-label-primary')
+    const next = within(dialog()).getByRole('button', { name: 'Dark: --dsw-alias-label-primary' })
+    next.focus()
+    fireEvent.click(next)
+    expect(screen.getAllByRole('dialog', { name: /^Edit color:/ })).toHaveLength(1)
+    expect(picker().getAttribute('aria-label')).toContain('Dark:')
+    fireEvent.pointerDown(nameInput())
+    expect(screen.queryByRole('dialog', { name: /^Edit color:/ })).toBeNull()
+  })
+
+  it('builds a color-mix expression inside the floating editor', () => {
+    mountDialog()
+    const field = editColor('Light: --dsw-alias-label-shimmer')
+    const percent = within(picker()).getByLabelText(/^Percent %/) as HTMLInputElement
     expect(percent.value).toBe('30')
-    const withInput = within(row).getByLabelText(/^Mix with/) as HTMLInputElement
+    const withInput = within(picker()).getByLabelText(/^Mix with/) as HTMLInputElement
     expect(withInput.value).toBe('transparent')
     fireEvent.change(percent, { target: { value: '60' } })
-    fireEvent.click(within(row).getByRole('button', { name: 'Apply' }))
+    fireEvent.click(within(picker()).getByRole('button', { name: 'Apply' }))
     expect(field.value).toBe('color-mix(in srgb, #141413 60%, transparent)')
+    closePicker()
+    expect(within(dialog()).getByLabelText('Light: --dsw-alias-label-shimmer').getAttribute('title'))
+      .toBe('color-mix(in srgb, #141413 60%, transparent)')
   })
 
   it('shows the save failure banner and disables controls while settings are unavailable', () => {
