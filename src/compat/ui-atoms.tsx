@@ -1,12 +1,37 @@
 /**
  * ui-primitives adaptation: `MenuSurface` and `Checkbox` joined the package
  * with DSH 0.1.7, so hosts on 0.1.5/0.1.6 resolve the package but leave the
- * names `undefined`. Like `menu-icons.tsx`, this module detects the exports
- * structurally and falls back to inline replicas of the same DOM contracts.
+ * names `undefined`. Older Input components also lack ref forwarding.
+ * Like `menu-icons.tsx`, this module detects these structures and preserves
+ * the host controls, with local fallbacks for the missing DOM contracts.
  */
 
-import { forwardRef, type HTMLAttributes, type ReactNode, type Ref } from 'react'
+import { forwardRef, type ComponentPropsWithoutRef, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import * as primitives from '@deepseek-ai/dsh-client-ui-primitives'
+
+type InputProps = ComponentPropsWithoutRef<typeof primitives.Input>
+type RefInputComponent = (props: InputProps & { ref?: Ref<HTMLInputElement> }) => ReactNode
+
+/** Older Inputs do not forward refs; retain their DOM/styles and bind the native input. */
+const LocalRefInput = forwardRef<HTMLInputElement, InputProps>(function LocalRefInput(props, ref) {
+  return (
+    <span style={{ display: 'contents' }} ref={element => {
+      const input = element?.querySelector('input') ?? null
+      if (typeof ref === 'function') ref(input)
+      else if (ref !== null) ref.current = input
+    }}>
+      <primitives.Input {...props} />
+    </span>
+  )
+})
+
+const hostInput: unknown = primitives.Input
+/** React's forwardRef marker is available without package/version probing. */
+export const RefInput: RefInputComponent =
+  typeof hostInput === 'object' && hostInput !== null
+    && '$$typeof' in hostInput && hostInput.$$typeof === Symbol.for('react.forward_ref')
+    ? hostInput as RefInputComponent
+    : LocalRefInput
 
 /** Props mirroring the upstream Checkbox contract. */
 export interface CheckboxProps {

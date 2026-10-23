@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Input, Menu, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import { ChevronDownIcon } from '../compat/menu-icons.tsx'
+import { RefInput } from '../compat/ui-atoms.tsx'
 import { formatLocale, type ThemeStudioKey } from './locales.ts'
 import { hasTokenDescription } from './token-descriptions.ts'
 import { ColorValueField } from './ColorValueField.tsx'
@@ -289,7 +290,7 @@ export function ThemeEditorDialog({
               </div>
               <div className={css.editorField}>
                 <label className={css.editorLabel} htmlFor="ts-editor-name">{t('editor.name')}</label>
-                <Input
+                <RefInput
                   id="ts-editor-name"
                   ref={registerField('name')}
                   value={draft.name}
@@ -310,7 +311,7 @@ export function ThemeEditorDialog({
               <div className={css.editorField}>
                 <label className={css.editorLabel} htmlFor="ts-editor-id">{t('editor.id')}</label>
                 <div className={css.editorIdRow}>
-                  <Input
+                  <RefInput
                     id="ts-editor-id"
                     ref={registerField('id')}
                     className={css.editorIdInput ?? ''}
@@ -337,7 +338,7 @@ export function ThemeEditorDialog({
               </div>
               <div className={css.editorField}>
                 <label className={css.editorLabel} htmlFor="ts-editor-author">{t('editor.author')}</label>
-                <Input
+                <RefInput
                   id="ts-editor-author"
                   ref={registerField('author')}
                   value={draft.author}

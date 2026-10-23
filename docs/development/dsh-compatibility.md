@@ -194,3 +194,13 @@ Themes 行改为与官方语言行同款的下拉选择器：selector 按钮（`
 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，当前开发基线 `0.2.1-rc.2` 的 `pnpm verify:all` 完整通过（349 passed、1 个预期 legacy-provider skip），包含全新 tarball 安装、校验器、官方 ThemeRuntime 与真实 CLI web profile 冒烟。默认 npm 缓存写权限失败后，改用临时可写缓存重跑通过，未改变开发 pin 或支持清单。
 
 隔离矩阵已完整通过 `0.1.5-rc.2`、`0.1.5-rc.3`、`0.1.6-alpha.1`、`0.1.6-alpha.2`、`0.2.1-alpha.3`，逐命令结果和未完成版本见[本轮矩阵证据](./dsh-compatibility-manual-editor-results-2026-10-22.json)。剩余矩阵与真实浏览器验证按用户后续指示暂缓，已停止任务；不声称全十七版本或浏览器通过，亦未运行 Linux/Windows 验证。实施提交及本轮范围见[已完成计划](../plans/completed/2026-10-22-manual-theme-editor.md)。
+
+### 上游控件替换后的 CI 修复（2026-10-23）
+
+[PR #14 的 CI run 39807449638](https://github.com/cherrchen/dsh-theme-studio/actions/runs/39807449638) 验证 `e16e2b1` 时，`0.1.5-rc.2` 至 `0.2.0-rc.1` 的九个版本在三平台构建失败，旧版浏览器任务也在构建阶段失败；其余八个版本、开发基线 package 与浏览器任务通过。已读取最老版本、`0.1.7-alpha.1`、`0.2.0-rc.1` 和 Windows `0.1.6-alpha.2` 的代表日志：旧版 Input 不支持 ref，较早的 Button 也不支持 ref，`0.1.5`/`0.1.6` 的 `useAnchoredPosition` 类型不接受 `align`。
+
+`compat/ui-atoms.tsx` 的 `RefInput` 按 React `forwardRef` 标记探测：支持时直接复用宿主导出；否则以 `display: contents` 容器绑定内部原生 input，保留上游样式与属性传递，并在卸载时清理 ref。错误定位仍指向真实输入框。调色板锚点从 Button 点击事件的 `currentTarget` 获取；定位使用各版本共有参数，省略默认的 start 对齐。没有修改支持清单、开发 pin 或 CI 覆盖范围。适配测试覆盖新旧 Input 的 ref、聚焦、属性、修改事件与卸载；对话框测试覆盖调色板 Esc 关闭后的焦点恢复。
+
+修复后的工作树在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上通过 `pnpm verify:all`（361 passed、1 个条件性 legacy-provider skip），并通过全部十七个支持版本的隔离矩阵，含真实 tarball 安装、官方 ThemeRuntime 与 CLI profile 冒烟。初次并行运行多个未限制 worker 的矩阵触发 UI 测试 5 秒超时；停止后以 `VITEST_MAX_WORKERS=2` 重跑全部版本通过，没有放宽测试断言或超时门槛。逐命令结果、源码指纹与两版浏览器报告见[本次修复证据](./dsh-compatibility-ci-fix-results-2026-10-23.json)。
+
+`0.1.6-alpha.2` 与 `0.2.1-rc.2` 另通过真实 Chromium 的既有主题选择器、预览/取消/应用、刷新和新 Host 进程磁盘恢复旅程，浏览器控制台无错误。首次缺少匹配的 Chromium 后在临时目录补齐，macOS 浏览器进程通信需在文件系统沙箱外执行。该浏览器脚本不覆盖手动编辑器的文件选择、导出回导或视觉审查；本机结果不替代推送后 Linux/Windows 的远端 CI 证据。

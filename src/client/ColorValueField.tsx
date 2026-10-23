@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button, Input, useAnchoredPosition, useDismissOnOutsidePointer } from '@deepseek-ai/dsh-client-ui-primitives'
-import { Checkbox, MenuSurface } from '../compat/ui-atoms.tsx'
+import { Checkbox, MenuSurface, RefInput } from '../compat/ui-atoms.tsx'
 import { parseColorMix, resolveCssColor, resolvePreviewColor } from './contrast-colors.ts'
 import { type ThemeStudioKey } from './locales.ts'
 import css from './ThemeStudioRow.module.css'
@@ -66,7 +66,7 @@ export function ColorValueField({
   const [buildOpen, setBuildOpen] = useState(false)
   const [mix, setMix] = useState({ color: '#000000', percent: 50, withColor: 'transparent' })
   const root = useRef<HTMLDivElement>(null)
-  const anchor = useRef<HTMLButtonElement>(null)
+  const anchor = useRef<HTMLButtonElement | null>(null)
   const panel = useRef<HTMLDivElement>(null)
   const resolved = useMemo(() => resolveCssColor(value, tokens), [value, tokens])
   const opaqueHex = useMemo(() => resolvePreviewColor(value, tokens), [value, tokens])
@@ -75,7 +75,6 @@ export function ColorValueField({
     anchorRef: anchor,
     panelRef: panel,
     side: 'bottom',
-    align: 'start',
     gap: 4,
     margin: 8,
   })
@@ -133,7 +132,7 @@ export function ColorValueField({
     <div className={css.colorField} ref={root}>
       <div className={css.colorRow}>
         <Swatch resolved={resolved} t={t} />
-        <Input
+        <RefInput
           ref={inputRef}
           className={css.colorInput ?? ''}
           value={value}
@@ -155,13 +154,15 @@ export function ColorValueField({
         </Button>
         {mode === 'literal' ? (
           <Button
-            ref={anchor}
             variant="outline"
             size="sm"
             aria-label={`${t('editor.color.palette')}: ${schemeLabel}: ${token}`}
             aria-expanded={paletteOpen}
             disabled={disabled}
-            onClick={() => { setPaletteOpen(open => !open) }}
+            onClick={event => {
+              anchor.current = event.currentTarget
+              setPaletteOpen(open => !open)
+            }}
           >
             {t('editor.color.palette')}
           </Button>

@@ -349,6 +349,19 @@ describe('ThemeEditorDialog', () => {
     expect(shimmer.value).toContain('color-mix(')
   })
 
+  it('returns focus to the palette trigger when Escape closes the portaled panel', () => {
+    mountDialog()
+    const field = within(dialog()).getByLabelText('Light: --dsw-alias-label-primary')
+    const trigger = within(field.closest('label') as HTMLElement).getByRole('button', { name: /^Palette:/ })
+    fireEvent.click(trigger)
+    const pop = screen.getByRole('group', { name: 'Palette' })
+    const picker = pop.querySelector('input[type="color"]') as HTMLInputElement
+    picker.focus()
+    fireEvent.keyDown(picker, { key: 'Escape' })
+    expect(screen.queryByRole('group', { name: 'Palette' })).toBeNull()
+    expect(document.activeElement).toBe(trigger)
+  })
+
   it('builds a color-mix expression from the structured editor', () => {
     mountDialog()
     const field = within(dialog()).getByLabelText('Light: --dsw-alias-label-shimmer') as HTMLInputElement
