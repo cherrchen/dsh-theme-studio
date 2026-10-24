@@ -16,5 +16,6 @@ Long-lived choices recorded as ADRs with context, decisions, alternatives, and c
 | [Standalone builds and tagged releases](./ADR-0008-standalone-build-and-tagged-releases.md) |
 | [Imported themes join the public catalog dynamically](./ADR-0009-dynamic-imported-theme-catalog.md) |
 | [Theme Creator via runtime skill injection, not a fifth agent preset](./ADR-0010-theme-creator-runtime-skill.md) |
+| [Manual theme editor lands in the imported partition as palette copy plus overrides diff](./ADR-0011-manual-theme-editor.md) |
 
 [Documentation map](../README.en.md)

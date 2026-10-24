@@ -7,9 +7,9 @@
  */
 
 import {
-  baseAliasTokens, CHROME_PALETTE_KEYS, deriveChrome, palettePreview, type ChromePalette,
+  baseAliasTokens, CHROME_PALETTE_KEYS, deriveChrome, type ChromePalette,
 } from './chrome-tokens.ts'
-import { checkColorSyntax } from './contrast-colors.ts'
+import { checkColorSyntax, resolvePreviewColor } from './contrast-colors.ts'
 import { isOfficialFontToken } from './font-boundary.ts'
 import type { BuiltinThemePreset } from './types.ts'
 
@@ -106,7 +106,7 @@ function describeValue(value: unknown): string {
   return Array.isArray(value) ? 'array' : 'object'
 }
 
-function readId(value: unknown): ThemeFileError | null {
+export function readId(value: unknown): ThemeFileError | null {
   if (typeof value !== 'string' || !ID_PATTERN.test(value)) {
     return { code: 'invalid-id', path: 'id', detail: describeValue(value) }
   }
@@ -276,26 +276,31 @@ export function parseThemeFile(text: string): ThemeFileParse {
 export function compileThemeFile(file: DshThemeFile): BuiltinThemePreset {
   const light = { ...file.palette.light }
   const dark = { ...file.palette.dark }
+  const lightTokens = Object.freeze({
+    ...deriveChrome(file.palette.light),
+    ...baseAliasTokens(file.palette.light),
+    ...file.overrides?.light,
+  })
+  const darkTokens = Object.freeze({
+    ...deriveChrome(file.palette.dark),
+    ...baseAliasTokens(file.palette.dark),
+    ...file.overrides?.dark,
+  })
+  const preview = (tokens: Readonly<Record<string, string>>) => Object.freeze({
+    background: resolvePreviewColor('--dsw-alias-bg-base', tokens),
+    surface: resolvePreviewColor('--dsw-alias-bg-layer-1', tokens),
+    foreground: resolvePreviewColor('--dsw-alias-label-primary', tokens),
+    accent: resolvePreviewColor('--dsw-alias-brand-primary', tokens),
+  })
   return Object.freeze({
     id: file.id,
     name: file.name,
     ...(file.description === undefined ? {} : { description: file.description }),
     palette: Object.freeze({ light: Object.freeze(light), dark: Object.freeze(dark) }),
-    tokens: Object.freeze({
-      light: Object.freeze({
-        ...deriveChrome(file.palette.light),
-        ...baseAliasTokens(file.palette.light),
-        ...file.overrides?.light,
-      }),
-      dark: Object.freeze({
-        ...deriveChrome(file.palette.dark),
-        ...baseAliasTokens(file.palette.dark),
-        ...file.overrides?.dark,
-      }),
-    }),
+    tokens: Object.freeze({ light: lightTokens, dark: darkTokens }),
     preview: Object.freeze({
-      light: Object.freeze(palettePreview(file.palette.light)),
-      dark: Object.freeze(palettePreview(file.palette.dark)),
+      light: preview(lightTokens),
+      dark: preview(darkTokens),
     }),
   })
 }

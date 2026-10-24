@@ -2,7 +2,7 @@
 
 ## Background
 
-Current，2026-10-15 更新 Theme Creator 与 `creatorAgentMode`。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，计划中的主题编辑器不属于已实现组件。
+Current，2026-10-23 更新手动主题编辑器的平铺列表与双标签颜色浮层；2026-10-24 重设计为左导航 + 预览卡 + 页脚状态区（当前分支，未发布）。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，实施和验证状态见[编辑器计划](../plans/completed/2026-10-22-manual-theme-editor.md)。
 
 ## Goals and Non-goals
 
@@ -32,6 +32,9 @@ flowchart TD
   Catalog --> Contrast[纯 sRGB 对比度校验]
   Row --> FileIO[theme-file / theme-import / download]
   FileIO --> Runtime
+  Row --> Editor[ThemeEditorDialog / row 内存草稿]
+  Editor --> Model[theme-editor 校验与差异 source]
+  Model --> FileIO
   Row --> UW[uiWorkspace.startSession 能力门控]
   UW --> Session[Cordis 会话 预填 /dsh-theme-creator]
 ```
@@ -43,13 +46,15 @@ flowchart TD
 | `src/index.ts`、`settings.ts` | Host 注册/Config、导出 schema 与默认值 | UI、浏览器服务、主题呈现 |
 | `compat/settings-host.ts` | register/configure 能力探测、volatile 适配、`{section, dispose}` 附件 | 版本字符串驱动分支 |
 | `compat/settings-client.ts` | 两种 transport 的最小结构契约 | 独立 RPC 协议 |
-| `compat/menu-icons.tsx` | ui-primitives 下拉箭头图标探测与本地回退 | 版本字符串分支 |
+| `compat/menu-icons.tsx`、`compat/ui-atoms.tsx` | ui-primitives 版本差异的结构探测与本地回退（chevron 图标、`MenuSurface`、`Checkbox`——后两者 0.1.7 才发布）；`RefInput` 为不转发 ref 的旧版 Input 绑定实际输入元素 | 版本字符串分支 |
 | `creator/`、`validate-theme.ts` | skill 正文、按 accepted 快照的 register/dispose watcher、校验器纯报告与 CLI 接线 | overlay、设置写入、模型工具 |
 | `client/index.ts` | provider、字典、槽位、runtime/store 组装与启停 | durable authority |
 | `client/presets.ts`、`chrome-tokens.ts` | 八套明暗配色、源 palette 保留与派生语义 token | 修改官方 stylesheets |
 | `client/catalog.ts` | `BuiltinPresetRegistry` 冻结静态分区；`ThemeStudioRegistry` 复合 imported 分区、快照、订阅与回写源 | 注册/编辑第三方主题 |
 | `client/theme-file.ts` | `dsh-theme.json` v1 解析/校验/编译/序列化、存储条目解析、id 冲突生成 | Host 持久化、对比度计算 |
 | `client/theme-import.ts`、`download.ts` | 导入决策/持久化/预览编排、Blob 下载 | 文件系统访问、UI 组件 |
+| `client/theme-editor.ts` | 基底快照、动态编辑面、slug、对称 diff、面外保留、序列化大小与候选校验 | DOM、设置写入、新持久字段 |
+| `ThemeEditorDialog.tsx`、`ColorValueField.tsx`、`token-descriptions.ts` | 受控草稿、基底选择、两栏布局与顶部通栏摘要、两级分类/搜索、逐字段错误；字面色/表达式双模式色值输入（色块、调色板、`color-mix` 拼装）；逐 token 双语用途说明 | 就地覆盖、整主题实时预览、持久草稿 |
 | `client/adapter.ts` | per-scheme map → per-token light/dark 值对 | 对比度认证、公共文件 schema |
 | `client/font-boundary.ts` | 安装 overlay 前去掉官方字体变量 | 字体设置 UI、字号和字体列表写入 |
 | `client/runtime.ts` | active/preview、Host adoption、双字段写队列、imported 分区同步、状态与监听器 | CSS 呈现 |
@@ -68,6 +73,8 @@ flowchart TD
 
 内置 Palette 含 13 个人工字段。`tokens()` 将其映射为基本 token 并与 `deriveChrome()` 合并，随后 preset 工厂冻结配色、preview 与源 `palette`（导出 `dsh-theme.json` 的真源）。catalog 构造时再做防御性复制，确保传入列表后续变更不影响 runtime。adapter 确认两种模式 token 键相同且值为字符串，转成 `ThemeTokenOverrides`。导入主题经 `compileThemeFile` 走同一 `deriveChrome` 路径：13 字段 palette 展开后叠加 `overrides` 稀疏 token。
 
+imported 的四色样本从各 scheme 的完整编译 map 解析，不再直接读 palette。展示转换复用 sRGB resolver、只在输出颜色时舍入；无法独立求值的样本为 `ThemePreview` 的 `null`，Mosaic 显示斜纹占位，绝不交给当前页面解析 `var()`。这不改变对比度精度，也不改变 builtin 工厂。
+
 ```text
 Official Light / Dark / System
         ↓
@@ -85,6 +92,14 @@ ThemeSnapshot → ThemePresenter → DOM
 Client 创建 store，runtime 变化后通过订阅调用 bound actions 的 `sync`；registry 的 imported 分区替换同样触发 store 的 `setCards` 投影。槽位注入组件时绑定 actions 并立即同步当前快照。下拉交互调用 runtime facade：悬停以整个 `menuitem` 行为单位——document 级 `mouseover`/`mouseout` 委托解析指针所在行，带 `data-ts-theme` 标记的行内任一位置（含 padding 与图标间隙）都走 previewTheme；落到无标记的行（footer 动作）、分隔线、组标签或菜单外，以及菜单关闭、选中 footer 动作都走 cancelPreview，选中主题走 activateTheme/restoreDefault。Apply 乐观更新 active 层并异步调用 Host.set。写入队列按 `{field, value}` 串行：`activeThemeId` 与 `importedThemes` 各自合并未发出的值且互不阻塞；进行中的自身写入会挡住 Host 回声。全部结算后，accepted Host snapshot 与乐观选择不一致时重新 adoption，并在 Themes 行与创作助手控件显示可本地化的保存失败。`saveError` 只是这次失败的界面标记，不是第二份持久设置。
 
 导入数据流：隐藏 file input 读文件 → `inspectThemeFile` 校验并附对比度摘要（计入在途写入的 id 冲突）→ Modal 确认（重复 id 时先经三选对话框）→ `saveImportedTheme` 以 `editableImportedSources()` 为合并基准写入 `importedThemes`（在途请求优先，否则 accepted 原始数组，无法解析的条目逐字保留）→ Host 采纳后 imported 分区替换 → `previewWhenImported` 等待 runtime 结算并核对 accepted 源文件后，对更新过的 id 触发 transient preview。确认前会按 catalog 与在途写入重查 id：已过期仍判冲突则回到三选对话框，`append` 兜底走 keep-both 改名，不写持久重复 id。导出走 `sourceOf` 原样回写（imported）或 `themeFileForPreset` 重建（builtin，id 改写为 `user.` 前缀）。删除激活的导入主题不写 `activeThemeId`——由 adoption 期的 unknown-id 修复回落 Default。
+
+### 手动创建
+
+Themes footer 的手动入口仅受 settings ready 门控，不读 AI 能力。row 保存草稿，对话框只展示/更新受控状态；`createEditorDraft` 经 Client 注入读取 catalog 基底及经校验的 source，`editorTakenIds` 合并 catalog 与 runtime 最新 editable 原始数组的 id。UI 不直接读取 Cordis 服务，runtime/store/catalog 无新增编辑职责。
+
+token 初值保持编译字符串；`theme-editor` 保留 palette，以纯派生 map 作 diff 基准并保留面外 overrides。提交前重查 id、序列化检查两个上限、整体校验，继而复用 `saveImportedTheme(source, 'append')` → Host accepted snapshot → imported 分区/card 投影 → `previewWhenImported`。关闭请求窗口不代表保存成功；草稿不自动清空，拒绝后可重开重试，进程/row 生命周期结束才丢失。切换基底重建整个草稿；本阶段没有 replace 分支、实时 overlay 或新增 durable 字段。
+
+对话框界面为 Settings 式双栏：左侧独立滚动的导航以「基本信息」页、类别标题与分组条目呈现全部 token 结构，条目标注数量、已修改点（品牌色）与错误点（错误色优先）；右侧内容面在元信息页（单列 Settings 式表单）与 token 面板间切换，固定高度不随导航变化。token 面板自上而下为静态预览卡、搜索与「仅显示已修改」工具行、以及 `Token | 浅色 | 深色` 网格行——短名省略分组前缀、附本地化用途说明，已修改行带点标与恢复基底按钮，错误行名标红；搜索跨全部类别并按分组分节，多组视图显示分组小标题；窄屏导航折叠为顶部横向滚动条、明暗值纵排显示方案标签。无顶部通栏：页脚左状态区以 `Tag` 呈现「N 个问题」（点击展开可定位错误菜单）、对比度摘要与已修改计数，保存失败同位出现，不产生布局位移；错误定位会切到目标分组（或元信息页）、清空搜索与修改过滤后聚焦字段。每个 token 名下显示本地化用途说明，`token-descriptions.ts` 的双语表并入 locales 字典（`token.--…` 键）。通用控件复用 ui-primitives——`Input`、`Button`、`Menu`（基底选择与错误定位菜单）、`Tag`；`Checkbox`/`MenuSurface`/`SegmentedControl` 经 `compat/ui-atoms.tsx` 在缺少导出的宿主上回退，搜索/关闭/恢复图标经 `compat/menu-icons.tsx` 同款探测；`textarea`、色卡、取色器与文件输入等无对应原语的自绘件保持原生。预览卡 `ThemePreviewCard` 以草稿同 scheme token map 解析后的颜色绘制明暗两张迷你样张，不可解析区域用斜纹占位。色值字段由 `ColorValueField` 统一渲染为可聚焦的紧凑按钮，包含色块与 `color-summary.ts` 的可读摘要（字面量原文、`var()` 目标、`color-mix` 分部与占比）；按钮注册为错误定位目标。点击经 `useAnchoredPosition`/`MenuSurface` 锚定并 portal 的编辑浮层：头部为短名与方案标签，对比条并列基底/当前解析色并提供恢复基底，`SegmentedControl` 切换 RGB 与 color-mix——RGB 集中原值输入、`input[type=color]` 与标注「基底调色板」的色板，color-mix 集中原值输入与结构化混色拼装器（色值、占比滑杆+数值、混合目标、透明开关、结果预览与应用）。打开时按当前值选择标签并初始化混色参数；标签切换仅影响局部展示，编辑原值、拼装应用或取色才写回草稿。触发器与当前色块按草稿同 scheme 完整 token map 解析；对比条的基底色块单独使用基底同 scheme 完整编译 token map（含面外 overrides），不随草稿中的引用目标修改而漂移；不可求值用斜纹占位。浮层使用 dialog/tablist/tab/tabpanel 语义，支持方向键切换标签、Escape/关闭按钮返回触发器、外部指针或焦点离开时收起，settings 非 ready 时关闭并禁用。
 
 ### Theme Creator
 

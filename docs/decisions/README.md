@@ -16,5 +16,6 @@ English: [README.en.md](./README.en.md)
 | [独立构建与 tag 发布](./ADR-0008-standalone-build-and-tagged-releases.md) |
 | [动态导入主题进入公共 catalog](./ADR-0009-dynamic-imported-theme-catalog.md) |
 | [Theme Creator 走运行时 skill 注入而非第五 agent preset](./ADR-0010-theme-creator-runtime-skill.md) |
+| [手动主题编辑器以 palette 拷贝加 overrides 差异落 imported 分区](./ADR-0011-manual-theme-editor.md) |
 
 [返回文档地图](../README.md)

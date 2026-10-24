@@ -52,7 +52,7 @@ Current，v1。本文是主题文件格式的唯一真源；解析器实现见 [
 
 `palette` 的 13 个字段为 `bgBase`、`bgLayer1`、`bgLayer2`、`bgOverlay`、`borderL1`、`borderL2`、`brand`、`labelPrimary`、`labelSecondary`、`error`、`success`、`warn`、`sidebar`，与 builtin preset 的 [ChromePalette](./theme-tokens.md) 一致。`deriveChrome()` 把 palette 展开为完整 token 面，`overrides` 叠加在派生结果之上。
 
-顶层不允许 `palette`、`overrides` 之外的未知字段（例如 `preview` 会被拒绝——四色样本从 palette 派生）。嵌套对象同样拒绝多余字段。
+顶层不允许 `palette`、`overrides` 之外的未知字段（例如 `preview` 会被拒绝——四色样本由编译后 token map 解析得到，无法解析为独立颜色时记为 `null` 占位）。嵌套对象同样拒绝多余字段。
 
 ## 色值语法
 
@@ -78,6 +78,12 @@ Current，v1。本文是主题文件格式的唯一真源；解析器实现见 [
 - 导入与管理入口仅在 settings ready 时启用；确认导入、覆盖与保留两份同样受此限制，避免基于未加载的目录替换持久列表。
 - 存储的原始文件对象位于 `theme-studio.importedThemes`（见[设置契约](./settings-and-package-contract.md)），Host schema 只做宽松结构校验；严格解析在 Client，无法读取的条目被跳过并计入 `droppedImports`。
 - 导出的文件名是 `<id>.dsh-theme.json`；导入主题原样回写其存储文件，内置主题导出时 id 改写为 `user.<短名>` 以便回导。
+
+## 手动创建（当前分支，未发布）
+
+[手动编辑器](../decisions/ADR-0011-manual-theme-editor.md) 仍生成 v1 的 palette+overrides：palette 复制基底，面内修改写对称差异，面外已有 overrides 保留。不新增格式版本或 durable 字段，保存只追加到既有 `importedThemes`，占用 id 不覆盖。
+
+保存前先按导出格式序列化；文本 UTF-16 长度和 UTF-8 字节数均须不超过 `THEME_FILE_MAX_LENGTH`（131072）。这分别覆盖 `parseThemeFile` 的字符限制和 file picker 的 `File.size` 限制；仅通过对象形状校验不足以保证导出可回导。草稿、逐字段校验与验收见[需求](../requirements/theme-studio.md)。
 
 ## 命令行校验器
 

@@ -1,0 +1,322 @@
+{
+  "generatedAt": "2026-10-22T06:18:00.810244+00:00",
+  "scope": "Partial matrix; remaining versions and browser verification deferred at user request on 2026-10-22",
+  "implementationCommit": "61abb7e",
+  "environment": {
+    "platform": "Darwin",
+    "arch": "arm64",
+    "node": "v24.18.0",
+    "pnpm": "11.7.0"
+  },
+  "baselineGate": {
+    "command": "pnpm verify:all",
+    "exitCode": 0,
+    "tests": "349 passed, 1 expected legacy-provider skip",
+    "npmCache": "temporary writable cache"
+  },
+  "mode": "supported",
+  "results": [
+    {
+      "version": "0.1.5-rc.2",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.2",
+        "schemastery": "3.18.2"
+      },
+      "testSummary": "350 passed (350)"
+    },
+    {
+      "version": "0.1.5-rc.3",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.2",
+        "schemastery": "3.18.2"
+      },
+      "testSummary": "350 passed (350)"
+    },
+    {
+      "version": "0.1.6-alpha.1",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.2",
+        "schemastery": "3.18.2"
+      },
+      "testSummary": "350 passed (350)"
+    },
+    {
+      "version": "0.1.6-alpha.2",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.2",
+        "schemastery": "3.18.2"
+      },
+      "testSummary": "350 passed (350)"
+    },
+    {
+      "version": "0.2.1-alpha.3",
+      "candidate": false,
+      "steps": [
+        {
+          "command": "pnpm install --ignore-scripts --no-frozen-lockfile --config.minimumReleaseAge=0",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm compat:check",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm lint",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm build",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm test",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm docs:check",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/audit-theme-tokens.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/verify-package.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-theme.mjs",
+          "exitCode": 0
+        },
+        {
+          "command": "node scripts/smoke-compose.mjs",
+          "exitCode": 0
+        }
+      ],
+      "passed": true,
+      "metadata": {
+        "cordis": "4.0.5-alpha.2",
+        "schemastery": "3.18.5-alpha.2"
+      },
+      "testSummary": "349 passed | 1 skipped (350)"
+    }
+  ],
+  "notCompleted": [
+    "0.1.7-alpha.1",
+    "0.1.7-alpha.2",
+    "0.1.7-rc.1",
+    "0.1.7-rc.2",
+    "0.2.0-rc.1",
+    "0.2.0-rc.2",
+    "0.2.1-alpha.1",
+    "0.2.1-alpha.2",
+    "0.2.1-alpha.4",
+    "0.2.1-alpha.5",
+    "0.2.1-rc.1",
+    "0.2.1-rc.2"
+  ],
+  "browser": {
+    "status": "deferred",
+    "reason": "Stopped at user request; no completed browser pass"
+  },
+  "crossPlatform": {
+    "linux": "not-run",
+    "windows": "not-run"
+  }
+}

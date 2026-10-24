@@ -52,7 +52,7 @@ Current, v1. This document is the single source of truth for the theme file form
 
 The 13 `palette` fields are `bgBase`, `bgLayer1`, `bgLayer2`, `bgOverlay`, `borderL1`, `borderL2`, `brand`, `labelPrimary`, `labelSecondary`, `error`, `success`, `warn` and `sidebar`, matching the builtin [ChromePalette](./theme-tokens.md). `deriveChrome()` expands the palette into the full token surface; `overrides` apply on top of the derived result.
 
-Unknown top-level fields are rejected (for example `preview` is refused — the four-color mosaic is derived from the palette). Nested objects likewise reject extra fields.
+Unknown top-level fields are rejected (for example `preview` is refused — the four-color mosaic is resolved from the compiled token map, and a sample that cannot be resolved to a standalone color is recorded as a `null` placeholder). Nested objects likewise reject extra fields.
 
 ## Color syntax
 
@@ -78,6 +78,12 @@ Color values are limited to the subset the official resolver supports (source of
 - Import and Manage are enabled only while settings are ready; confirmation, overwrite and keep-both actions follow the same rule so an unloaded catalog cannot replace the durable list.
 - Stored source objects live in `theme-studio.importedThemes` (see [settings contract](./settings-and-package-contract.md)); the Host schema is deliberately loose while the Client parses strictly, and unreadable entries are skipped and counted in `droppedImports`.
 - Downloads are named `<id>.dsh-theme.json`; imported themes round-trip their stored file verbatim, and builtin exports rewrite the id to `user.<short>` so the file can be imported back.
+
+## Manual creation (current branch, unreleased)
+
+The [manual editor](../decisions/ADR-0011-manual-theme-editor.md) still produces v1 palette+overrides: it copies the base palette, emits symmetric diffs inside the editable surface, and retains existing overrides outside it. There is no new format version or durable field. Saving only appends to the existing `importedThemes` list; an occupied id is never overwritten.
+
+Before saving, the export serialization must be at most `THEME_FILE_MAX_LENGTH` (131072) in both UTF-16 code units and UTF-8 bytes. These cover the `parseThemeFile` character limit and file picker's `File.size` limit respectively; object-shape validation alone does not guarantee re-importability. Draft behavior and acceptance criteria live in the [requirements](../requirements/theme-studio.md).
 
 ## Command-line validator
 

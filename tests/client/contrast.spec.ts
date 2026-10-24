@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { contrastRatio, DEFAULT_CONTRAST_PAIRS, validateThemeContrast } from '../../src/client/contrast.ts'
+import { resolvePreviewColor } from '../../src/client/contrast-colors.ts'
 import { BUILTIN_PRESETS } from '../../src/client/presets.ts'
 
 describe('WCAG sRGB contrast', () => {
@@ -46,6 +47,27 @@ describe('WCAG sRGB contrast', () => {
     expect(() => contrastRatio('--a', 'white', undefined, { '--a': 'var(--b)', '--b': 'var(--a)' })).toThrow('cyclic')
     const nested = 'var(--absent, '.repeat(40) + 'black' + ')'.repeat(40)
     expect(() => contrastRatio(nested, 'white')).toThrow('deeply nested')
+  })
+})
+
+describe('preview color resolution', () => {
+  it('resolves supported values to a standalone lowercase hex', () => {
+    expect(resolvePreviewColor('#FAF9F5', {})).toBe('#faf9f5')
+    expect(resolvePreviewColor('rgb(43, 108, 176)', {})).toBe('#2b6cb0')
+    expect(resolvePreviewColor('#abc', {})).toBe('#aabbcc')
+    expect(resolvePreviewColor('var(--ink)', { '--ink': '#112233' })).toBe('#112233')
+    expect(resolvePreviewColor('color-mix(in srgb, black, white)', {})).toBe('#808080')
+  })
+
+  it('returns null for translucent results and unresolvable values', () => {
+    expect(resolvePreviewColor('transparent', {})).toBeNull()
+    expect(resolvePreviewColor('#fff8', {})).toBeNull()
+    expect(resolvePreviewColor('rgba(255, 255, 255, 0.5)', {})).toBeNull()
+    expect(resolvePreviewColor('color-mix(in srgb, black 50%, transparent)', {})).toBeNull()
+    expect(resolvePreviewColor('hsl(0 0% 0%)', {})).toBeNull()
+    expect(resolvePreviewColor('notacolor', {})).toBeNull()
+    expect(resolvePreviewColor('var(--missing)', {})).toBeNull()
+    expect(resolvePreviewColor('--loop', { '--loop': 'var(--loop)' })).toBeNull()
   })
 })
 

@@ -4,7 +4,7 @@
  * package cannot load under vitest; per-branch adapter coverage lives in
  * tests/client/menu-icons.spec.tsx through module mocks.
  */
-import { useEffect, useRef, type ReactNode } from 'react'
+import { forwardRef, useEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react'
 
 /** MenuItem-like row the row passes to Menu. */
 interface ShimMenuItem {
@@ -30,6 +30,7 @@ interface ShimMenuProps {
   items?: readonly ShimMenuEntry[]
   footer?: readonly ShimMenuEntry[]
   selectedId?: string
+  selectedIds?: readonly string[]
   onSelect?: (id: string) => void
   onClose?: () => void
   align?: string
@@ -47,26 +48,28 @@ function isStructural(entry: ShimMenuEntry): entry is ShimMenuStructural {
   return (entry as ShimMenuStructural).type === 'separator' || (entry as ShimMenuStructural).type === 'label'
 }
 
-function MenuRow({ entry, selectedId, onSelect }: {
+function MenuRow({ entry, selectedId, selectedIds, onSelect }: {
   entry: ShimMenuEntry
   selectedId?: string
+  selectedIds?: readonly string[]
   onSelect?: (id: string) => void
 }) {
   if (isStructural(entry)) {
     if (entry.type === 'separator') return <hr key={entry.id} role="separator" />
     return <div role="presentation" data-menu-label>{entry.text}</div>
   }
+  const selected = entry.id === selectedId || selectedIds?.includes(entry.id) === true
   return (
     <button
       type="button"
       role="menuitem"
       disabled={entry.disabled === true}
-      aria-selected={entry.id === selectedId}
+      aria-selected={selected}
       onClick={() => onSelect?.(entry.id)}
     >
       {entry.icon}
       {entry.label}
-      {entry.id === selectedId ? <span aria-hidden="true" data-check /> : null}
+      {selected ? <span aria-hidden="true" data-check /> : null}
     </button>
   )
 }
@@ -76,7 +79,7 @@ function MenuRow({ entry, selectedId, onSelect }: {
  * Mirrors the close paths the row relies on — pointerdown outside the
  * anchor/list subtree and Escape both call onClose.
  */
-export function Menu({ open, anchor, items = [], footer = [], selectedId, onSelect, onClose }: ShimMenuProps) {
+export function Menu({ open, anchor, items = [], footer = [], selectedId, selectedIds, onSelect, onClose }: ShimMenuProps) {
   const rootRef = useRef<HTMLSpanElement>(null)
   useEffect(() => {
     if (!open || onClose === undefined) return
@@ -101,7 +104,7 @@ export function Menu({ open, anchor, items = [], footer = [], selectedId, onSele
       {open ? (
         <div role="menu">
           {items.map(entry => (
-            <MenuRow key={entry.id} entry={entry} selectedId={selectedId} onSelect={onSelect} />
+            <MenuRow key={entry.id} entry={entry} selectedId={selectedId} selectedIds={selectedIds} onSelect={onSelect} />
           ))}
           {footer.length > 0 ? (
             <div data-menu-footer>
@@ -116,19 +119,52 @@ export function Menu({ open, anchor, items = [], footer = [], selectedId, onSele
   )
 }
 
-/** Button contract double: a plain button honoring disabled and className. */
-export function Button({ children, onClick, disabled, variant, size, className }: {
-  children?: ReactNode
-  onClick?: () => void
-  disabled?: boolean
+/**
+ * Button contract double: a plain button forwarding ref and the rest of the
+ * native attributes (aria, id, title) the real component passes through.
+ */
+export const Button = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: string
   size?: string
+  icon?: ReactNode
+}>(function Button({ variant, size, icon, ...rest }, ref) {
+  return (
+    <button ref={ref} type="button" data-variant={variant} data-size={size} {...rest}>
+      {icon}
+      {rest.children}
+    </button>
+  )
+})
+
+/**
+ * Input contract double: the real wrap > input structure, so className lands
+ * on the wrapper while native attributes and the ref reach the input.
+ */
+export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & {
+  icon?: ReactNode
+}>(function Input({ icon, className, ...rest }, ref) {
+  return (
+    <span className={className}>
+      {icon}
+      <input ref={ref} {...rest} />
+    </span>
+  )
+})
+
+/** Checkbox contract double: same label > input + span structure. */
+export function Checkbox({ checked, onChange, label, disabled, title, className }: {
+  checked: boolean
+  onChange: (next: boolean) => void
+  label: string
+  disabled?: boolean
+  title?: string
   className?: string
 }) {
   return (
-    <button type="button" disabled={disabled === true} data-variant={variant} data-size={size} className={className} onClick={onClick}>
-      {children}
-    </button>
+    <label className={className} title={title}>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={event => onChange(event.target.checked)} />
+      <span>{label}</span>
+    </label>
   )
 }
 
@@ -163,6 +199,57 @@ export function Modal({ open, onClose, title, children, footer }: {
   )
 }
 
+/**
+ * MenuSurface contract double: a plain div forwarding ref and div props;
+ * the real surface's portal backing has no test-visible behavior.
+ */
+export const MenuSurface = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  function MenuSurface(props, ref) {
+    return <div ref={ref} {...props} />
+  },
+)
+
+/**
+ * useAnchoredPosition contract double: jsdom cannot measure an anchor, so the
+ * shim reports a stable origin position while open like the real hook would
+ * after its first measured frame.
+ */
+export function useAnchoredPosition(options: {
+  open: boolean
+  anchorRef: RefObject<HTMLElement | null>
+  panelRef: RefObject<HTMLElement | null>
+  side?: string
+  align?: string
+  gap: number
+  margin: number
+}): CSSProperties | null {
+  return options.open ? { top: 0, left: 0 } : null
+}
+
+/**
+ * useDismissOnOutsidePointer contract double: same outside-pointerdown
+ * close the real hook performs, counting the portaled panel as inside.
+ */
+export function useDismissOnOutsidePointer(
+  root: RefObject<HTMLElement | null>,
+  open: boolean,
+  setOpen: (open: boolean) => void,
+  portal?: RefObject<HTMLElement | null>,
+): void {
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (event: Event) => {
+      const target = event.target
+      if (!(target instanceof Node)) return
+      if (root.current?.contains(target) === true) return
+      if (portal?.current?.contains(target) === true) return
+      setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => { document.removeEventListener('pointerdown', onPointerDown) }
+  }, [root, open, setOpen, portal])
+}
+
 /** IconChevronDownOutlineRegular look-alike carrying the native artwork. */
 export function IconChevronDownOutlineRegular({ size = 14, className }: { size?: number; className?: string }) {
   return (
@@ -172,5 +259,87 @@ export function IconChevronDownOutlineRegular({ size = 14, className }: { size?:
         stroke="currentColor"
       />
     </svg>
+  )
+}
+
+/** Tag contract double: the read-only capsule with its tone on data-tone. */
+export function Tag({ tone = 'outline', className, children }: {
+  tone?: string
+  className?: string
+  children?: ReactNode
+}) {
+  return <span className={className} data-tone={tone}>{children}</span>
+}
+
+interface ShimSegmentedOption {
+  value: string
+  label: string
+  disabled?: boolean
+  title?: string
+}
+
+function walkOptions(options: readonly ShimSegmentedOption[], from: number, key: string): ShimSegmentedOption | undefined {
+  const enabled = options.filter(option => option.disabled !== true)
+  if (key === 'Home') return enabled[0]
+  if (key === 'End') return enabled[enabled.length - 1]
+  const step = key === 'ArrowRight' || key === 'ArrowDown' ? 1 : key === 'ArrowLeft' || key === 'ArrowUp' ? -1 : 0
+  if (step === 0) return undefined
+  const count = options.length
+  for (let offset = 1; offset < count; offset += 1) {
+    const candidate = options[((from + step * offset) % count + count) % count]
+    if (candidate !== undefined && candidate.disabled !== true) return candidate
+  }
+  return undefined
+}
+
+/**
+ * SegmentedControl contract double: the published tablist DOM (`<id>-<value>`
+ * tabs, `<id>-<value>-panel` panels, roving tabIndex, walk keys) without the
+ * decorative sliding indicator.
+ */
+export function SegmentedControl({ id, value, options, onChange, label, disabled = false, className }: {
+  id: string
+  value: string
+  options: readonly ShimSegmentedOption[]
+  onChange: (next: string) => void
+  label: string
+  disabled?: boolean
+  className?: string
+}) {
+  const list = useRef<HTMLDivElement>(null)
+  const selected = options.findIndex(option => option.value === value)
+  useEffect(() => {
+    const root = list.current
+    if (root === null || !root.contains(document.activeElement)) return
+    root.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]')?.focus()
+  }, [value])
+  return (
+    <div ref={list} role="tablist" aria-label={label} className={className}>
+      {options.map((option) => {
+        const active = option.value === value
+        return (
+          <button
+            key={option.value}
+            id={`${id}-${option.value}`}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            aria-controls={`${id}-${option.value}-panel`}
+            tabIndex={active ? 0 : -1}
+            disabled={disabled || option.disabled === true}
+            title={option.title}
+            onClick={() => { if (!active) onChange(option.value) }}
+            onKeyDown={(event) => {
+              const target = walkOptions(options, selected, event.key)
+              if (target === undefined) return
+              event.preventDefault()
+              if (target.value !== value) onChange(target.value)
+            }}
+          >
+            {option.label}
+          </button>
+        )
+      })}
+    </div>
   )
 }

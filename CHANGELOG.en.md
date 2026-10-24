@@ -6,6 +6,19 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- New **Create theme manually…** entry in the Themes menu (current branch, unreleased): a creation path independent of `/dsh-theme-creator`. Pick a builtin or imported base, edit every editable token's Light/Dark values (collapsed groups, name search, `var()`/`color-mix()` expressions kept verbatim), and save it as an append-only, never-overwriting imported theme that previews automatically once the Host accepts it and can be exported back. The editor dialog uses a two-column layout (metadata + independently scrolling token panel, with a full-width banner for validation errors and the contrast summary); tokens are filtered by a two-level categorization (single-select root category + multi-select subgroups) and each token carries a localized usage note. Color fields offer two switchable modes — a literal input with an inline swatch and a palette (base colors, standard colors and a color picker), and an expression input whose swatch resolves against the draft token map, plus a structured `color-mix` builder.
+
+### Changed
+
+- The four public `ThemePreview` fields widened to `string | null`: imported-theme preview samples now resolve in the theme's own compiled token map instead of reusing other themes' colors.
+- Manual theme editor redesign (current branch, unreleased): the dialog is now a Settings-style left nav (Basic info + category/group entries with counts, modified and error dots) beside a content pane; the token pane carries a static light/dark preview card painted from resolved draft tokens, a global search plus a "modified only" filter, and Token/Light/Dark grid rows (short names, usage notes, reset-to-base buttons); validation errors, the contrast summary and the modified count live in footer Tags, with errors jumping through an "N problems" menu; value triggers show a readable summary (var target, color-mix parts), the picker gains a base/current compare strip with restore, and the mode switch uses SegmentedControl (auto-fallback on older hosts). On narrow widths the nav collapses to a top scroll strip and scheme values stack.
+
+### Fixed
+
+- Imported themes' four-color Mosaic now resolves each sample in that theme's own compiled token map (including `var()`/`color-mix()` expressions); samples that cannot resolve to an opaque color render as a striped placeholder instead of a misleading color.
+
 ## [0.1.5] - 2026-10-17
 
 ### Added

@@ -46,7 +46,7 @@ export function apply(ctx: Context): void {
 | `ThemeCatalog` | `get(id)`、`list()` | overlay runtime 使用的最小发现面 |
 | `ThemeStudioCatalog` | 继承 ThemeCatalog，增加 `validate(id)` | 公开发现与默认规则诊断 |
 | `BuiltinThemePreset` | readonly `id/name/description?/palette/tokens/preview` | 可 JSON 序列化的数据，不是公共文件格式 |
-| `ThemePreview` | readonly `background/surface/foreground/accent` | 每种模式的四色装饰样本 |
+| `ThemePreview` | readonly `background/surface/foreground/accent` | 每种模式的四色装饰样本；类型为 `string \| null`，`null` 表示样本无法解析为独立颜色（UI 呈现占位样式而非伪造颜色） |
 | `ThemeContrastReport` | readonly `themeId/passed/checks` | 两种模式逐配对结果，详见[对比度参考](./theme-contrast.md) |
 
 `palette.light/dark` 是 13 字段 `ChromePalette` 源数据（导出 `dsh-theme.json` 与 token 派生共用），`tokens.light/dark` 为 `Readonly<Record<string, string>>` 编译结果，`preview.light/dark` 为 ThemePreview。id 为命名空间 id，不是官方 `light/dark/system` 或默认 `null`。
