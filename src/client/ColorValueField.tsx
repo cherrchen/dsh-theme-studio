@@ -22,8 +22,10 @@ export interface ColorValueFieldProps {
   value: string
   /** Base theme's compiled value for this scheme, for the compare strip. */
   baseValue: string
-  /** Same-scheme token map used to resolve `var()`/`color-mix()` previews. */
+  /** Same-scheme draft token map used to resolve `var()`/`color-mix()` previews. */
   tokens: Readonly<Record<string, string>>
+  /** Complete same-scheme base token map used only for the base comparison. */
+  baseTokens: Readonly<Record<string, string>>
   /** Literal colors offered in the palette popover. */
   swatches: readonly string[]
   schemeLabel: string
@@ -96,7 +98,7 @@ function shortName(token: string): string {
 }
 
 export function ColorValueField({
-  value, baseValue, tokens, swatches, schemeLabel, token, disabled, invalid, describedBy, onChange, inputRef, t,
+  value, baseValue, tokens, baseTokens, swatches, schemeLabel, token, disabled, invalid, describedBy, onChange, inputRef, t,
 }: ColorValueFieldProps) {
   const detected: ColorInputMode = isLiteralColor(value) ? 'literal' : 'expression'
   const [mode, setMode] = useState<ColorInputMode>(detected)
@@ -108,7 +110,7 @@ export function ColorValueField({
   const id = useId()
   const visible = open && !disabled
   const resolved = useMemo(() => resolveCssColor(value, tokens), [value, tokens])
-  const baseResolved = useMemo(() => resolveCssColor(baseValue, tokens), [baseValue, tokens])
+  const baseResolved = useMemo(() => resolveCssColor(baseValue, baseTokens), [baseValue, baseTokens])
   const opaqueHex = useMemo(() => resolvePreviewColor(value, tokens), [value, tokens])
   const position = useAnchoredPosition({
     open: visible,

@@ -405,6 +405,48 @@ describe('ThemeEditorDialog', () => {
     expect(within(picker()).getByRole('button', { name: 'Restore base' }).getAttribute('disabled')).not.toBeNull()
   })
 
+  it.each([
+    { expression: 'var(--dsw-alias-bg-base)', light: 'rgba(32, 64, 96, 1)', dark: 'rgba(96, 128, 160, 1)', current: 'rgba(160, 192, 224, 1)' },
+    { expression: 'color-mix(in srgb, var(--dsh-base-color) 50%, black)', light: 'rgba(16, 32, 48, 1)', dark: 'rgba(48, 64, 80, 1)', current: 'rgba(80, 96, 112, 1)' },
+  ])('keeps the imported base comparison stable for $expression in both schemes', ({ expression, light, dark, current }) => {
+    const parsed = validateThemeFileData({
+      ...oceanDraft().base,
+      overrides: {
+        light: {
+          '--dsw-alias-bg-base': '#204060',
+          '--dsw-alias-brand-primary': expression,
+          '--dsh-base-color': 'var(--dsw-alias-bg-base)',
+        },
+        dark: {
+          '--dsw-alias-bg-base': '#6080a0',
+          '--dsw-alias-brand-primary': expression,
+          '--dsh-base-color': 'var(--dsw-alias-bg-base)',
+        },
+      },
+    })
+    if (!parsed.ok) throw new Error('fixture did not parse')
+    mountDialog({ draft: createThemeEditorDraft(compileThemeFile(parsed.file), parsed.file) })
+    const compareSwatch = (label: string) =>
+      within(within(picker()).getByText(label).parentElement!).getByRole('img', { name: 'Color preview' })
+
+    for (const [scheme, baseColor] of [['Light', light], ['Dark', dark]]) {
+      selectNav(/^brand-/)
+      editColor(`${scheme}: --dsw-alias-brand-primary`)
+      expect(compareSwatch('Base').getAttribute('title')).toBe(baseColor)
+      expect(compareSwatch('Current').getAttribute('title')).toBe(baseColor)
+      closePicker()
+
+      selectNav(/^bg-/)
+      fireEvent.change(editColor(`${scheme}: --dsw-alias-bg-base`), { target: { value: '#a0c0e0' } })
+      closePicker()
+      selectNav(/^brand-/)
+      expect(editColor(`${scheme}: --dsw-alias-brand-primary`).value).toBe(expression)
+      expect(compareSwatch('Base').getAttribute('title')).toBe(baseColor)
+      expect(compareSwatch('Current').getAttribute('title')).toBe(current)
+      closePicker()
+    }
+  })
+
   it('opens compact fields in the matching tab and preserves expressions when tabs change', () => {
     const b = mountDialog()
     selectNav(/^label-/)

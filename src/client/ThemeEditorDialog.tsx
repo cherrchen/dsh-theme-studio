@@ -262,6 +262,7 @@ export function ThemeEditorDialog({
           value={draft.values[scheme][token] ?? ''}
           baseValue={compiled[scheme][token] ?? ''}
           tokens={resolveMaps[scheme]}
+          baseTokens={compiled[scheme]}
           swatches={swatchLists[scheme]}
           schemeLabel={t(`editor.scheme.${scheme}` as ThemeStudioKey)}
           token={token}
