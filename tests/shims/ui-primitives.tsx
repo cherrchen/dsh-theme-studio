@@ -261,3 +261,85 @@ export function IconChevronDownOutlineRegular({ size = 14, className }: { size?:
     </svg>
   )
 }
+
+/** Tag contract double: the read-only capsule with its tone on data-tone. */
+export function Tag({ tone = 'outline', className, children }: {
+  tone?: string
+  className?: string
+  children?: ReactNode
+}) {
+  return <span className={className} data-tone={tone}>{children}</span>
+}
+
+interface ShimSegmentedOption {
+  value: string
+  label: string
+  disabled?: boolean
+  title?: string
+}
+
+function walkOptions(options: readonly ShimSegmentedOption[], from: number, key: string): ShimSegmentedOption | undefined {
+  const enabled = options.filter(option => option.disabled !== true)
+  if (key === 'Home') return enabled[0]
+  if (key === 'End') return enabled[enabled.length - 1]
+  const step = key === 'ArrowRight' || key === 'ArrowDown' ? 1 : key === 'ArrowLeft' || key === 'ArrowUp' ? -1 : 0
+  if (step === 0) return undefined
+  const count = options.length
+  for (let offset = 1; offset < count; offset += 1) {
+    const candidate = options[((from + step * offset) % count + count) % count]
+    if (candidate !== undefined && candidate.disabled !== true) return candidate
+  }
+  return undefined
+}
+
+/**
+ * SegmentedControl contract double: the published tablist DOM (`<id>-<value>`
+ * tabs, `<id>-<value>-panel` panels, roving tabIndex, walk keys) without the
+ * decorative sliding indicator.
+ */
+export function SegmentedControl({ id, value, options, onChange, label, disabled = false, className }: {
+  id: string
+  value: string
+  options: readonly ShimSegmentedOption[]
+  onChange: (next: string) => void
+  label: string
+  disabled?: boolean
+  className?: string
+}) {
+  const list = useRef<HTMLDivElement>(null)
+  const selected = options.findIndex(option => option.value === value)
+  useEffect(() => {
+    const root = list.current
+    if (root === null || !root.contains(document.activeElement)) return
+    root.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]')?.focus()
+  }, [value])
+  return (
+    <div ref={list} role="tablist" aria-label={label} className={className}>
+      {options.map((option) => {
+        const active = option.value === value
+        return (
+          <button
+            key={option.value}
+            id={`${id}-${option.value}`}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            aria-controls={`${id}-${option.value}-panel`}
+            tabIndex={active ? 0 : -1}
+            disabled={disabled || option.disabled === true}
+            title={option.title}
+            onClick={() => { if (!active) onChange(option.value) }}
+            onKeyDown={(event) => {
+              const target = walkOptions(options, selected, event.key)
+              if (target === undefined) return
+              event.preventDefault()
+              if (target.value !== value) onChange(target.value)
+            }}
+          >
+            {option.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}

@@ -82,3 +82,71 @@ describe('ui-atoms compat adapter', () => {
     expect(spy).toHaveBeenCalledWith(true)
   })
 })
+
+function NativeSegmented({ options }: { options: { value: string; label: string }[] }) {
+  return <div data-testid="native-segmented">{options.length}</div>
+}
+
+async function loadSegmented(exports: Record<string, unknown>) {
+  vi.resetModules()
+  vi.doMock('@deepseek-ai/dsh-client-ui-primitives', () => ({
+    MenuSurface: undefined,
+    Checkbox: undefined,
+    Input: undefined,
+    SegmentedControl: undefined,
+    ...exports,
+  }))
+  return import('../../src/compat/ui-atoms.tsx')
+}
+
+describe('ui-atoms SegmentedControl adapter', () => {
+  it('binds the host SegmentedControl where published', async () => {
+    const adapter = await loadSegmented({ SegmentedControl: NativeSegmented })
+    expect(adapter.SegmentedControl).toBe(NativeSegmented)
+  })
+
+  it('replicates the tablist contract on pre-0.1.7 hosts', async () => {
+    const adapter = await loadSegmented({})
+    const changed = vi.fn()
+    render(createElement(adapter.SegmentedControl, {
+      id: 'pick-mode',
+      label: 'Switch input mode',
+      value: 'literal',
+      onChange: changed,
+      options: [
+        { value: 'literal', label: 'RGB' },
+        { value: 'expression', label: 'color-mix' },
+      ],
+    }))
+    const rgb = screen.getByRole('tab', { name: 'RGB' })
+    const mix = screen.getByRole('tab', { name: 'color-mix' })
+    expect(rgb.id).toBe('pick-mode-literal')
+    expect(rgb.getAttribute('aria-controls')).toBe('pick-mode-literal-panel')
+    expect(rgb.getAttribute('aria-selected')).toBe('true')
+    expect(mix.tabIndex).toBe(-1)
+    fireEvent.click(mix)
+    expect(changed).toHaveBeenCalledWith('expression')
+  })
+
+  it('walks tabs with arrow keys like the published control', async () => {
+    const adapter = await loadSegmented({})
+    const changed = vi.fn()
+    render(createElement(adapter.SegmentedControl, {
+      id: 'pick-mode',
+      label: 'Switch input mode',
+      value: 'literal',
+      onChange: changed,
+      options: [
+        { value: 'literal', label: 'RGB' },
+        { value: 'expression', label: 'color-mix' },
+      ],
+    }))
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'RGB' }), { key: 'ArrowRight' })
+    expect(changed).toHaveBeenCalledWith('expression')
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'RGB' }), { key: 'End' })
+    expect(changed).toHaveBeenLastCalledWith('expression')
+    // Home targets the already-selected value, so the owner is not called again.
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'RGB' }), { key: 'Home' })
+    expect(changed).toHaveBeenCalledTimes(2)
+  })
+})

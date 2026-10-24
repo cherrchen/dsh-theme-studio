@@ -2,7 +2,7 @@
 
 ## Background
 
-Current，2026-10-23 更新手动主题编辑器的平铺列表与双标签颜色浮层（当前分支，未发布）。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，实施和验证状态见[编辑器计划](../plans/completed/2026-10-22-manual-theme-editor.md)。
+Current，2026-10-23 更新手动主题编辑器的平铺列表与双标签颜色浮层；2026-10-24 重设计为左导航 + 预览卡 + 页脚状态区（当前分支，未发布）。本架构描述当前源码；历史演进见[提交记录](../reference/repository-history.md)，实施和验证状态见[编辑器计划](../plans/completed/2026-10-22-manual-theme-editor.md)。
 
 ## Goals and Non-goals
 
@@ -99,7 +99,7 @@ Themes footer 的手动入口仅受 settings ready 门控，不读 AI 能力。r
 
 token 初值保持编译字符串；`theme-editor` 保留 palette，以纯派生 map 作 diff 基准并保留面外 overrides。提交前重查 id、序列化检查两个上限、整体校验，继而复用 `saveImportedTheme(source, 'append')` → Host accepted snapshot → imported 分区/card 投影 → `previewWhenImported`。关闭请求窗口不代表保存成功；草稿不自动清空，拒绝后可重开重试，进程/row 生命周期结束才丢失。切换基底重建整个草稿；本阶段没有 replace 分支、实时 overlay 或新增 durable 字段。
 
-对话框界面为左右两栏：左栏基底与元信息，右栏独立滚动的 token 面板，窄屏退回单栏；顶部通栏集中渲染校验错误（点击定位字段）与对比度摘要。通用控件复用 ui-primitives——`Input` 承载全部单行文本/搜索/数值框，`Button` 承载动作与下拉锚点，`Menu` 承载基底选择与两级过滤，`Checkbox`/`MenuSurface` 经 `compat/ui-atoms.tsx` 在缺少导出的宿主上回退；`textarea`、色卡、调色板取色器与文件输入等无对应原语的自绘件保持原生。token 面板由两级过滤驱动——一级类别（如 `--dsw-alias`）单选决定族，二级分组多选（`Menu` 的 `selectedIds`，含全选/清空）决定参与筛选的组；搜索在选中组内过滤，匹配的 token 按原有类别/组内顺序合并为平铺列表，直接渲染 token 行，不再设置分组标题、嵌套容器或独立折叠状态。错误定位会切换类别、补选目标分组并清空搜索后聚焦字段。每个 token 名下显示本地化用途说明，`token-descriptions.ts` 的双语表并入 locales 字典（`token.--…` 键）。色值字段由 `ColorValueField` 统一渲染为可聚焦的紧凑按钮，包含色块、原始值和 RGB / color-mix 模式标记；按钮注册为错误定位目标。点击经 `useAnchoredPosition`/`MenuSurface` 锚定并 portal 的编辑浮层，RGB 标签集中原值输入、基底 palette 与标准色以及 `input[type=color]`，color-mix 标签集中表达式原文输入与结构化混色拼装器。打开时按当前值选择标签并初始化混色参数；标签切换仅影响局部展示，编辑原值、拼装应用或取色才写回草稿。色块按当前草稿同 scheme 完整 token map 解析、不可求值用斜纹占位。浮层使用 dialog/tablist/tab/tabpanel 语义，支持方向键切换标签、Escape/关闭按钮返回触发器、外部指针或焦点离开时收起，settings 非 ready 时关闭并禁用。
+对话框界面为 Settings 式双栏：左侧独立滚动的导航以「基本信息」页、类别标题与分组条目呈现全部 token 结构，条目标注数量、已修改点（品牌色）与错误点（错误色优先）；右侧内容面在元信息页（单列 Settings 式表单）与 token 面板间切换，固定高度不随导航变化。token 面板自上而下为静态预览卡、搜索与「仅显示已修改」工具行、以及 `Token | 浅色 | 深色` 网格行——短名省略分组前缀、附本地化用途说明，已修改行带点标与恢复基底按钮，错误行名标红；搜索跨全部类别并按分组分节，多组视图显示分组小标题；窄屏导航折叠为顶部横向滚动条、明暗值纵排显示方案标签。无顶部通栏：页脚左状态区以 `Tag` 呈现「N 个问题」（点击展开可定位错误菜单）、对比度摘要与已修改计数，保存失败同位出现，不产生布局位移；错误定位会切到目标分组（或元信息页）、清空搜索与修改过滤后聚焦字段。每个 token 名下显示本地化用途说明，`token-descriptions.ts` 的双语表并入 locales 字典（`token.--…` 键）。通用控件复用 ui-primitives——`Input`、`Button`、`Menu`（基底选择与错误定位菜单）、`Tag`；`Checkbox`/`MenuSurface`/`SegmentedControl` 经 `compat/ui-atoms.tsx` 在缺少导出的宿主上回退，搜索/关闭/恢复图标经 `compat/menu-icons.tsx` 同款探测；`textarea`、色卡、取色器与文件输入等无对应原语的自绘件保持原生。预览卡 `ThemePreviewCard` 以草稿同 scheme token map 解析后的颜色绘制明暗两张迷你样张，不可解析区域用斜纹占位。色值字段由 `ColorValueField` 统一渲染为可聚焦的紧凑按钮，包含色块与 `color-summary.ts` 的可读摘要（字面量原文、`var()` 目标、`color-mix` 分部与占比）；按钮注册为错误定位目标。点击经 `useAnchoredPosition`/`MenuSurface` 锚定并 portal 的编辑浮层：头部为短名与方案标签，对比条并列基底/当前解析色并提供恢复基底，`SegmentedControl` 切换 RGB 与 color-mix——RGB 集中原值输入、`input[type=color]` 与标注「基底调色板」的色板，color-mix 集中原值输入与结构化混色拼装器（色值、占比滑杆+数值、混合目标、透明开关、结果预览与应用）。打开时按当前值选择标签并初始化混色参数；标签切换仅影响局部展示，编辑原值、拼装应用或取色才写回草稿。色块按当前草稿同 scheme 完整 token map 解析、不可求值用斜纹占位。浮层使用 dialog/tablist/tab/tabpanel 语义，支持方向键切换标签、Escape/关闭按钮返回触发器、外部指针或焦点离开时收起，settings 非 ready 时关闭并禁用。
 
 ### Theme Creator
 

@@ -204,3 +204,16 @@ Themes 行改为与官方语言行同款的下拉选择器：selector 按钮（`
 修复后的工作树在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上通过 `pnpm verify:all`（361 passed、1 个条件性 legacy-provider skip），并通过全部十七个支持版本的隔离矩阵，含真实 tarball 安装、官方 ThemeRuntime 与 CLI profile 冒烟。初次并行运行多个未限制 worker 的矩阵触发 UI 测试 5 秒超时；停止后以 `VITEST_MAX_WORKERS=2` 重跑全部版本通过，没有放宽测试断言或超时门槛。逐命令结果、源码指纹与两版浏览器报告见[本次修复证据](./dsh-compatibility-ci-fix-results-2026-10-23.json)。
 
 `0.1.6-alpha.2` 与 `0.2.1-rc.2` 另通过真实 Chromium 的既有主题选择器、预览/取消/应用、刷新和新 Host 进程磁盘恢复旅程，浏览器控制台无错误。首次缺少匹配的 Chromium 后在临时目录补齐，macOS 浏览器进程通信需在文件系统沙箱外执行。该浏览器脚本不覆盖手动编辑器的文件选择、导出回导或视觉审查；本机结果不替代推送后 Linux/Windows 的远端 CI 证据。
+
+## 手动编辑器界面重设计的适配补充（2026-10-24）
+
+编辑器重设计引入的跨版本回退，均沿用结构探测惯例（`compat/ui-atoms.tsx`、`compat/menu-icons.tsx`），不做版本字符串分支：
+
+| 接缝 | 上游事实 | 插件处理 |
+| --- | --- | --- |
+| `SegmentedControl` | 0.1.7-alpha.1 起发布；0.1.7-alpha.1..rc.1 其 `--dsw-radius-md` 无字面回退（圆角退化为直角，仅外观） | 缺席时回退本地 tablist 副本，保持 `<id>-<value>` tab、`<id>-<value>-panel` 面板、roving tabIndex 与方向键语义 |
+| `IconSearch/IconClose/IconRefresh` | 0.1.7 起为 `*OutlineRegular` 命名，0.1.5/0.1.6 为 `*Outline16` | `SearchIcon`/`CloseIcon`/`RefreshIcon` 依次探测 Regular → 16 → 内联同稿 SVG |
+| `Tag`、`Menu`（`side="top"` 错误菜单） | Tag 在全部支持版本导出；`Menu` 的 `side?: 'bottom' \| 'top' \| 'right'` 自 0.1.5-rc.2 起存在，`side="top"` 在所有支持版本可用 | 直接复用宿主导出，未加探测 |
+| `--dsw-elevation-panel`、`--dsw-radius-*`、`--dsw-focus-ring-color` | elevation 全版本存在；radius 与 focus-ring 变量在 0.1.7-rc.2 前缺席 | 编辑器/浮层样式一律 `var(--dsw-radius-*, <literal>)`、`var(--dsw-focus-ring-color, <alias>)` 字面回退 |
+
+适配测试：`tests/client/ui-atoms.spec.tsx` 覆盖 SegmentedControl 探测与本地 tablist 契约（tab/panel id、aria、遍历键），`tests/client/menu-icons.spec.tsx` 覆盖三组图标的 Regular→16→内联阶梯。**本轮未重跑逐版本隔离矩阵**——新增接缝全部为可选导出回退，不改动必需路径；逐版本证据以下一次矩阵批次为准。开发基线 `pnpm typecheck`、`pnpm lint`、`pnpm vitest run tests/client`、`pnpm docs:check` 通过。

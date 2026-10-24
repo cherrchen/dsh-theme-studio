@@ -1,5 +1,5 @@
 /**
- * Compact color swatch/value trigger with a portaled RGB / color-mix editor.
+ * Compact color swatch/summary trigger with a portaled RGB / color-mix editor.
  * Switching tabs never rewrites the draft; only editing a value does.
  * The leading square always previews the value resolved against the draft's
  * same-scheme token map (never the page theme, so candidate colors stay
@@ -8,8 +8,10 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button, Input, useAnchoredPosition, useDismissOnOutsidePointer } from '@deepseek-ai/dsh-client-ui-primitives'
-import { Checkbox, MenuSurface } from '../compat/ui-atoms.tsx'
+import { Checkbox, MenuSurface, SegmentedControl } from '../compat/ui-atoms.tsx'
+import { CloseIcon } from '../compat/menu-icons.tsx'
 import { parseColorMix, resolveCssColor, resolvePreviewColor } from './contrast-colors.ts'
+import { summarizeColorValue } from './color-summary.ts'
 import { type ThemeStudioKey } from './locales.ts'
 import css from './ThemeStudioRow.module.css'
 
@@ -18,6 +20,8 @@ export type ColorInputMode = 'literal' | 'expression'
 export interface ColorValueFieldProps {
   /** Draft value for this scheme. */
   value: string
+  /** Base theme's compiled value for this scheme, for the compare strip. */
+  baseValue: string
   /** Same-scheme token map used to resolve `var()`/`color-mix()` previews. */
   tokens: Readonly<Record<string, string>>
   /** Literal colors offered in the palette popover. */
@@ -40,12 +44,13 @@ function isLiteralColor(value: string): boolean {
     || /^(?:transparent|black|white)$/i.test(v)
 }
 
-function Swatch({ resolved, t }: { resolved: string | null; t: (key: ThemeStudioKey) => string }) {
+function Swatch({ resolved, t, mini }: { resolved: string | null; t: (key: ThemeStudioKey) => string; mini?: boolean }) {
   return (
     <span
-      className={css.colorSwatch}
-      role="img"
-      aria-label={t('editor.color.swatch')}
+      className={`${css.colorSwatch ?? ''} ${mini === true ? css.colorSwatchMini ?? '' : ''}`.trim()}
+      role={mini === true ? undefined : 'img'}
+      aria-hidden={mini === true ? true : undefined}
+      aria-label={mini === true ? undefined : t('editor.color.swatch')}
       title={resolved ?? t('editor.color.noPreview')}
     >
       {resolved === null
@@ -55,8 +60,43 @@ function Swatch({ resolved, t }: { resolved: string | null; t: (key: ThemeStudio
   )
 }
 
+/** Readable one-line rendering of a draft value inside the trigger. */
+function ValueSummary({ value, tokens, t }: {
+  value: string
+  tokens: Readonly<Record<string, string>>
+  t: (key: ThemeStudioKey) => string
+}) {
+  const summary = useMemo(() => summarizeColorValue(value, tokens), [value, tokens])
+  if (value.trim() === '') return <span className={css.colorDisplay}>{t('editor.color.empty')}</span>
+  switch (summary.kind) {
+    case 'literal':
+      return <span className={css.colorDisplay}>{summary.text}</span>
+    case 'var':
+      return <span className={css.colorDisplay}>→ {summary.target}</span>
+    case 'mix':
+      return (
+        <span className={css.colorDisplay}>
+          <Swatch resolved={summary.left.color} t={t} mini />
+          <span>{summary.left.text}</span>
+          <span className={css.summaryDim}>{summary.percent}%</span>
+          <span className={css.summaryDim}>·</span>
+          <Swatch resolved={summary.right.color} t={t} mini />
+          <span>{summary.right.text}</span>
+        </span>
+      )
+    default:
+      return <span className={css.colorDisplay}>{summary.text}</span>
+  }
+}
+
+/** Last name segment(s) for the picker header; the full name stays on title. */
+function shortName(token: string): string {
+  const segments = token.split('-').filter(segment => segment !== '')
+  return segments.slice(-2).join('-')
+}
+
 export function ColorValueField({
-  value, tokens, swatches, schemeLabel, token, disabled, invalid, describedBy, onChange, inputRef, t,
+  value, baseValue, tokens, swatches, schemeLabel, token, disabled, invalid, describedBy, onChange, inputRef, t,
 }: ColorValueFieldProps) {
   const detected: ColorInputMode = isLiteralColor(value) ? 'literal' : 'expression'
   const [mode, setMode] = useState<ColorInputMode>(detected)
@@ -68,6 +108,7 @@ export function ColorValueField({
   const id = useId()
   const visible = open && !disabled
   const resolved = useMemo(() => resolveCssColor(value, tokens), [value, tokens])
+  const baseResolved = useMemo(() => resolveCssColor(baseValue, tokens), [baseValue, tokens])
   const opaqueHex = useMemo(() => resolvePreviewColor(value, tokens), [value, tokens])
   const position = useAnchoredPosition({
     open: visible,
@@ -131,16 +172,17 @@ export function ColorValueField({
       withColor: 'transparent',
     })
   }
+  const percent = Math.min(100, Math.max(0, mix.percent))
+  const mixed = `color-mix(in srgb, ${mix.color.trim() === '' ? '#000000' : mix.color.trim()} ${percent}%, ${mix.withColor.trim() === '' ? 'transparent' : mix.withColor.trim()})`
   const applyMix = (): void => {
-    const percent = Math.min(100, Math.max(0, mix.percent))
-    const color = mix.color.trim() === '' ? '#000000' : mix.color.trim()
-    const withColor = mix.withColor.trim() === '' ? 'transparent' : mix.withColor.trim()
-    onChange(`color-mix(in srgb, ${color} ${percent}%, ${withColor})`)
+    onChange(mixed)
   }
   const mixTransparent = mix.withColor.trim().toLowerCase() === 'transparent'
   const mixColorResolved = resolveCssColor(mix.color, tokens)
   const mixWithResolved = resolveCssColor(mix.withColor, tokens)
+  const mixResultResolved = resolveCssColor(mixed, tokens)
   const fieldLabel = `${schemeLabel}: ${token}`
+  const changed = value.trim() !== baseValue.trim()
 
   return (
     <div className={css.colorField} ref={root}>
@@ -165,8 +207,7 @@ export function ColorValueField({
         }}
       >
         <Swatch resolved={resolved} t={t} />
-        <span className={css.colorDisplay}>{value || t('editor.color.empty')}</span>
-        <span className={css.colorMode}>{detected === 'literal' ? 'RGB' : 'color-mix'}</span>
+        <ValueSummary value={value} tokens={tokens} t={t} />
       </button>
       {visible ? createPortal(
         <MenuSurface
@@ -178,34 +219,59 @@ export function ColorValueField({
           aria-label={`${t('editor.color.edit')}: ${fieldLabel}`}
         >
           <div className={css.paletteHeader}>
-            <span className={css.paletteToken} title={token}>{token}</span>
-            <Button size="sm" aria-label={t('action.close')} onClick={closePicker}>×</Button>
+            <span className={css.paletteToken} title={token}>{shortName(token)}</span>
+            <span className={css.paletteScheme}>{schemeLabel}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={css.paletteClose ?? ''}
+              aria-label={t('action.close')}
+              onClick={closePicker}
+            >
+              <CloseIcon />
+            </Button>
           </div>
-          <div className={css.colorTabs} role="tablist" aria-label={t('editor.color.mode.switch')}>
-            {(['literal', 'expression'] as const).map(tab => (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                id={`${id}-${tab}`}
-                aria-selected={mode === tab}
-                aria-controls={`${id}-content`}
-                tabIndex={mode === tab ? 0 : -1}
-                onClick={() => { setMode(tab) }}
-                onKeyDown={event => {
-                  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
-                  event.preventDefault()
-                  const next = event.key === 'Home' ? 'literal' : event.key === 'End' ? 'expression'
-                    : mode === 'literal' ? 'expression' : 'literal'
-                  setMode(next)
-                  document.getElementById(`${id}-${next}`)?.focus()
-                }}
-              >
-                {tab === 'literal' ? 'RGB' : 'color-mix'}
-              </button>
-            ))}
+          <div className={css.compareStrip}>
+            <span className={css.compareCell}>
+              <span className={css.compareLabel}>{t('editor.color.base')}</span>
+              <span className={css.compareRow}>
+                <Swatch resolved={baseResolved} t={t} />
+                <span className={css.compareValue} title={baseValue}>{baseValue}</span>
+              </span>
+            </span>
+            <span className={css.compareCell}>
+              <span className={css.compareLabel}>{t('editor.color.current')}</span>
+              <span className={css.compareRow}>
+                <Swatch resolved={resolved} t={t} />
+                <span className={css.compareValue} title={value}>{value}</span>
+              </span>
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!changed}
+              onClick={() => { onChange(baseValue) }}
+            >
+              {t('editor.resetBase')}
+            </Button>
           </div>
-          <div className={css.colorTabPanel} role="tabpanel" id={`${id}-content`} aria-labelledby={`${id}-${mode}`}>
+          <SegmentedControl
+            id={`${id}-mode`}
+            className={css.colorTabs ?? ''}
+            label={t('editor.color.mode.switch')}
+            value={mode}
+            options={[
+              { value: 'literal', label: 'RGB' },
+              { value: 'expression', label: 'color-mix' },
+            ]}
+            onChange={setMode}
+          />
+          <div
+            className={css.colorTabPanel}
+            role="tabpanel"
+            id={`${id}-mode-${mode}-panel`}
+            aria-labelledby={`${id}-mode-${mode}`}
+          >
             <label className={css.pickerValue}>
               <span className={css.mixLabel}>{t(mode === 'literal' ? 'editor.color.mode.literal' : 'editor.color.mode.expression')}</span>
               <Input
@@ -232,79 +298,101 @@ export function ColorValueField({
                     seedMix(event.target.value)
                   }}
                 />
-                <div className={css.paletteGrid}>
-                  {swatches.map(swatch => (
-                    <button
-                      key={swatch}
-                      type="button"
-                      className={css.paletteChip}
-                      title={swatch}
-                      aria-label={swatch}
-                      disabled={disabled}
-                      onClick={() => {
-                        onChange(swatch)
-                        closePicker()
-                      }}
-                    >
-                      <span className={css.swatchFill} style={{ background: resolveCssColor(swatch, tokens) ?? undefined }} />
-                    </button>
-                  ))}
+                <div className={css.paletteArea}>
+                  <p className={css.paletteCaption}>{t('editor.color.basePalette')}</p>
+                  <div className={css.paletteGrid}>
+                    {swatches.map(swatch => (
+                      <button
+                        key={swatch}
+                        type="button"
+                        className={css.paletteChip}
+                        title={swatch}
+                        aria-label={swatch}
+                        disabled={disabled}
+                        onClick={() => {
+                          onChange(swatch)
+                          closePicker()
+                        }}
+                      >
+                        <span className={css.swatchFill} style={{ background: resolveCssColor(swatch, tokens) ?? undefined }} />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </>
             ) : (
               <div className={css.mixBuilder}>
                 <label className={css.mixField}>
                   <span className={css.mixLabel}>{t('editor.mix.color')}</span>
-                  <Swatch resolved={mixColorResolved} t={t} />
-                  <Input
-                    className={css.mixInput ?? ''}
-                    value={mix.color}
-                    aria-label={`${t('editor.mix.color')}: ${schemeLabel}: ${token}`}
-                    disabled={disabled}
-                    onChange={event => setMix(current => ({ ...current, color: event.target.value }))}
-                  />
+                  <span className={css.mixControls}>
+                    <Swatch resolved={mixColorResolved} t={t} />
+                    <Input
+                      className={css.mixInput ?? ''}
+                      value={mix.color}
+                      aria-label={`${t('editor.mix.color')}: ${schemeLabel}: ${token}`}
+                      disabled={disabled}
+                      onChange={event => setMix(current => ({ ...current, color: event.target.value }))}
+                    />
+                  </span>
                 </label>
-                <label className={css.mixPercent}>
+                <div className={css.mixField}>
                   <span className={css.mixLabel}>{t('editor.mix.percent')}</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    className={css.mixPercentInput ?? ''}
-                    value={mix.percent}
-                    aria-label={`${t('editor.mix.percent')}: ${schemeLabel}: ${token}`}
-                    disabled={disabled}
-                    onChange={event => setMix(current => ({ ...current, percent: Number(event.target.value) }))}
-                  />
-                </label>
+                  <span className={css.mixControls}>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      className={css.mixRange}
+                      value={percent}
+                      aria-label={t('editor.mix.percentRange')}
+                      disabled={disabled}
+                      onChange={event => setMix(current => ({ ...current, percent: Number(event.target.value) }))}
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      className={css.mixPercentInput ?? ''}
+                      value={mix.percent}
+                      aria-label={`${t('editor.mix.percent')}: ${schemeLabel}: ${token}`}
+                      disabled={disabled}
+                      onChange={event => setMix(current => ({ ...current, percent: Number(event.target.value) }))}
+                    />
+                  </span>
+                </div>
                 <label className={css.mixField}>
                   <span className={css.mixLabel}>{t('editor.mix.with')}</span>
-                  <Swatch resolved={mixWithResolved} t={t} />
-                  <Input
-                    className={css.mixInput ?? ''}
-                    value={mix.withColor}
-                    aria-label={`${t('editor.mix.with')}: ${schemeLabel}: ${token}`}
-                    disabled={disabled}
-                    onChange={event => setMix(current => ({ ...current, withColor: event.target.value }))}
-                  />
+                  <span className={css.mixControls}>
+                    <Swatch resolved={mixWithResolved} t={t} />
+                    <Input
+                      className={css.mixInput ?? ''}
+                      value={mix.withColor}
+                      aria-label={`${t('editor.mix.with')}: ${schemeLabel}: ${token}`}
+                      disabled={disabled}
+                      onChange={event => setMix(current => ({ ...current, withColor: event.target.value }))}
+                    />
+                  </span>
                 </label>
-                <Checkbox
-                  className={css.mixTransparent ?? ''}
-                  checked={mixTransparent}
-                  disabled={disabled}
-                  label={t('editor.mix.transparent')}
-                  onChange={(next) => {
-                    setMix(current => ({ ...current, withColor: next ? 'transparent' : '#ffffff' }))
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={disabled}
-                  onClick={applyMix}
-                >
-                  {t('editor.mix.apply')}
-                </Button>
+                <div className={css.mixFooter}>
+                  <Checkbox
+                    className={css.mixTransparent ?? ''}
+                    checked={mixTransparent}
+                    disabled={disabled}
+                    label={t('editor.mix.transparent')}
+                    onChange={(next) => {
+                      setMix(current => ({ ...current, withColor: next ? 'transparent' : '#ffffff' }))
+                    }}
+                  />
+                  <Swatch resolved={mixResultResolved} t={t} />
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={disabled}
+                    onClick={applyMix}
+                  >
+                    {t('editor.mix.apply')}
+                  </Button>
+                </div>
               </div>
             )}
           </div>

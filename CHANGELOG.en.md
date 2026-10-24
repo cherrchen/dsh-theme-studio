@@ -13,6 +13,7 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Changed
 
 - The four public `ThemePreview` fields widened to `string | null`: imported-theme preview samples now resolve in the theme's own compiled token map instead of reusing other themes' colors.
+- Manual theme editor redesign (current branch, unreleased): the dialog is now a Settings-style left nav (Basic info + category/group entries with counts, modified and error dots) beside a content pane; the token pane carries a static light/dark preview card painted from resolved draft tokens, a global search plus a "modified only" filter, and Token/Light/Dark grid rows (short names, usage notes, reset-to-base buttons); validation errors, the contrast summary and the modified count live in footer Tags, with errors jumping through an "N problems" menu; value triggers show a readable summary (var target, color-mix parts), the picker gains a base/current compare strip with restore, and the mode switch uses SegmentedControl (auto-fallback on older hosts). On narrow widths the nav collapses to a top scroll strip and scheme values stack.
 
 ### Fixed
 

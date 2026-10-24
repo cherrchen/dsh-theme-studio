@@ -52,3 +52,55 @@ describe('menu-icons compat adapter', () => {
     expect(path?.getAttribute('stroke')).toBe('currentColor')
   })
 })
+
+describe('menu-icons picker icon ladders', () => {
+  async function loadPickerIcons(exports: Record<string, unknown>) {
+    vi.resetModules()
+    vi.doMock('@deepseek-ai/dsh-client-ui-primitives', () => ({
+      IconChevronDownOutlineRegular: undefined,
+      IconChevronDownOutline14: undefined,
+      IconSearchOutlineRegular: undefined,
+      IconSearchOutline16: undefined,
+      IconCloseOutlineRegular: undefined,
+      IconCloseOutline16: undefined,
+      IconRefreshOutlineRegular: undefined,
+      IconRefreshOutline16: undefined,
+      ...exports,
+    }))
+    return import('../../src/compat/menu-icons.tsx')
+  }
+
+  it('binds the Regular picker icons where published', async () => {
+    const adapter = await loadPickerIcons({
+      IconSearchOutlineRegular: NativeRegular,
+      IconCloseOutlineRegular: NativeRegular,
+      IconRefreshOutlineRegular: NativeRegular,
+    })
+    expect(adapter.SearchIcon).toBe(NativeRegular)
+    expect(adapter.CloseIcon).toBe(NativeRegular)
+    expect(adapter.RefreshIcon).toBe(NativeRegular)
+  })
+
+  it('binds the 0.1.5-era *Outline16 names when Regular is absent', async () => {
+    const adapter = await loadPickerIcons({
+      IconSearchOutline16: NativeFourteen,
+      IconCloseOutline16: NativeFourteen,
+      IconRefreshOutline16: NativeFourteen,
+    })
+    expect(adapter.SearchIcon).toBe(NativeFourteen)
+    expect(adapter.CloseIcon).toBe(NativeFourteen)
+    expect(adapter.RefreshIcon).toBe(NativeFourteen)
+  })
+
+  it('falls back to inline artwork when no picker icon resolves', async () => {
+    const adapter = await loadPickerIcons({})
+    render(createElement(adapter.SearchIcon, {}))
+    expect(document.querySelector('svg path')?.getAttribute('stroke')).toBe('currentColor')
+    cleanup()
+    render(createElement(adapter.CloseIcon, {}))
+    expect(document.querySelector('svg path')?.getAttribute('d')).toContain('M2.5 2.5')
+    cleanup()
+    render(createElement(adapter.RefreshIcon, {}))
+    expect(document.querySelector('svg path')?.getAttribute('d')).toContain('M14.5001 8')
+  })
+})

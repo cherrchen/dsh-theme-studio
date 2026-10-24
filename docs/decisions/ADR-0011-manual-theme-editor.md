@@ -102,3 +102,5 @@ Accepted（2026-10-21 初稿；同日经两轮技术评审修订及最终复核�
 ## Implementation Status
 
 2026-10-22：本 ADR 的方案已按 [实施计划](../plans/completed/2026-10-22-manual-theme-editor.md) Phase 0–4 落地于 `feat/user-manul-design` 分支，并按计划拆分提交。完整 `pnpm verify:all` 已通过；具体命令、兼容矩阵和验证边界见该计划。剩余矩阵与真实浏览器验证按用户后续指示暂缓，尚未发布。历史决策文本保持不变。
+
+2026-10-24 补充（不改变已接受决策）：编辑器界面重设计为 Settings 式左导航 + 右内容面，并新增静态预览卡——token 面板顶部的明暗迷你样张全部用草稿同 scheme token map 解析后的颜色绘制，不可解析区域以斜纹占位。该预览卡是编辑器内联的静态色样展示，与本 ADR 归入 Phase 2 的实时 overlay / 图形样张不是一回事，后者仍属未实施方向。
