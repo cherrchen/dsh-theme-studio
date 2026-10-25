@@ -8,6 +8,8 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
+- Support DSH `0.2.1-rc.3` and move the development baseline to that release.
+
 - New **Create theme manually…** entry in the Themes menu (current branch, unreleased): a creation path independent of `/dsh-theme-creator`. Pick a builtin or imported base, edit every editable token's Light/Dark values (collapsed groups, name search, `var()`/`color-mix()` expressions kept verbatim), and save it as an append-only, never-overwriting imported theme that previews automatically once the Host accepts it and can be exported back. The editor dialog uses a two-column layout (metadata + independently scrolling token panel, with a full-width banner for validation errors and the contrast summary); tokens are filtered by a two-level categorization (single-select root category + multi-select subgroups) and each token carries a localized usage note. Color fields offer two switchable modes — a literal input with an inline swatch and a palette (base colors, standard colors and a color picker), and an expression input whose swatch resolves against the draft token map, plus a structured `color-mix` builder.
 
 ### Changed

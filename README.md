@@ -36,7 +36,7 @@ dsh --profile web
 
 **使用本插件**：一个受支持的 DSH 版本（精确匹配，不是范围；清单见 [DSH 兼容性](#dsh-兼容性)）下的 Web profile。`dsh plugin` 负责安装，无需本地 Node 工具链。
 
-**从源码构建 / 贡献**：Node.js `^22.19.0 || >=24`，pnpm `11.7.0`（建议经 corepack 启用）；开发 pin 的 DSH 为 `0.2.1-rc.2`。
+**从源码构建 / 贡献**：Node.js `^22.19.0 || >=24`，pnpm `11.7.0`（建议经 corepack 启用）；开发 pin 的 DSH 为 `0.2.1-rc.3`。
 
 **运行平台**：任何能运行受支持 DSH Web 的环境；DeepSeek Harness Desktop 将本包作为内置 runtime 插件集成。
 
@@ -50,7 +50,7 @@ dsh --profile web
 | `v0.1.6` | `0.1.6-alpha.1`、`0.1.6-alpha.2` |
 | `v0.1.7` | `0.1.7-alpha.1`、`0.1.7-alpha.2`、`0.1.7-rc.1`、`0.1.7-rc.2` |
 | `v0.2.0` | `0.2.0-rc.1`、`0.2.0-rc.2` |
-| `v0.2.1` | `0.2.1-alpha.1`、`0.2.1-alpha.2`、`0.2.1-alpha.3`、`0.2.1-alpha.4`、`0.2.1-alpha.5`、`0.2.1-rc.1`、`0.2.1-rc.2` |
+| `v0.2.1` | `0.2.1-alpha.1`、`0.2.1-alpha.2`、`0.2.1-alpha.3`、`0.2.1-alpha.4`、`0.2.1-alpha.5`、`0.2.1-rc.1`、`0.2.1-rc.2`、`0.2.1-rc.3` |
 
 表外版本或 `@deepseek-ai/dsh-*` 混装的安装未经验证：插件自身不在运行时探测安装树或阻断启动；宿主安装期的 peer 准入可能拒绝部分不匹配版本，未被拒绝的混装仍可能启动，只是不在受支持范围。
 
@@ -183,7 +183,7 @@ Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均
 
 ### 手动创建主题（未发布）
 
-> 仅存在于当前 `feat/user-manul-design` 分支，尚未发布——npm 0.1.5 不包含此功能。
+> 当前源码已包含，尚未发布——npm 0.1.5 不包含此功能。
 
 主题菜单底部的 **手动创建主题…** 是独立于 `/dsh-theme-creator` AI 助手的创建入口，只在设置就绪时可用，不受创作助手模式与工作区状态影响：
 
