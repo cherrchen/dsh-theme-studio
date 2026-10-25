@@ -217,3 +217,13 @@ Themes 行改为与官方语言行同款的下拉选择器：selector 按钮（`
 | `--dsw-elevation-panel`、`--dsw-radius-*`、`--dsw-focus-ring-color` | elevation 全版本存在；radius 与 focus-ring 变量在 0.1.7-rc.2 前缺席 | 编辑器/浮层样式一律 `var(--dsw-radius-*, <literal>)`、`var(--dsw-focus-ring-color, <alias>)` 字面回退 |
 
 适配测试：`tests/client/ui-atoms.spec.tsx` 覆盖 SegmentedControl 探测与本地 tablist 契约（tab/panel id、aria、遍历键），`tests/client/menu-icons.spec.tsx` 覆盖三组图标的 Regular→16→内联阶梯。**本轮未重跑逐版本隔离矩阵**——新增接缝全部为可选导出回退，不改动必需路径；逐版本证据以下一次矩阵批次为准。开发基线 `pnpm typecheck`、`pnpm lint`、`pnpm vitest run tests/client`、`pnpm docs:check` 通过。
+
+## DSH 0.2.1-rc.3 提升（2026-10-25）
+
+本批次从 `18f1de9` 开始，先以 `node scripts/run-dsh-matrix.mjs --candidate 0.2.1-rc.3` 在隔离副本验证，未提前修改支持清单。候选全部步骤通过，包含 379 passed、1 个条件性 legacy-provider skip、真实 tarball 安装、官方 ThemeRuntime 与 CLI web profile 组合。发布包元数据仍配套 Cordis `4.0.5`、Schemastery `3.18.5`。
+
+公开声明对比以 npm 发布的 rc.2/rc.3 包为依据：`dsh-settings`、`dsh-client-ui-settings`、`dsh-client-ui-theme` 和 `dsh-skill` 的声明未变；Menu 新增可选 `current` / `minWidthFromAnchor`，Tooltip 增加视口适配能力，workspace 的两参 `startSession` 保持不变。新增 `whenDraftExists` 的默认行为仍是保留已有草稿，与插件现有调用一致。本批次不新增适配分支，不改动 production 入口、设置 transport、overlay 或 catalog 所有权。
+
+候选通过后同步精确支持清单、DSH peers、最新开发 pin、overrides、release-age 例外、lockfile 和中英 README。2026-10-25 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，正式基线 `pnpm verify:all` 通过（379 passed、1 个条件性 legacy-provider skip）；全部十八版隔离矩阵（含原有十七版）通过。矩阵分成两个互不共享安装树的批次，每批 `VITEST_MAX_WORKERS=1`，逐版执行安装、一致性检查、lint、类型检查、构建、完整单测、文档检查、token 审计、真实 tarball 安装、官方 ThemeRuntime 与 CLI web profile 组合。rc.3 的正式模式使用更新后的 frozen lockfile，没有候选放宽开关；当前 checkout 保持最新受支持 rc.3 开发基线，非 DSH 依赖版本未改变。逐命令结果、源码指纹与浏览器报告见[本批次证据](./dsh-compatibility-rc3-results-2026-10-25.json)。
+
+rc.3 真实 Chromium 的主题/外观共存、悬停预览、取消、应用、刷新与新 Host 进程磁盘恢复旅程通过，浏览器控制台没有错误。首次浏览器命令误读重打包前的 tarball，之后补齐匹配的 Chromium 并使用新 tarball 成功重跑，未使用 peer 豁免。该浏览器旅程不覆盖手动编辑器的文件选择、导出回导或 Theme Creator 的模型/会话端到端行为，也不证明逐版本像素对比或 Linux/Windows 通过。远端三平台 CI 从同一清单自动纳入 rc.3，跨平台结果须以相应提交的 CI 为准；本批次没有执行 tag 或发布。进度和发布状态见[路线图](../plans/active/2026-10-02-theme-studio-roadmap.md)。

@@ -36,7 +36,7 @@ Once it is up, open **Settings → General**: the "Themes" row sits between the 
 
 **Using the plugin**: a Web profile on one of the supported DSH releases — an exact match, not a range; the list lives under [DSH compatibility](#dsh-compatibility). `dsh plugin` handles the install; no local Node toolchain is needed.
 
-**Building from source / contributing**: Node.js `^22.19.0 || >=24`, pnpm `11.7.0` (enable via corepack); the dev-pinned DSH is `0.2.1-rc.2`.
+**Building from source / contributing**: Node.js `^22.19.0 || >=24`, pnpm `11.7.0` (enable via corepack); the dev-pinned DSH is `0.2.1-rc.3`.
 
 **Platforms**: any environment that runs a supported DSH Web; DeepSeek Harness Desktop integrates this package as a built-in runtime plugin.
 
@@ -50,7 +50,7 @@ The exact supported releases are owned by `src/compat/dsh-version.ts` as the sin
 | `v0.1.6` | `0.1.6-alpha.1`, `0.1.6-alpha.2` |
 | `v0.1.7` | `0.1.7-alpha.1`, `0.1.7-alpha.2`, `0.1.7-rc.1`, `0.1.7-rc.2` |
 | `v0.2.0` | `0.2.0-rc.1`, `0.2.0-rc.2` |
-| `v0.2.1` | `0.2.1-alpha.1`, `0.2.1-alpha.2`, `0.2.1-alpha.3`, `0.2.1-alpha.4`, `0.2.1-alpha.5`, `0.2.1-rc.1`, `0.2.1-rc.2` |
+| `v0.2.1` | `0.2.1-alpha.1`, `0.2.1-alpha.2`, `0.2.1-alpha.3`, `0.2.1-alpha.4`, `0.2.1-alpha.5`, `0.2.1-rc.1`, `0.2.1-rc.2`, `0.2.1-rc.3` |
 
 Releases outside the table — or installs mixing different `@deepseek-ai/dsh-*` versions — are unverified: the plugin itself does not probe the installed tree or block itself at runtime. Peer admission during install may reject some mismatched releases, but an unrejected mixed install can still start; it simply falls outside the supported set.
 
@@ -183,7 +183,7 @@ Creator visibility is controlled by `creatorAgentMode` (switchable on the Plugin
 
 ### Manual theme creation (unreleased)
 
-> Current `feat/user-manul-design` branch only — not yet released; npm 0.1.5 does not include this feature.
+> Included in the current source — not yet released; npm 0.1.5 does not include this feature.
 
 The theme menu's **Create theme manually…** is a creation entry independent of the `/dsh-theme-creator` AI assistant. It is enabled only while settings are ready and does not depend on the creator mode or workspace state:
 
