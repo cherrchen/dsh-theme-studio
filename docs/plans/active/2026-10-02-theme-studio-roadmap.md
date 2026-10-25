@@ -29,10 +29,12 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 | `dsh-theme.json` v1 与主题导入/导出、复合 catalog | Completed，本分支实现 | v0.1.5 | [导入导出](../completed/2026-10-14-theme-file-import-export.md)、[文件格式](../../reference/theme-file-format.md) |
 | Theme Creator：运行时 skill + `creatorAgentMode` + 一键跳转 + 校验器 | Completed，本分支实现 | v0.1.5 | [ADR-0010](../../decisions/ADR-0010-theme-creator-runtime-skill.md)、[设置契约](../../reference/settings-and-package-contract.md) |
 | DSH 0.2.1-alpha.3 至 0.2.1-rc.2 支持 | Completed，PR #10/#12 | v0.1.5；远端跨平台结果由 PR CI 与 Release verify 提供 | [兼容矩阵](../../development/dsh-compatibility.md) |
-| 手动主题编辑器 Phase 1 | Completed，分批提交，完整 verify:all 通过；当前源码的十八版矩阵在 rc.3 批次复验通过，手动编辑器浏览器旅程仍未覆盖 | 未发布 | [实施与验证记录](../completed/2026-10-22-manual-theme-editor.md)、[ADR-0011](../../decisions/ADR-0011-manual-theme-editor.md)、[后续兼容复验](../../development/dsh-compatibility.md#dsh-021-rc3-提升2026-10-25) |
-| DSH 0.2.1-rc.3 支持 | Completed，候选验证、正式 verify:all、十八版隔离矩阵与 rc.3 既有主题浏览器旅程通过（macOS） | 未发布 | [兼容矩阵](../../development/dsh-compatibility.md#dsh-021-rc3-提升2026-10-25) |
+| 手动主题编辑器 Phase 1 | Completed，分批提交，完整 verify:all 通过；当前源码的十八版矩阵在 rc.3 批次复验通过，手动编辑器浏览器旅程仍未覆盖 | v0.1.6 准备中；尚未打 tag / 发布 | [实施与验证记录](../completed/2026-10-22-manual-theme-editor.md)、[ADR-0011](../../decisions/ADR-0011-manual-theme-editor.md)、[后续兼容复验](../../development/dsh-compatibility.md#dsh-021-rc3-提升2026-10-25) |
+| DSH 0.2.1-rc.3 支持 | Completed，候选验证、正式 verify:all、十八版隔离矩阵与 rc.3 既有主题浏览器旅程通过（macOS） | v0.1.6 准备中；尚未打 tag / 发布 | [兼容矩阵](../../development/dsh-compatibility.md#dsh-021-rc3-提升2026-10-25) |
 
-“发布状态”以 tag 与远端产物为准：v0.1.4 于 2026-10-11 打 tag、发布 GitHub Release 并推上 npm（`@dsh-electron/dsh-theme-studio@0.1.4`），Stage 2/3、文档补齐与兼容/发布改进均纳入其中；v0.1.5 于 2026-10-17 打 tag、发布 GitHub Release 并推上 npm `latest`（`@dsh-electron/dsh-theme-studio@0.1.5`），主题文件格式、Theme Creator 与 DSH 0.2.1 新版支持纳入其中。每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
+“发布状态”以 tag 与远端产物为准：v0.1.4 于 2026-10-11 打 tag、发布 GitHub Release 并推上 npm（`@dsh-electron/dsh-theme-studio@0.1.4`），Stage 2/3、文档补齐与兼容/发布改进均纳入其中；v0.1.5 于 2026-10-17 打 tag、发布 GitHub Release 并推上 npm `latest`（`@dsh-electron/dsh-theme-studio@0.1.5`），主题文件格式、Theme Creator 与 DSH 0.2.1 新版支持纳入其中。v0.1.6 于 2026-10-25 开始发布准备，基于已合并 PR #14/#15 的 main；版本内容已整理至 CHANGELOG，尚未创建或推送 tag，也未发布 npm/GitHub Release。每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
+
+发布准备验证（2026-10-25）：在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，基于 main `7a8aa25`，将包版本调整为 `0.1.6` 并同步双语 CHANGELOG/README；冻结安装、清空生成 `lib/` 后的 `pnpm verify:all`（379 passed | 1 skipped (380)）、实际 tarball 安装与 CLI profile 冒烟、`pnpm pack --dry-run` 均通过。包内版本确认为 `0.1.6`，仍为 `platform:web`，README/CHANGELOG 与源码一致。此次没有改动运行时代码、测试、兼容声明或 lockfile；跨版本证据沿用[rc.3 批次与 PR CI](../../development/dsh-compatibility.md#dsh-021-rc3-提升2026-10-25)，没有把旧证据当作 v0.1.6 的新全量矩阵。tag 触发的 Release verify（含十八版全量浏览器）与实际发布尚未执行。
 
 ## Current State
 

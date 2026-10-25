@@ -6,20 +6,23 @@
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-10-25
+
 ### Added
 
+- Themes 菜单新增「手动创建主题…」：任选内置或导入主题为基底，填写名称、ID、作者和描述，编辑全部可编辑 token 的浅色/深色值；保留 `var()` / `color-mix()` 表达式，保存仅新增，经 Host 接受后自动预览，并可导出回导。草稿在主题行生命周期内保留，关闭或保存被拒后可继续编辑。
+- 编辑器采用 Settings 式左导航与右内容面，提供类别/分组、全局搜索、仅显示已修改、逐 token 双语用途说明、恢复基底及静态明暗预览卡；错误定位、对比度摘要和修改计数集中在页脚，窄屏自动调整布局。
+- 色值编辑浮层提供 RGB / color-mix 标签、字面量或表达式输入、基底调色板与取色器、结构化混色拼装器，以及基底/当前色对比和恢复操作；旧宿主缺失的控件、图标与 ref 能力由兼容层适配。
 - 支持 DSH `0.2.1-rc.3`，开发基线同步提升至该版本。
-
-- Themes 菜单新增「手动创建主题…」（当前分支，未发布）：独立于 `/dsh-theme-creator` 的创建入口，任选内置或导入主题为基底，编辑全部可编辑 token 的浅色/深色值（分组收起、可搜索、`var()`/`color-mix()` 等表达式原样保留），保存为只新增、不覆盖的导入主题，经 Host 接受后自动预览并可导出回导。编辑对话框为左右两栏（元信息 + 独立滚动 token 面板，顶部通栏展示校验错误与对比度摘要）；token 按两级类别过滤（一级类别单选、二级分组多选），每个 token 附本地化用途说明；色值字段分字面色/表达式两种模式并可切换——字面色带内嵌色块与调色板（基底色、标准色与取色器），表达式色块按当前草稿 token map 解析并提供结构化 `color-mix` 拼装器。
 
 ### Changed
 
-- 公共 `ThemePreview` 四个字段类型放宽为 `string | null`：导入主题的预览样本改为在自身完整 token 图中解析，不再复用其他主题的色值。
-- 手动主题编辑器界面重设计（当前分支，未发布）：对话框改为 Settings 式左导航（「基本信息」+ 类别/分组条目，含数量、已修改点与错误点）+ 右内容面；token 面板含静态明暗预览卡（按草稿 token 解析色绘制）、全局搜索与「仅显示已修改」过滤、Token/浅色/深色网格行（短名 + 用途说明 + 已修改恢复按钮）；校验错误、对比度摘要与已修改计数以页脚 Tag 呈现，错误经「N 个问题」菜单定位；色值触发器显示可读摘要（var 目标、color-mix 分部），浮层新增基底/当前对比条与恢复基底，模式切换改用 SegmentedControl（旧宿主自动回退）。窄屏导航折叠为顶部横滚条、明暗值纵排。
+- 公共 `ThemePreview` 四个字段类型放宽为 `string | null`：导入主题的预览样本在自身完整 token 图中解析，不能解析的颜色显式为空。
 
 ### Fixed
 
-- 导入主题的四色 Mosaic 现在按该主题自身编译后的 token 图解析（含 `var()`/`color-mix()` 表达式）；无法解析为不透明色的样本渲染为占位条纹，不再显示误导性颜色。
+- 导入主题的四色 Mosaic 按自身编译后的 token 图解析（含 `var()` / `color-mix()`）；无法解析为不透明色的样本显示占位条纹。
+- 编辑器基底色块使用基底的完整 token 图解析，不再随草稿引用目标的修改而漂移。
 
 ## [0.1.5] - 2026-10-17
 
@@ -110,7 +113,8 @@
 - Host 侧持久化当前主题选择，并兼容受支持 DSH 版本间的 register/settingsScope 与 Config/configure/configForms 差异；设置服务停止重供后可重新启动主题行。
 - 发布 standalone Host、Client bundle、TypeScript 声明和 `cordis.patch.yml`，并声明精确的 DSH 兼容版本。
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.2...v0.1.3

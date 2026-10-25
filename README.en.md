@@ -17,7 +17,7 @@ The official "Appearance" owns the mode, not the palette, while peer desktop too
 - **Absent when absent**: declares `platform:web`, with no dependency on Electron, Node client capabilities, or a Desktop provider, and no model tools or prompt content; with no theme chosen the UI is item-for-item identical to an uninstalled harness.
 - **Creation stays quiet**: the Theme Creator skill answers only the `/dsh-theme-creator` user gesture and stays out of the model catalog by default; the theme menu's "Create your own theme…" opens a Cordis session with the gesture prefilled (never auto-sent), and the result takes effect only after you confirm the import.
 
-Current released version: `v0.1.5`. The user-visible changes of each version live in the [CHANGELOG](./CHANGELOG.en.md); progress and release state live in the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
+Current source version: `v0.1.6`. The user-visible changes of each version live in the [CHANGELOG](./CHANGELOG.en.md); progress and release state live in the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
 
 ## Quick Start
 
@@ -91,7 +91,7 @@ pnpm pack @dsh-electron/dsh-theme-studio
 dsh plugin --profile web add ./plugin.tgz
 ```
 
-You can also download `plugin.tgz` from the [GitHub Release assets](https://github.com/cherrchen/dsh-theme-studio/releases/download/v0.1.5/plugin.tgz). Also pre-built, handy for air-gapped or offline delivery — available only once the matching Release assets exist.
+You can also download `plugin.tgz` from the [GitHub Release assets](https://github.com/cherrchen/dsh-theme-studio/releases/download/v0.1.6/plugin.tgz). Also pre-built, handy for air-gapped or offline delivery — available only once the matching Release assets exist.
 
 ### Install from GitHub
 
@@ -101,10 +101,10 @@ dsh plugin --profile web add github:cherrchen/dsh-theme-studio
 
 A GitHub install fetches source code and builds it automatically during `add` — no manual build needed — but `allowBuilds` has to name this package itself, as described above.
 
-Pinning a version (e.g. `#v0.1.5`) is recommended so a later push cannot silently change what actually runs:
+Pinning a version (e.g. `#v0.1.6`) is recommended so a later push cannot silently change what actually runs:
 
 ```sh
-dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.5
+dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.6
 ```
 
 ### Install from a local clone
@@ -181,17 +181,15 @@ The theme menu's **Create your own theme…** opens a Cordis session with `/dsh-
 
 Creator visibility is controlled by `creatorAgentMode` (switchable on the Plugins management page, default `gesture`): `gesture` answers user gestures only and stays out of the model catalog, `catalog` also lets the model route to it, and `off` disables the feature and hides the entry.
 
-### Manual theme creation (unreleased)
-
-> Included in the current source — not yet released; npm 0.1.5 does not include this feature.
+### Manual theme creation (v0.1.6)
 
 The theme menu's **Create theme manually…** is a creation entry independent of the `/dsh-theme-creator` AI assistant. It is enabled only while settings are ready and does not depend on the creator mode or workspace state:
 
 - Pick any builtin or imported theme as the base, then fill in the name (the id is generated automatically; you can edit it or use "Generate available id"), author and description. Switching the base rebuilds the entire draft, including the name, id and token edits.
-- The token area groups tokens by prefix with every group collapsed and offers name search; each token provides a Light and a Dark input. Expressions such as `var()` and `color-mix()` are stored verbatim, and tokens outside the editable surface keep their base values.
+- The left nav organizes tokens by category/group and marks counts, modifications and errors. The content pane offers static light/dark preview cards, global search and a modified-only filter. Each row has separate Light/Dark editing, restore-to-base and bilingual usage notes. The color popover provides RGB / color-mix tabs, a color picker, base palette and mix builder. Expressions such as `var()` and `color-mix()` are stored verbatim, and tokens outside the editable surface keep their base values.
 - Contrast diagnostics are informational and never block saving; the name, id and color values must be valid. The serialized text must not exceed 131072 in either UTF-16 code units or UTF-8 bytes; an overflow identifies its largest contribution.
 - **Save theme** only appends — never overwrites: a taken id prompts a rename or a generated one. Once the Host accepts the write the theme joins the imported list and previews automatically, and can be exported back to `dsh-theme.json` from **Manage themes**.
-- The draft lives in the row's runtime memory: closing the dialog, a pending write or a rejected save keeps every value when reopened; a process restart or row unmount loses it. There is no live graphical preview — preview/apply the saved theme to see it.
+- The draft lives in the row's runtime memory: closing the dialog, a pending write or a rejected save keeps every value when reopened; a process restart or row unmount loses it. The editor shows static light/dark samples without installing a live overlay; preview/apply the saved theme to see the actual interface.
 
 ## Project structure
 
@@ -235,7 +233,7 @@ Issues and PRs are welcome:
 
 ## Known limitations
 
-- Manual theme creation is implemented on the current branch but unreleased (npm 0.1.5 does not include it — see "Manual theme creation (unreleased)" above); in-place editing, a graphical token preview and durable drafts remain on the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
+- See "Manual theme creation (v0.1.6)" above for creation and static light/dark samples; in-place editing, live overlay previews and durable drafts remain on the [roadmap](./docs/plans/active/2026-10-02-theme-studio-roadmap.md).
 - The contrast check is a diagnostic, not a gate: some built-in palettes fall below threshold and are neither repaired automatically nor blocked from preview or apply; `pnpm contrast:report` is documented in the [token reference](./docs/reference/theme-tokens.md).
 - Preview is hover-driven: keyboard focus on menu items does not preview; press Enter to apply directly.
 - The read-only catalog `ctx.themeStudio.catalog` exists only on the Client, covers builtin and imported themes but not "Default"; it offers no register API or Host RPC, and the imported section follows the settings snapshot — see the [catalog reference](./docs/reference/theme-catalog.md).

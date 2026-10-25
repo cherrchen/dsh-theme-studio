@@ -17,7 +17,7 @@ DSH（DeepSeek Harness）原生只提供浅色 / 深色 / 跟随系统三种外�
 - **不配等于没装**：声明 `platform:web`，不依赖 Electron、Node 客户端能力或 Desktop provider，也不注册模型工具或提示词内容；未选主题时界面与未装插件逐项一致。
 - **创作不打扰**：Theme Creator skill 默认只响应 `/dsh-theme-creator` 用户手势，不进模型目录；主题菜单的「创建自己的主题」会打开 Cordis 会话并预填手势（不自动发送），产物经导入确认后才生效。
 
-当前发布版本 `v0.1.5`。各版本的用户可见变更见 [CHANGELOG](./CHANGELOG.md)；进度与发布状态见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
+当前源码版本 `v0.1.6`。各版本的用户可见变更见 [CHANGELOG](./CHANGELOG.md)；进度与发布状态见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
 
 ## 快速开始
 
@@ -91,7 +91,7 @@ pnpm pack @dsh-electron/dsh-theme-studio
 dsh plugin --profile web add ./plugin.tgz
 ```
 
-也可以从 [GitHub Release 资产](https://github.com/cherrchen/dsh-theme-studio/releases/download/v0.1.5/plugin.tgz)下载 `plugin.tgz`。同样是预构建产物，适合内网或离线环境交付；仅在对应 Release 产物生成后可用。
+也可以从 [GitHub Release 资产](https://github.com/cherrchen/dsh-theme-studio/releases/download/v0.1.6/plugin.tgz)下载 `plugin.tgz`。同样是预构建产物，适合内网或离线环境交付；仅在对应 Release 产物生成后可用。
 
 ### 从 GitHub 安装
 
@@ -101,10 +101,10 @@ dsh plugin --profile web add github:cherrchen/dsh-theme-studio
 
 GitHub 来源装的是源码，`add` 时会自动构建，不需要手动编译；但 `allowBuilds` 要含本包自身，见上文说明。
 
-建议锁定版本（如 `#v0.1.5`），让后续推送无法悄悄改变实际运行的内容：
+建议锁定版本（如 `#v0.1.6`），让后续推送无法悄悄改变实际运行的内容：
 
 ```sh
-dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.5
+dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.6
 ```
 
 ### 从本地源码安装
@@ -181,17 +181,15 @@ Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均
 
 创作助手的可见性由 `creatorAgentMode` 控制（插件管理页中可切换，默认 `gesture`）：`gesture` 只响应用户手势、不进模型目录，`catalog` 同时允许模型路由，`off` 完全关闭并隐藏入口。
 
-### 手动创建主题（未发布）
-
-> 当前源码已包含，尚未发布——npm 0.1.5 不包含此功能。
+### 手动创建主题（v0.1.6）
 
 主题菜单底部的 **手动创建主题…** 是独立于 `/dsh-theme-creator` AI 助手的创建入口，只在设置就绪时可用，不受创作助手模式与工作区状态影响：
 
 - 任选内置或已导入主题为基底，填写名称（id 自动生成，可手动修改或点「生成可用 ID」）、作者与描述；切换基底会重建整个草稿（含名称、ID 与 token 编辑）。
-- token 编辑区按前缀分组、默认收起，可按名称搜索；每个 token 提供浅色/深色两个输入，`var()`、`color-mix()` 等表达式按原文保存，基底中不可编辑的 token 原样保留。
+- 左侧导航按类别/分组组织 token，标记数量、已修改与错误；右侧提供静态明暗预览卡、全局搜索与「仅显示已修改」过滤。每行可分别编辑浅色/深色值并恢复基底，附双语用途说明。色值浮层提供 RGB / color-mix 标签、取色器、基底调色板与混色拼装器；`var()`、`color-mix()` 等表达式按原文保存，基底中不可编辑的 token 原样保留。
 - 对比度诊断只提示不阻止保存；名称、ID、色值必须合法。序列化文本须同时满足 UTF-16 长度与 UTF-8 字节数均不超过 131072 的限制；超限提示最大贡献项。
 - **保存主题** 只新增不覆盖：id 冲突时提示改名或生成新 id；保存经 Host 接受后进入导入主题列表并自动预览，之后可在 **管理主题** 中导出为 `dsh-theme.json`。
-- 草稿保存在主题行的运行内存中：关闭对话框、等待写入或保存被拒后重开内容仍在；进程重启或行卸载后草稿丢失。不提供图形化即时预览，保存后通过预览/应用查看效果。
+- 草稿保存在主题行的运行内存中：关闭对话框、等待写入或保存被拒后重开内容仍在；进程重启或行卸载后草稿丢失。编辑器内提供静态明暗样张，不安装实时 overlay；保存后通过预览/应用查看实际界面效果。
 
 ## 项目结构
 
@@ -235,7 +233,7 @@ Claude、Codex、Claude Cream、Graphite、OLED、Nordic、Paper、Warm，id 均
 
 ## 已知限制
 
-- 手动主题创建已在当前分支实现但未发布（npm 0.1.5 不含，见上文「手动创建主题（未发布）」）；就地编辑、图形化 token 预览与持久草稿仍属规划，见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
+- 手动主题创建与静态明暗预览卡见上文「手动创建主题（v0.1.6）」；就地编辑、实时 overlay 预览与持久草稿仍属规划，见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
 - 对比度校验是诊断而非门禁：部分内置配色低于阈值，不自动修色也不阻止预览或应用；`pnpm contrast:report` 见[token 参考](./docs/reference/theme-tokens.md)。
 - 预览由悬停驱动：键盘聚焦菜单项不触发预览，可直接 Enter 应用。
 - 只读 catalog `ctx.themeStudio.catalog` 只在 Client 提供，含内置与导入主题、不含「默认」项；不提供 register API 或 Host RPC，导入分区随设置快照更新，契约见 [catalog 参考](./docs/reference/theme-catalog.md)。

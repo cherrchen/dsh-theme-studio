@@ -6,20 +6,23 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-10-25
+
 ### Added
 
+- **Create theme manually…** in the Themes menu: choose a builtin or imported base, enter a name, ID, author and description, and edit every editable token's Light/Dark values. Expressions such as `var()` / `color-mix()` are preserved. Saving appends a new theme, previews it after Host acceptance, and supports export/reimport. The draft survives closing the dialog or a rejected save within the theme row's lifetime.
+- A Settings-style navigation rail and content pane with categories/groups, global search, a modified-only filter, bilingual token usage notes, restore-to-base actions and static light/dark preview cards. Error navigation, contrast summaries and modification counts share the footer, with a responsive layout for narrow screens.
+- A color editing popover with RGB / color-mix tabs, literal or expression input, a base palette and color picker, a structured mix builder, and base/current color comparison and restore. Compatibility adapters cover controls, icons and ref support missing on older hosts.
 - Support DSH `0.2.1-rc.3` and move the development baseline to that release.
-
-- New **Create theme manually…** entry in the Themes menu (current branch, unreleased): a creation path independent of `/dsh-theme-creator`. Pick a builtin or imported base, edit every editable token's Light/Dark values (collapsed groups, name search, `var()`/`color-mix()` expressions kept verbatim), and save it as an append-only, never-overwriting imported theme that previews automatically once the Host accepts it and can be exported back. The editor dialog uses a two-column layout (metadata + independently scrolling token panel, with a full-width banner for validation errors and the contrast summary); tokens are filtered by a two-level categorization (single-select root category + multi-select subgroups) and each token carries a localized usage note. Color fields offer two switchable modes — a literal input with an inline swatch and a palette (base colors, standard colors and a color picker), and an expression input whose swatch resolves against the draft token map, plus a structured `color-mix` builder.
 
 ### Changed
 
-- The four public `ThemePreview` fields widened to `string | null`: imported-theme preview samples now resolve in the theme's own compiled token map instead of reusing other themes' colors.
-- Manual theme editor redesign (current branch, unreleased): the dialog is now a Settings-style left nav (Basic info + category/group entries with counts, modified and error dots) beside a content pane; the token pane carries a static light/dark preview card painted from resolved draft tokens, a global search plus a "modified only" filter, and Token/Light/Dark grid rows (short names, usage notes, reset-to-base buttons); validation errors, the contrast summary and the modified count live in footer Tags, with errors jumping through an "N problems" menu; value triggers show a readable summary (var target, color-mix parts), the picker gains a base/current compare strip with restore, and the mode switch uses SegmentedControl (auto-fallback on older hosts). On narrow widths the nav collapses to a top scroll strip and scheme values stack.
+- The four public `ThemePreview` fields now allow `string | null`: imported-theme samples resolve in the theme's own complete token graph, with unresolvable colors represented explicitly as null.
 
 ### Fixed
 
-- Imported themes' four-color Mosaic now resolves each sample in that theme's own compiled token map (including `var()`/`color-mix()` expressions); samples that cannot resolve to an opaque color render as a striped placeholder instead of a misleading color.
+- Imported themes' four-color Mosaic resolves against each theme's compiled token graph, including `var()` / `color-mix()`; samples that cannot resolve to an opaque color use a striped placeholder.
+- Editor base swatches resolve against the base theme's complete token graph and no longer drift when a referenced draft token changes.
 
 ## [0.1.5] - 2026-10-17
 
@@ -110,7 +113,8 @@ First public release of the theme overlay plugin for DSH Web and Desktop.
 - Persist the selected theme on the Host and adapt register/settingsScope and Config/configure/configForms across supported DSH releases; restart the Themes row after the settings service stops and is provided again.
 - Publish standalone Host and Client bundles, TypeScript declarations, and `cordis.patch.yml`, with an explicit DSH compatibility list.
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.2...v0.1.3
