@@ -6,6 +6,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- 支持 DSH `0.2.1-rc.4` 与 `0.2.2-alpha.2`，开发基线同步提升至 `0.2.2-alpha.2`。
+- 派生 token 新增六个空状态插画色（`--dsw-alias-illustration-background`/`surface`/`backing`/`detail`/`inset`/`shadow`）与完成态主色 `--dsw-alias-state-done-primary`，覆盖 0.2.2-alpha.2 上游新增语义 token；旧版本把它们当作未引用的多余 override 安全忽略。
+
 ## [0.1.6] - 2026-10-25
 
 ### Added

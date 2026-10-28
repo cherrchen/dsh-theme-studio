@@ -47,7 +47,7 @@ describe('editor token surface', () => {
   it('exposes the compiled preset keys verbatim and groups each key once', () => {
     const names = editorTokenNames()
     expect(names).toEqual(Object.keys(BUILTIN_PRESETS[0]!.tokens.light))
-    expect(names).toHaveLength(145)
+    expect(names).toHaveLength(152)
     const groups = editorTokenGroups()
     const grouped = groups.flatMap(group => group.tokens.map(token => ({ prefix: group.prefix, token })))
     expect(grouped).toHaveLength(names.length)

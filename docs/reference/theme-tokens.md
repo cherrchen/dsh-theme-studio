@@ -247,6 +247,13 @@ Current，2026-10-02。数据由当前编译 preset 与源码派生表达式核�
 | `--dsw-alias-state-warn-secondary` | `mix(warn, bgBase, 70)` |
 | `--dsw-alias-state-warn-tertiary` | `fade(warn, 16)` |
 | `--dsw-alias-state-idle-primary` | `mix(labelSecondary, bgBase, 45)` |
+| `--dsw-alias-state-done-primary` | `brand` |
+| `--dsw-alias-illustration-background` | `bgLayer1` |
+| `--dsw-alias-illustration-surface` | `bgLayer2` |
+| `--dsw-alias-illustration-backing` | `mix(bgLayer2, labelPrimary, 82)` |
+| `--dsw-alias-illustration-detail` | `mix(bgLayer2, labelSecondary, 60)` |
+| `--dsw-alias-illustration-inset` | `dark ? mix(bgLayer2, labelPrimary, 82) : bgLayer2` |
+| `--dsw-alias-illustration-shadow` | `dark ? mix(bgLayer2, labelPrimary, 82) : bgLayer2` |
 | `--dsw-alias-link` | `brand` |
 | `--dsw-focus-ring-color` | `brand` |
 | `--dsw-alias-switch-thumb` | `dark ? labelSecondary : bgBase` |
@@ -321,7 +328,7 @@ Current，2026-10-02。数据由当前编译 preset 与源码派生表达式核�
 | `--dsw-static-neutral-200` | `watermark` |
 | `--dsw-static-neutral-700` | `watermark` |
 
-当前共 13 个基本 token、132 个派生 token，每种模式合计 145 个。CHROME_TOKEN_NAMES 从同一函数的 probe 返回值取得，不能单独手写第二份名称集合。
+当前共 13 个基本 token、139 个派生 token，每种模式合计 152 个。CHROME_TOKEN_NAMES 从同一函数的 probe 返回值取得，不能单独手写第二份名称集合。
 
 ## 保留与新上游 token
 
