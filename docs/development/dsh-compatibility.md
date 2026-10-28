@@ -229,3 +229,21 @@ Themes 行改为与官方语言行同款的下拉选择器：selector 按钮（`
 rc.3 真实 Chromium 的主题/外观共存、悬停预览、取消、应用、刷新与新 Host 进程磁盘恢复旅程通过，浏览器控制台没有错误。首次浏览器命令误读重打包前的 tarball，之后补齐匹配的 Chromium 并使用新 tarball 成功重跑，未使用 peer 豁免。该浏览器旅程不覆盖手动编辑器的文件选择、导出回导或 Theme Creator 的模型/会话端到端行为，也不证明逐版本像素对比或 Linux/Windows 通过。远端三平台 CI 从同一清单自动纳入 rc.3，跨平台结果须以相应提交的 CI 为准；本批次没有执行 tag 或发布。进度和发布状态见[路线图](../plans/active/2026-10-02-theme-studio-roadmap.md)。
 
 2026-10-25 发布准备时复核 [PR #15 的 CI run 40161437199](https://github.com/cherrchen/dsh-theme-studio/actions/runs/40161437199)：提交 `61dd71d` 的 59 个检查全部成功，包含十八版 × Ubuntu/macOS/Windows 的 54 个隔离矩阵任务、Ubuntu 上 `0.1.6-alpha.2` / `0.2.1-rc.3` 的两个浏览器任务，以及 package 和两个计划任务。PR #15 已合并为 main 的 `7a8aa25`。这些结果补充远端平台证据，不能当作后续 v0.1.6 版本号与文档变更或 tag 全量浏览器验证已经执行。
+
+## DSH 0.2.1-rc.4 与 0.2.2-alpha.2 提升（2026-10-28）
+
+审查来源为本地 `deepseek-harness` 仓库标签 `dsh-v0.2.1-rc.3` → `dsh-v0.2.1-rc.4` 与 `dsh-v0.2.1-rc.3` → `dsh-v0.2.2-alpha.2`，以及 npm 上这两个精确版本的已发布包。本插件消费的各接缝包在 rc.3 → rc.4 区间 `src/` 无实现变更；alpha.2 的差异如下表。
+
+| 接缝 | 上游变化及风险 | 插件处理 |
+| --- | --- | --- |
+| 共享运行时 | alpha.2 使用 Cordis 4.0.6-alpha.1、Schemastery 3.18.6-alpha.1，配套 cosmokit 1.8.7-alpha.1、cordis-plugin-loader 1.0.7-alpha.1、group 1.0.6-alpha.1、include 1.0.11-alpha.1、timer 1.1.8-alpha.1 | peer 与 dependency 追加这两个精确预发布；overrides、开发 pin 与 minimumReleaseAgeExclude 随 `upgrade-dsh.mjs` 重钉 |
+| 设置 Host | `SettingsForms` 改读 `fiber.effectiveConfig` 而非 `fiber.config` | 插件只消费 status/value/set/subscribe 结构面与 configure/configForms 通道，矩阵的 settings 路径测试不变 |
+| locale | `register()` 类型改为 `Record<BuiltInLocaleId,…> & Record<LocaleId,…>`；ui-theme 新增可选 `ThemeDefinition.icons`、图标 sprite 与六个新 locale | 均为类型面或可选新增；插件 locale 注入与 `ctx.theme` 覆盖语义不变，各安装树类型检查覆盖 |
+| 设置入口与面板 | ui-settings-general 的 `sidebar.settings` 改经 `ctx.remoteAccess.whenAccess('settings/describe')` 门控，设置面板布局变更 | smoke-client 的直连按钮/账号菜单双路径在新 shell 实测通过 |
+| connection / remotes | hooks 新增可选 `resolveAsset`；api-remotes 新增 toolResults remote | 插件只依赖服务在场，不使用新增导出 |
+| ui-primitives / ui-plugin-manager | ui-primitives 大量新导出（Button/Menu/useAnchoredPosition 仅内部调整）；ui-plugin-manager 重构，`plugins.bundle.config` keyed slot 契约不变 | `src/compat/ui-atoms.tsx`、`menu-icons.tsx` 结构探测与 slot 注册不变 |
+| 语义 token | 新增六个 `--dsw-alias-illustration-*`（ui-schedule 空状态插画）与 `--dsw-alias-state-done-primary`；`--dsw-specific-sidebar-nav-item-hover` 被移除（侧栏改用 `--dsw-alias-interactive-bg-hover`） | deriveChrome 派生七个新 token（见下）；保留 sidebar-nav-item-hover override 供旧版读取，token 审计将其报告为已接受的 extra |
+
+新增派生 token：`illustration-background`=`bgLayer1`、`surface`=`bgLayer2`、`backing`=`mix(bgLayer2, labelPrimary, 82)`、`detail`=`mix(bgLayer2, labelSecondary, 60)`、`inset`/`shadow`=dark 取 backing、light 取 `bgLayer2`（对应官方 dark 下 inset=shadow=backing、light 下 inset=shadow=surface），`state-done-primary`=`brand`。0.1.5–0.2.1 各版本官方 CSS 不引用这些 token，作为未引用 override 安全共存（token 审计逐版确认 extra 集合）；可编辑 token 面由每 scheme 145 扩为 152，双语用途说明同步。
+
+验证：2026-10-28 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，先以 `--candidate` 分别验证两候选全步骤通过（379 passed、1 个条件性 legacy-provider skip），随后按既有批次流程提升。正式基线 `pnpm compat:check` 与 `pnpm verify:all` 通过；二十版隔离矩阵全部通过——`0.1.5-rc.3` 首轮在 smoke-compose 的 `npm view` 元数据请求遇到瞬时网络失败后单独重跑通过，逐命令结果与重跑说明见[本批次证据](./dsh-compatibility-alpha2-results-2026-10-28.json)。`0.2.1-rc.3`、`0.2.1-rc.4`、`0.2.2-alpha.2` 三个版本的真实 Chromium 旅程（主题/外观共存、悬停预览、取消、应用、刷新与新 Host 进程磁盘恢复）全部通过，浏览器控制台无错误；alpha.2 新设置 shell 下入口探测走账号菜单路径。Playwright 为本机 `dsh-plugin-git` 工作区安装的 1.64.1（Chromium 1248）。仍未覆盖手动编辑器文件选择/导出回导、Theme Creator 端到端、逐版本像素对比与 Linux/Windows 本机验证；远端三平台 CI 另行提供证据。本轮未执行 tag 或发布。

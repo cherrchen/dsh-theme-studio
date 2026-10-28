@@ -57,7 +57,7 @@ DSH 官方 Appearance 提供 Light、Dark、System 与主题呈现。用户需�
 | F26 | 菜单 footer 在 `creatorAgentMode !== 'off'` 时提供「创建自己的主题」；`startSession` 两参签名可用时打开 Cordis 会话并预填 `/dsh-theme-creator `（不自动发送），否则弹出本地化手动输入提示 | `ThemeStudioRow.spec.tsx` 门控与降级测试 |
 | F27 | 插件管理页（`plugins.bundle.config`）以 Menu 选择器写入 `creatorAgentMode`，控件样式与官方设置行一致；settings 离开 `ready` 时控件禁用、菜单收起且回到 `ready` 不自动重开，写入被拒时在选择器旁显示可本地化的保存失败；无该 slot 的宿主（0.1.5、0.1.6-alpha.1）保持已存储或默认档位 | `CreatorConfigSection.spec.tsx` 测试 |
 | F28 | 「手动创建主题…」独立于 skill，仅在 settings ready 时可用；基底任选内置或已导入主题，保存仅新建 | `ThemeStudioRow.spec.tsx`、`apply.client.spec.ts` |
-| F29 | 编辑面从 preset 编译键集派生（当前每 scheme 145 个）：左侧导航以「基本信息」+ 类别标题 + 分组条目呈现全部结构（条目标注数量、已修改点与错误点），右侧面板按类别/分组以表格行展示 Token/浅色/深色；搜索跨全部类别生效并按分组分节；每个 token 显示前缀省略短名与本地化用途说明，已修改行有点标与恢复基底按钮，错误行名标红，字段错误可定位 | `theme-editor.spec.ts`、`ThemeEditorDialog.spec.tsx`、CSS 编译测试 |
+| F29 | 编辑面从 preset 编译键集派生（当前每 scheme 152 个）：左侧导航以「基本信息」+ 类别标题 + 分组条目呈现全部结构（条目标注数量、已修改点与错误点），右侧面板按类别/分组以表格行展示 Token/浅色/深色；搜索跨全部类别生效并按分组分节；每个 token 显示前缀省略短名与本地化用途说明，已修改行有点标与恢复基底按钮，错误行名标红，字段错误可定位 | `theme-editor.spec.ts`、`ThemeEditorDialog.spec.tsx`、CSS 编译测试 |
 | F30 | palette 原样拷贝；以不含 overrides 的派生 token 为差异基准，任一侧变化写入对称键；面外 overrides 原样保留，仅改名复制保持两侧完整 token map 等价 | `theme-editor.spec.ts` |
 | F31 | name 必填；id 自动 slug/去重且可手改，复用完整 id 校验；输入与确认均查 catalog/在途写入，占用只改名或返回编辑，不提供覆盖 | editor、dialog、Row 与 Client 注入测试 |
 | F32 | 色值按 `checkColorSyntax` 校验并保留表达式原文；保存前序列化检查 UTF-16 长度与 UTF-8 字节上限，再整体回环校验；错误阻塞并指向可编辑字段或全局来源 | editor 的边界、中文多字节、回导测试与 dialog 错误定位测试 |

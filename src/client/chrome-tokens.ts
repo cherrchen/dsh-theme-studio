@@ -65,6 +65,7 @@ export function deriveChrome(palette: ChromePalette): Readonly<Record<string, st
   const quietSurface = mix(bgBase, labelPrimary, 94)
   const liftedLayer = mix(bgLayer2, labelPrimary, 92)
   const watermark = mix(bgBase, labelPrimary, 82)
+  const illustrationBacking = mix(bgLayer2, labelPrimary, 82)
   const bubble = dark ? mix(bgBase, 'black', 70) : labelPrimary
   const toastBg = dark ? mix(bgBase, 'black', 75) : labelPrimary
   const toastLabel = dark ? labelPrimary : bgBase
@@ -134,6 +135,13 @@ export function deriveChrome(palette: ChromePalette): Readonly<Record<string, st
     '--dsw-alias-state-warn-secondary': mix(warn, bgBase, 70),
     '--dsw-alias-state-warn-tertiary': fade(warn, 16),
     '--dsw-alias-state-idle-primary': mix(labelSecondary, bgBase, 45),
+    '--dsw-alias-state-done-primary': brand,
+    '--dsw-alias-illustration-background': bgLayer1,
+    '--dsw-alias-illustration-surface': bgLayer2,
+    '--dsw-alias-illustration-backing': illustrationBacking,
+    '--dsw-alias-illustration-detail': mix(bgLayer2, labelSecondary, 60),
+    '--dsw-alias-illustration-inset': dark ? illustrationBacking : bgLayer2,
+    '--dsw-alias-illustration-shadow': dark ? illustrationBacking : bgLayer2,
     '--dsw-alias-link': brand,
     '--dsw-focus-ring-color': brand,
 

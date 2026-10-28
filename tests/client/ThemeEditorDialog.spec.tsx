@@ -173,12 +173,12 @@ describe('ThemeEditorDialog', () => {
   it('lists a whole category, a single group, and searches globally', () => {
     mountDialog()
     const names = editorTokenNames()
-    expect(names).toHaveLength(145)
-    // Category page: every group renders as a section, 103 tokens per scheme.
+    expect(names).toHaveLength(152)
+    // Category page: every group renders as a section, 110 tokens per scheme.
     selectNav('--dsw-alias')
     expect(within(dialog()).getAllByLabelText(/^Light: --dsw-alias-label-/)).toHaveLength(13)
-    expect(within(dialog()).getAllByLabelText(/^Light: --dsw-alias-/)).toHaveLength(103)
-    expect(within(dialog()).getAllByLabelText(/^Dark: --dsw-alias-/)).toHaveLength(103)
+    expect(within(dialog()).getAllByLabelText(/^Light: --dsw-alias-/)).toHaveLength(110)
+    expect(within(dialog()).getAllByLabelText(/^Dark: --dsw-alias-/)).toHaveLength(110)
     // Group page: just the 13 label tokens.
     selectNav(/^label-/)
     expect(within(dialog()).getAllByLabelText(/^Light: --dsw-alias-/)).toHaveLength(13)
@@ -367,7 +367,7 @@ describe('ThemeEditorDialog', () => {
     fireEvent.change(editColor('Light: --dsw-alias-bg-base'), { target: { value: '#112233' } })
     closePicker()
     selectNav('--dsw-alias')
-    expect(within(dialog()).getAllByLabelText(/^Light: --dsw-alias-/)).toHaveLength(103)
+    expect(within(dialog()).getAllByLabelText(/^Light: --dsw-alias-/)).toHaveLength(110)
     fireEvent.click(within(dialog()).getByRole('checkbox', { name: 'Modified only' }))
     const fields = within(dialog()).getAllByLabelText(/^Light: --dsw-alias-/)
     expect(fields).toHaveLength(1)
