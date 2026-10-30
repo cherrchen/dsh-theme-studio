@@ -247,3 +247,16 @@ rc.3 真实 Chromium 的主题/外观共存、悬停预览、取消、应用、�
 新增派生 token：`illustration-background`=`bgLayer1`、`surface`=`bgLayer2`、`backing`=`mix(bgLayer2, labelPrimary, 82)`、`detail`=`mix(bgLayer2, labelSecondary, 60)`、`inset`/`shadow`=dark 取 backing、light 取 `bgLayer2`（对应官方 dark 下 inset=shadow=backing、light 下 inset=shadow=surface），`state-done-primary`=`brand`。0.1.5–0.2.1 各版本官方 CSS 不引用这些 token，作为未引用 override 安全共存（token 审计逐版确认 extra 集合）；可编辑 token 面由每 scheme 145 扩为 152，双语用途说明同步。
 
 验证：2026-10-28 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，先以 `--candidate` 分别验证两候选全步骤通过（379 passed、1 个条件性 legacy-provider skip），随后按既有批次流程提升。正式基线 `pnpm compat:check` 与 `pnpm verify:all` 通过；二十版隔离矩阵全部通过——`0.1.5-rc.3` 首轮在 smoke-compose 的 `npm view` 元数据请求遇到瞬时网络失败后单独重跑通过，逐命令结果与重跑说明见[本批次证据](./dsh-compatibility-alpha2-results-2026-10-28.json)。`0.2.1-rc.3`、`0.2.1-rc.4`、`0.2.2-alpha.2` 三个版本的真实 Chromium 旅程（主题/外观共存、悬停预览、取消、应用、刷新与新 Host 进程磁盘恢复）全部通过，浏览器控制台无错误；alpha.2 新设置 shell 下入口探测走账号菜单路径。Playwright 为本机 `dsh-plugin-git` 工作区安装的 1.64.1（Chromium 1248）。仍未覆盖手动编辑器文件选择/导出回导、Theme Creator 端到端、逐版本像素对比与 Linux/Windows 本机验证；远端三平台 CI 另行提供证据。本轮未执行 tag 或发布。
+
+## DSH 0.2.1-rc.5 提升（2026-10-30）
+
+审查来源为本地 `deepseek-harness` 仓库标签 `dsh-v0.2.1-rc.4` → `dsh-v0.2.1-rc.5`，以及 npm 上该精确版本的已发布包。两标签之间只有一个实质提交（`534dac8c81 fix(web): customize thinking block rendering`），其余为版本号 bump；发布包仍配套 Cordis `4.0.5`、Schemastery `3.18.5`、cosmokit `~1.8.6` 与 cordis-plugin-loader `~1.0.6`，vendor 源树无差异。
+
+| 接缝 | 上游变化及风险 | 插件处理 |
+| --- | --- | --- |
+| reasoning 槽位 | `ui-chat` 的 `ReasoningBodyOwnerProps` 新增 `rawText`，`ReasoningContentInput` 解耦为独立的 `{text, running, labels?}`；`conversation.chat.reasoning.body` 槽位声明同步 | 插件不消费 conversation 槽位或 `ui-chat`；`plugins.bundle.config` 与 `settings.general.item` 契约不变 |
+| slot 目录元数据 | `cordis-client-runner` 的 `slot-catalog.ts` 仅随 ui-chat 改动更新行号与摘要 | 非插件消费面，无需处理 |
+| 实验性翻译 | `client-ui-cot-translation` 的 `TranslationBody` 适配新 props | experimental 包，插件不依赖 |
+| 设置、主题、槽位、primitives、renderer、connection、remotes、store、locale、workspace、skill、宿主加载 | 目标区间 `src/` 无实现变更 | 沿用现有适配与结构探测，不新增版本分支 |
+
+当前开发基线保持 `0.2.2-alpha.2` / Cordis `4.0.6-alpha.1` / Schemastery `3.18.6-alpha.1`（受支持清单中 semver 最高）。2026-10-30 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，先以 `node scripts/run-dsh-matrix.mjs --candidate 0.2.1-rc.5` 在隔离副本验证，install、`compat:check`（candidate 判定）、lint、typecheck、build、全部单测（379 passed、1 个条件性 legacy-provider skip）、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 行为矩阵与真实 CLI profile 组合全部退出 0；随后同步精确支持清单与全部 DSH peers，README 兼容表、双语 CHANGELOG 与路线图一并更新。提升后正式基线 `pnpm compat:check` 与 `pnpm verify:all` 通过；二十一版隔离矩阵全部通过——本轮 npm registry 连接不稳定，十四版首轮在 smoke-compose 的 `npm view` 元数据请求瞬时失败后于保留的隔离树重试通过，`0.1.7-rc.1` 与 `0.2.1-rc.3` 在 repoint 元数据阶段失败后整版重跑通过，逐命令结果与重跑说明见[本批次证据](./dsh-compatibility-rc5-results-2026-10-30.json)。`0.2.1-rc.5` 的真实 Chromium 旅程（主题/外观共存、悬停预览、取消、应用、刷新与新 Host 进程磁盘恢复）通过，浏览器控制台无错误；Playwright 为本机 `dsh-plugin-git` 工作区安装的 1.64.1（Chromium 1248）。仍未覆盖手动编辑器文件选择/导出回导、Theme Creator 端到端、逐版本像素对比与 Linux/Windows 本机验证；远端三平台 CI 另行提供证据。本轮未执行 tag 或发布。
