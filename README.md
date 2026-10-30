@@ -17,7 +17,7 @@ DSH（DeepSeek Harness）原生只提供浅色 / 深色 / 跟随系统三种外�
 - **不配等于没装**：声明 `platform:web`，不依赖 Electron、Node 客户端能力或 Desktop provider，也不注册模型工具或提示词内容；未选主题时界面与未装插件逐项一致。
 - **创作不打扰**：Theme Creator skill 默认只响应 `/dsh-theme-creator` 用户手势，不进模型目录；主题菜单的「创建自己的主题」会打开 Cordis 会话并预填手势（不自动发送），产物经导入确认后才生效。
 
-当前源码版本 `v0.1.6`。各版本的用户可见变更见 [CHANGELOG](./CHANGELOG.md)；进度与发布状态见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
+当前源码版本 `v0.1.7`。各版本的用户可见变更见 [CHANGELOG](./CHANGELOG.md)；进度与发布状态见[路线图](./docs/plans/active/2026-10-02-theme-studio-roadmap.md)。
 
 ## 快速开始
 
@@ -92,7 +92,7 @@ pnpm pack @dsh-electron/dsh-theme-studio
 dsh plugin --profile web add ./plugin.tgz
 ```
 
-也可以从 [GitHub Release 资产](https://github.com/cherrchen/dsh-theme-studio/releases/download/v0.1.6/plugin.tgz)下载 `plugin.tgz`。同样是预构建产物，适合内网或离线环境交付；仅在对应 Release 产物生成后可用。
+也可以从 [GitHub Release 资产](https://github.com/cherrchen/dsh-theme-studio/releases/download/v0.1.7/plugin.tgz)下载 `plugin.tgz`。同样是预构建产物，适合内网或离线环境交付；仅在对应 Release 产物生成后可用。
 
 ### 从 GitHub 安装
 
@@ -102,10 +102,10 @@ dsh plugin --profile web add github:cherrchen/dsh-theme-studio
 
 GitHub 来源装的是源码，`add` 时会自动构建，不需要手动编译；但 `allowBuilds` 要含本包自身，见上文说明。
 
-建议锁定版本（如 `#v0.1.6`），让后续推送无法悄悄改变实际运行的内容：
+建议锁定版本（如 `#v0.1.7`），让后续推送无法悄悄改变实际运行的内容：
 
 ```sh
-dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.6
+dsh plugin --profile web add github:cherrchen/dsh-theme-studio#v0.1.7
 ```
 
 ### 从本地源码安装

@@ -6,6 +6,8 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-10-30
+
 ### Added
 
 - Support DSH `0.2.1-rc.4` and `0.2.2-alpha.2`, moving the development baseline to `0.2.2-alpha.2`.
@@ -119,7 +121,8 @@ First public release of the theme overlay plugin for DSH Web and Desktop.
 - Persist the selected theme on the Host and adapt register/settingsScope and Config/configure/configForms across supported DSH releases; restart the Themes row after the settings service stops and is provided again.
 - Publish standalone Host and Client bundles, TypeScript declarations, and `cordis.patch.yml`, with an explicit DSH compatibility list.
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.7...HEAD
+[0.1.7]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.3...v0.1.4
