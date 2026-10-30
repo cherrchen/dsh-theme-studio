@@ -9,6 +9,7 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Added
 
 - Support DSH `0.2.1-rc.4` and `0.2.2-alpha.2`, moving the development baseline to `0.2.2-alpha.2`.
+- Support DSH `0.2.1-rc.5`; the development baseline stays `0.2.2-alpha.2`.
 - Seven new derived tokens recolor empty-state illustrations (`--dsw-alias-illustration-background`/`surface`/`backing`/`detail`/`inset`/`shadow`) and the done state (`--dsw-alias-state-done-primary`), covering semantic tokens added upstream in `0.2.2-alpha.2`; older releases safely ignore them as unreferenced overrides.
 
 ## [0.1.6] - 2026-10-25

@@ -32,6 +32,7 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 | 手动主题编辑器 Phase 1 | Completed，分批提交，完整 verify:all 通过；当前源码的十八版矩阵在 rc.3 批次复验通过，手动编辑器浏览器旅程仍未覆盖 | v0.1.6 准备中；尚未打 tag / 发布 | [实施与验证记录](../completed/2026-10-22-manual-theme-editor.md)、[ADR-0011](../../decisions/ADR-0011-manual-theme-editor.md)、[后续兼容复验](../../development/dsh-compatibility.md#dsh-021-rc3-提升2026-10-25) |
 | DSH 0.2.1-rc.3 支持 | Completed，候选验证、正式 verify:all、十八版隔离矩阵与 rc.3 既有主题浏览器旅程通过（macOS） | v0.1.6 准备中；尚未打 tag / 发布 | [兼容矩阵](../../development/dsh-compatibility.md#dsh-021-rc3-提升2026-10-25) |
 | DSH 0.2.1-rc.4 与 0.2.2-alpha.2 支持 | Completed，候选验证、正式 verify:all、二十版隔离矩阵与三个新版的 Chromium 旅程通过（macOS）；新增七个派生插画/完成态 token | 未发布 | [兼容矩阵](../../development/dsh-compatibility.md#dsh-021-rc4-与-022-alpha2-提升2026-10-28) |
+| DSH 0.2.1-rc.5 支持 | Completed，候选验证、正式 verify:all、二十一版隔离矩阵与 rc.5 Chromium 旅程通过（macOS） | 未发布 | [兼容矩阵](../../development/dsh-compatibility.md#dsh-021-rc5-提升2026-10-30) |
 
 “发布状态”以 tag 与远端产物为准：v0.1.4 于 2026-10-11 打 tag、发布 GitHub Release 并推上 npm（`@dsh-electron/dsh-theme-studio@0.1.4`），Stage 2/3、文档补齐与兼容/发布改进均纳入其中；v0.1.5 于 2026-10-17 打 tag、发布 GitHub Release 并推上 npm `latest`（`@dsh-electron/dsh-theme-studio@0.1.5`），主题文件格式、Theme Creator 与 DSH 0.2.1 新版支持纳入其中。v0.1.6 于 2026-10-25 开始发布准备，基于已合并 PR #14/#15 的 main；版本内容已整理至 CHANGELOG，尚未创建或推送 tag，也未发布 npm/GitHub Release。每个版本内容的唯一归档是 [CHANGELOG](../../../CHANGELOG.md)。
 
@@ -41,7 +42,7 @@ Stage 1 自 2026-08-26 已落地，多次迁移设置、loader 和兼容接缝�
 
 runtime 通过两层 overrideTokens 工作，Host accepted snapshot 持久化（`activeThemeId` + `importedThemes`），官方 Appearance 保留所有权。catalog 在 Client 父 fiber 提供为 builtin+imported 复合目录，settings 子树可停止/重建。主题文件导入/导出/删除走浏览器 file picker 与 Blob 下载，不扩大 portable 权限。对比度默认报告可复现、全内置可计算，但有低于阈值的配对；报告与 UI 认证必须分开。
 
-当前全部受支持 DSH 版本由[兼容契约](../../../src/compat/dsh-version.ts)决定。清单包含 0.2.1-alpha.1 至 0.2.1-rc.4 与 0.2.2-alpha.2（0.2.1-alpha.3 于 2026-10-15 提升，0.2.1-alpha.4 至 0.2.1-rc.2 于 2026-10-17 提升，0.2.1-rc.3 于 2026-10-25 提升，0.2.1-rc.4 与 0.2.2-alpha.2 于 2026-10-28 提升，均未单独发布）；证据见[兼容矩阵](../../development/dsh-compatibility.md)。Theme Creator 已实现：`dsh-theme-creator` skill 由 `creatorAgentMode` 驱动注册（默认 `gesture`，模型目录零占用），菜单一键跳转按 `startSession` 能力门控降级，`lib/validate-theme.js` 提供命令行校验；skill 不新增 agent preset、模型工具或系统提示改写。
+当前全部受支持 DSH 版本由[兼容契约](../../../src/compat/dsh-version.ts)决定。清单包含 0.2.1-alpha.1 至 0.2.1-rc.5 与 0.2.2-alpha.2（0.2.1-alpha.3 于 2026-10-15 提升，0.2.1-alpha.4 至 0.2.1-rc.2 于 2026-10-17 提升，0.2.1-rc.3 于 2026-10-25 提升，0.2.1-rc.4 与 0.2.2-alpha.2 于 2026-10-28 提升，0.2.1-rc.5 于 2026-10-30 提升，均未单独发布）；证据见[兼容矩阵](../../development/dsh-compatibility.md)。Theme Creator 已实现：`dsh-theme-creator` skill 由 `creatorAgentMode` 驱动注册（默认 `gesture`，模型目录零占用），菜单一键跳转按 `startSession` 能力门控降级，`lib/validate-theme.js` 提供命令行校验；skill 不新增 agent preset、模型工具或系统提示改写。
 
 ## Scope and Non-goals
 
