@@ -2,7 +2,7 @@
 
 ## Status and Sources
 
-Current，2026-10-02。数据由当前编译 preset 与源码派生表达式核对；权威仍是 [presets.ts](../../src/client/presets.ts) 与 [chrome-tokens.ts](../../src/client/chrome-tokens.ts)，不是此文的快照。修改源码后应重新审阅表，不以历史颜色覆盖新源码。
+Current，2026-11-11（0.2.2-rc.2 审查补充）。数据由当前编译 preset 与源码派生表达式核对；权威仍是 [presets.ts](../../src/client/presets.ts) 与 [chrome-tokens.ts](../../src/client/chrome-tokens.ts)，不是此文的快照。修改源码后应重新审阅表，不以历史颜色覆盖新源码。
 
 ## Palette model
 
@@ -185,6 +185,11 @@ Current，2026-10-02。数据由当前编译 preset 与源码派生表达式核�
 | bubble | dark 时 mix(bgBase, black, 70)，light 时 labelPrimary |
 | toastBg | dark 时 mix(bgBase, black, 75)，light 时 labelPrimary |
 | toastLabel | dark 时 labelPrimary，light 时 bgBase |
+| onBubbleSecondary | mix(bgBase, white, 75) |
+| onBubbleTertiary | mix(bgBase, white, 55) |
+| onBubbleBrand | mix(brand, white, 60) |
+| onBubbleError | mix(error, white, 55) |
+| readableAccent | mix(brand, labelPrimary, 70) |
 
 | 派生 token | 表达式 |
 | --- | --- |
@@ -248,6 +253,9 @@ Current，2026-10-02。数据由当前编译 preset 与源码派生表达式核�
 | `--dsw-alias-state-warn-tertiary` | `fade(warn, 16)` |
 | `--dsw-alias-state-idle-primary` | `mix(labelSecondary, bgBase, 45)` |
 | `--dsw-alias-state-done-primary` | `brand` |
+| `--dsw-alias-chart-messages` | `brand` |
+| `--dsw-alias-chart-system` | `labelSecondary` |
+| `--dsw-alias-chart-tools` | `mix(brand, labelSecondary, 70)` |
 | `--dsw-alias-illustration-background` | `bgLayer1` |
 | `--dsw-alias-illustration-surface` | `bgLayer2` |
 | `--dsw-alias-illustration-backing` | `mix(bgLayer2, labelPrimary, 82)` |
@@ -265,6 +273,18 @@ Current，2026-10-02。数据由当前编译 preset 与源码派生表达式核�
 | `--dsw-alias-toast-bg` | `toastBg` |
 | `--dsw-alias-toast-label` | `toastLabel` |
 | `--dsw-alias-tooltip-bg` | `bubble` |
+| `--dsw-alias-hovercard-bg` | `bubble` |
+| `--dsw-alias-hovercard-label-secondary` | `onBubbleSecondary` |
+| `--dsw-alias-hovercard-label-tertiary` | `onBubbleTertiary` |
+| `--dsw-alias-hovercard-state-done` | `onBubbleBrand` |
+| `--dsw-alias-hovercard-state-error` | `onBubbleError` |
+| `--dsw-alias-json-tree-hover` | `fade(labelPrimary, dark ? 5 : 4)` |
+| `--dsw-alias-json-tree-icon` | `labelSecondary` |
+| `--dsw-alias-json-tree-keyword` | `readableAccent` |
+| `--dsw-alias-json-tree-number` | `readableAccent` |
+| `--dsw-alias-json-tree-property` | `mix(brand, labelPrimary, 55)` |
+| `--dsw-alias-json-tree-punctuation` | `labelPrimary` |
+| `--dsw-alias-json-tree-string` | `success` |
 | `--dsw-specific-sidebar-nav-item-active` | `bgLayer2` |
 | `--dsw-specific-sidebar-nav-item-hover` | `mix(sidebar, labelPrimary, 92)` |
 | `--dsw-specific-sidebar-nav-item-active-accent` | `fade(brand, 18)` |
@@ -328,7 +348,7 @@ Current，2026-10-02。数据由当前编译 preset 与源码派生表达式核�
 | `--dsw-static-neutral-200` | `watermark` |
 | `--dsw-static-neutral-700` | `watermark` |
 
-当前共 13 个基本 token、139 个派生 token，每种模式合计 152 个。CHROME_TOKEN_NAMES 从同一函数的 probe 返回值取得，不能单独手写第二份名称集合。
+当前共 13 个基本 token、154 个派生 token，每种模式合计 167 个。CHROME_TOKEN_NAMES 从同一函数的 probe 返回值取得，不能单独手写第二份名称集合。
 
 ## 保留与新上游 token
 
@@ -337,6 +357,8 @@ Current，2026-10-02。数据由当前编译 preset 与源码派生表达式核�
 `pnpm audit:tokens` 从 `presets.ts` 和 `chrome-tokens.ts` 的源码 token 字面量取得覆盖集合，独立从 `STAGE1_TOKENS` 读取必需集合；必需清单不能补入覆盖集合。删除必需映射后，即使类型契约与上游 bundle 仍保留该名称，审计也必须失败。单测另外对每套 preset 的实际 light/dark token 键执行审计。
 
 DSH 0.2 提升新增八项语义表达式：document-selection、label-deep-diving、label-deep-diving-shimmer、label-shimmer、switch-thumb、turn-trigger-bg、turn-trigger-bg-hover、menu-group-header-fill。源码与上游角色之间的证据见 [compatibility matrix](../development/dsh-compatibility.md)。旧 host 能接受 overlay-only token，但这不保证某个名字在旧版本已有可见消费者。
+
+DSH 0.2.2-rc.2 的官方样式表新增 37 个 `--dsw-*` 名称（悬浮预览卡、JSON 树、图表、macOS 毛玻璃侧栏等）。插件派生其中 15 个：悬浮预览卡背景与副文字/完成态/错误态（与 Tooltip 同用暗色气泡，文字和状态从 bgBase/brand/error 抬高）、三个图表色（品牌、次级文字与两者混合）、JSON 树七个语法角色（键/数值/关键字取 brand 向文字色收敛，字符串取 success，标点取 labelPrimary，图标取 labelSecondary，悬停取 labelPrimary 的 4%/5% 淡色）。其余 22 个不覆写：9 个经已覆写的静态色或别名自动落到主题值（border-selected、card-fill、card-fill-hover、guide-hero、toast-action、trajectory-accent、sidebar-right-flash 浅色、sidebar-tint、glass-collapsed-hover），13 个是官方刻意的白色/中性/玻璃透明值（card-tile-fill、hovercard-label-primary、label-on-color、tooltip-label、file-upload-track、sidebar-right-flash 深色与七项 darwin 毛玻璃填充/洗色），保留它们不引入主题色偏差。旧 host 不引用这些名称，作为未引用 override 安全共存；`pnpm audit:tokens` 会把它们计入 extra 或 retained。
 
 ## 扩展约束
 

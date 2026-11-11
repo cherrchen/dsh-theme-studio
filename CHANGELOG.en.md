@@ -9,10 +9,16 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Added
 
 - Support DSH `0.2.2-alpha.3` and `0.2.2-rc.1`, moving the development baseline to `0.2.2-rc.1` (Cordis `4.1.0`, Schemastery `3.19.0`).
+- Fifteen new derived tokens cover hover cards, the context chart and the JSON tree (`--dsw-alias-hovercard-*`, `--dsw-alias-chart-*`, `--dsw-alias-json-tree-*`), the surfaces DSH `0.2.2-rc.2` adds. Older releases safely ignore them as unreferenced overrides.
 
 ### Fixed
 
 - Adapt to the narrower `ctx.on` event-key type in Cordis 4.1: the Host settings subscription face no longer requires the event name to be `string`, so newer hosts no longer fail the build with TS2345.
+- Color-picker placement no longer depends on `useAnchoredPosition` from `@deepseek-ai/dsh-client-ui-primitives`: DSH `0.2.2-rc.2` dropped that export, so the plugin now reuses the host hook when it exists and otherwise uses a local implementation of the same contract, keeping the panel anchored and viewport-clamped.
+
+### Changed
+
+- Adapted ahead of DSH `0.2.2-rc.2`'s UI and type changes. That release is not published to npm yet, so the support allowlist, DSH peers and development baseline stay at `0.2.2-rc.1`; promotion and matrix evidence follow once it is available.
 
 ## [0.1.7] - 2026-10-30
 

@@ -106,6 +106,24 @@ describe('BUILTIN_PRESETS', () => {
     expect(claude.tokens.dark['--dsw-alias-toast-label']).toBe('#FAF9F5')
   })
 
+  it('derives the 0.2.2-rc.2 hover card, chart, and JSON tree roles from the palette', () => {
+    for (const preset of BUILTIN_PRESETS) {
+      for (const scheme of ['light', 'dark'] as const) {
+        const tokens = preset.tokens[scheme]
+        expect(tokens['--dsw-alias-hovercard-bg']).toBe(tokens['--dsw-alias-tooltip-bg'])
+        expect(tokens['--dsw-alias-chart-messages']).toBe(tokens['--dsw-alias-brand-primary'])
+        expect(tokens['--dsw-alias-chart-system']).toBe(tokens['--dsw-alias-label-secondary'])
+        expect(tokens['--dsw-alias-chart-tools']).toBe(
+          `color-mix(in srgb, ${tokens['--dsw-alias-brand-primary']} 70%, ${tokens['--dsw-alias-label-secondary']})`,
+        )
+        expect(tokens['--dsw-alias-json-tree-string']).toBe(tokens['--dsw-alias-state-success-primary'])
+        expect(tokens['--dsw-alias-json-tree-punctuation']).toBe(tokens['--dsw-alias-label-primary'])
+        expect(tokens['--dsw-alias-json-tree-icon']).toBe(tokens['--dsw-alias-label-secondary'])
+        expect(tokens['--dsw-alias-hovercard-state-error']).toContain(tokens['--dsw-alias-state-error-primary'])
+      }
+    }
+  })
+
   it('covers every builtin id in NAME_KEYS so the preview bar does not fall back to Default', () => {
     for (const preset of BUILTIN_PRESETS) {
       expect(NAME_KEYS[preset.id]).toBe(`${preset.id.replace(/^dsh-theme-studio\./, '')}.name`)

@@ -285,3 +285,26 @@ rc.3 真实 Chromium 的主题/外观共存、悬停预览、取消、应用、�
 验证：2026-11-11 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，先对两个候选执行 `node scripts/run-dsh-matrix.mjs --candidate <version>`：两次探测都在 install 后的构建阶段因上面的 TS2345 失败（alpha.3 与 rc.1 携带同一 Cordis 源，只是发布版本号不同），由此确认结构面必须放宽。修复后同步精确支持清单、全部 DSH peers、开发 pin、overrides 与 release-age 例外，正式基线 `pnpm compat:check` 与 `pnpm verify:all` 全部通过（`pnpm test` 为 379 passed、1 个条件性 legacy-provider skip；真实 tarball 安装、校验器 CLI 与真实 CLI web profile 组合同步通过）。随后对 `0.2.2-alpha.3` 与 `0.2.2-rc.1` 各自执行支持模式的十一项隔离矩阵——install、`compat:check`、lint、typecheck、build、完整单测、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 行为矩阵与真实 CLI profile 组合——全部退出 0；alpha.3 首轮在 repoint 的 `npm view` 元数据阶段遇到瞬时网络失败，保留安装树后整版重跑通过。为确认结构面放宽没有反噬最老类型面，另对最老的 `0.1.5-rc.2`（Cordis 4.0.2）与上一批次的 `0.2.1-rc.5` 执行同一矩阵，同样全部退出 0。逐命令结果见[本批次证据](./dsh-compatibility-rc1-results-2026-11-11.json)。
 
 其余十九个既有支持版本没有在本机重跑，由本分支 PR 的远端三平台 CI 按同一清单覆盖。本轮没有设置 `DSH_BROWSER_E2E`，不声称验证真实浏览器旅程或 Linux/Windows 本机呈现；也未执行 tag、npm publish 或 GitHub Release。
+
+
+## DSH 0.2.2-rc.2 适配（2026-11-11）
+
+审查来源为本地 `deepseek-harness` 仓库标签 `dsh-v0.2.2-rc.1` → `dsh-v0.2.2-rc.2`。该标签已推送到 `origin/master`，但截至本日 `npm view @deepseek-ai/dsh-settings@0.2.2-rc.2 version` 与 `npm view @deepseek-ai/dsh@0.2.2-rc.2 version` 都返回 404，`dist-tags` 仍指向 `0.2.2-rc.1`。因此本分支只提交源码适配：`SUPPORTED_DSH_RELEASES`、DSH peers、开发 pin、overrides 与 lockfile 保持 `0.2.2-rc.1`，不把尚未发布的版本写成受支持，也不伪造矩阵证据。
+
+该区间改动面很大（约 4600 个文件），但 vendor 与共享运行时版本未变（Cordis `4.1.0`、Schemastery `3.19.0`、cosmokit `1.9.0` 等）；与插件接缝相关的实质变化集中在客户端 UI 包，其余是版本号、文档、快照与插件的横向改动。
+
+| 接缝 | 上游变化及风险 | 插件处理 |
+| --- | --- | --- |
+| ui-primitives 定位 hook | 0.2.2-rc.2 删除 `useAnchoredPosition` 与 `AnchoredPositionOptions` 导出（`useAnchoredPosition.ts` 整文件删除，门户菜单改用 CSS anchor positioning），没有替代导出。插件的 `ColorValueField` 用该 hook 把颜色面板固定在触发器下方，旧写法在新类型面上直接编译失败 | 新增 `src/compat/anchored-position.ts`：按导出存在性选择宿主 hook，缺失时使用同契约本地实现（frame clearance、visual viewport、ResizeObserver、内联变量恢复都保留）；不按版本字符串分支 |
+| ui-primitives Menu | `Menu` 的 `getAnchorRect` 被 `anchorRef`/`anchorPoint` 取代，门户菜单改为 CSS anchor positioning；`MenuItemButton` 由 `MenuRow` 复用 | 插件未使用 `getAnchorRect`，调色板使用自有 `MenuSurface` 门户；`Menu` 的既有 props 调用面不变 |
+| ui-slots | 新增 hoc SlotKind、`HocRenderOpts`/`HocKeysOf`/`HocShare`，`ComposedProps` 增加 hoc children share | 纯新增；插件只注册 `settings.general.item` 与 `plugins.bundle.config`，类型面继续通过 |
+| ui-settings | `SettingsLauncherOwnerProps.openSettings` 形参扩为可选 `sectionId` | 插件不调用 `openSettings`，不消费该 surface |
+| ui-theme | 样式表新增 37 个 `--dsw-*` 名称（悬浮预览卡、JSON 树、图表、卡片、toast-action、tooltip-label、trajectory-accent、选中边框、darwin 玻璃侧栏等）；`ThemeRuntime` 增加从 `documentElement.dataset.dsThemeSource` 恢复启动偏好 | 派生 15 个主题相关 token；其中 22 个经已覆写的静态色自动取主题值，或保留官方刻意的白色/中性/玻璃值。清单与理由见 [token 参考](../reference/theme-tokens.md)；`overrideTokens` 契约未变，不新增版本分支 |
+| ui-renderer | `scoped-slots.tsx` 支持 HOC 包装层并新增测试 | 插件只 `import type {}`，不注册 HOC；无改动 |
+| 设置 Host/Client、store、locale、connection、remotes、skill、宿主加载 | 目标区间 `src/` 无实现变更（只有版本号与测试/文档改动） | 沿用现有适配与结构探测，不新增版本分支 |
+
+适配证据（2026-11-11，macOS arm64、Node 24.18.0、pnpm 11.7.0，开发基线 `0.2.2-rc.1`）：`pnpm verify:all` 通过（383 passed、1 个条件性 legacy-provider skip），包含 `compat:check`、lint、双端 typecheck、构建、全部单测、token 审计、真实 tarball 安装与校验器/CLI 冒烟。`tests/client/anchored-position.spec.tsx` 覆盖宿主导出存在与缺失两条路径、视口钳制、宿主提供 rect 与内联变量恢复；`tests/client/presets.spec.ts` 锁定新 token 的派生关系。`pnpm audit:tokens` 在 rc.1 运行时上报告 151 covered、16 extra——15 个新 token 加上旧版保留的 `sidebar-nav-item-hover`，符合旧宿主把未引用 override 视为安全多余项的既有约定。
+
+另在临时副本中删除已安装 `@deepseek-ai/dsh-client-ui-primitives` 类型面的 `useAnchoredPosition` 声明后运行 `tsc -p tsconfig.client.json --noEmit`，通过。这是类型面模拟，不是 `0.2.2-rc.2` 已发布包的安装验证。
+
+发布后的提升步骤：`node scripts/upgrade-dsh.mjs 0.2.2-rc.2` 重钉开发依赖、overrides 与 release-age 例外；把该精确版本追加到 `SUPPORTED_DSH_RELEASES` 和全部 DSH peers；`pnpm install --no-frozen-lockfile` 重写 lockfile；先 `node scripts/run-dsh-matrix.mjs --candidate 0.2.2-rc.2`，再跑正式 `pnpm verify:all`，最后补本节的逐版本结果与双语 README 兼容表。本轮没有执行这些步骤，也没有设置 `DSH_BROWSER_E2E`，不声称真实浏览器旅程或 Linux/Windows 本机呈现。
