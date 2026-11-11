@@ -26,11 +26,16 @@ export interface AttachContextFace {
   readonly fiber: object
   /**
    * Subscribe to a host event (used for `settings/document-updated`).
+   *
+   * Cordis 4.1 types the name as `keyof Events`, which includes a symbol
+   * index, so a `string`-only parameter no longer accepts the host context.
+   * Widening to every property-key type keeps the structural face assignable
+   * from both the older `string` signature and the newer generic one.
    * @param name - event name.
    * @param listener - event listener.
    * @returns a disposer removing the listener, when the host returns one.
    */
-  on(name: string, listener: () => void): unknown
+  on(name: string | number | symbol, listener: () => void): unknown
 }
 
 /**
