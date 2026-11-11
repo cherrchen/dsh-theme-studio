@@ -6,6 +6,14 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- Support DSH `0.2.2-alpha.3` and `0.2.2-rc.1`, moving the development baseline to `0.2.2-rc.1` (Cordis `4.1.0`, Schemastery `3.19.0`).
+
+### Fixed
+
+- Adapt to the narrower `ctx.on` event-key type in Cordis 4.1: the Host settings subscription face no longer requires the event name to be `string`, so newer hosts no longer fail the build with TS2345.
+
 ## [0.1.7] - 2026-10-30
 
 ### Added

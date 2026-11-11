@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- 支持 DSH `0.2.2-alpha.3` 与 `0.2.2-rc.1`，开发基线同步提升至 `0.2.2-rc.1`（Cordis `4.1.0`、Schemastery `3.19.0`）。
+
+### Fixed
+
+- 适配 Cordis 4.1 收窄的 `ctx.on` 事件键类型：Host 设置订阅的结构面不再把事件名限定为 `string`，新版宿主上构建不再报 TS2345。
+
 ## [0.1.7] - 2026-10-30
 
 ### Added

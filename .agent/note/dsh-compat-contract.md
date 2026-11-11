@@ -16,6 +16,7 @@ English: [dsh-compat-contract.en.md](./dsh-compat-contract.en.md)
 6. **真实 provider 用例有合法 skip。** 新 Config API 安装缺 legacy register，旧 provider regression 显式 skip；由 configure 契约/客户端测试覆盖，不代表持久化完全未测。仍不能把内存 test 当真实 profile 磁盘旅程。
 7. **0.2.1 的 vendor 按发布批次配对。** alpha.1/alpha.2 配 Cordis 4.0.5-alpha.1 与 Schemastery 3.18.5-alpha.1，alpha.3 至 alpha.5 配 4.0.5-alpha.2 与 3.18.5-alpha.2，rc.1/rc.2 配正式版 4.0.5 与 3.18.5；精确预发布不满足不含预发布标记的范围。peer 和 dependency 要显式写出每个版本对应的精确预发布版本，并用 overrides 锁住配套的 cordis plugin 与 cosmokit。`dsh-invariants` 在 0.2.1 各 alpha 没有对应发布包，不能再把它 pin 到该版本。矩阵现在从被测发布包的依赖声明计算这些 pin；声明不能唯一确定时失败，不再维护手写 vendor 表。
 8. **候选探测不扩大清单。** `run-dsh-matrix.mjs --candidate` 和 weekly upgrade workflow 只在隔离副本或一次性 checkout 上放宽 peer。绿灯后的提升仍是人工编辑 `SUPPORTED_DSH_RELEASES`。生产入口继续不做 Node 版本探测。
+9. **Cordis 4.1 的事件键类型会打断结构面。** `Events` 带 symbol 索引后 `on` 是 `on<K extends keyof Events>`，只声明 `name: string` 的结构接口（如 `AttachContextFace`）不再接受 `Context`，构建直接报 TS2345。用 `string | number | symbol` 这类属性键联合声明结构面，不要给适配层加版本分支。该 Cordis 源在 `0.2.2-alpha.3` 已以 `4.0.6-alpha.2` 发布，`0.2.2-rc.1` 只是把版本号改成 `4.1.0`，所以只按 semver 最高版判断会漏掉 alpha.3。
 
 ## 修改时的操作
 
