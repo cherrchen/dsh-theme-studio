@@ -36,7 +36,7 @@ dsh --profile web
 
 **使用本插件**：一个受支持的 DSH 版本（精确匹配，不是范围；清单见 [DSH 兼容性](#dsh-兼容性)）下的 Web profile。`dsh plugin` 负责安装，无需本地 Node 工具链。
 
-**从源码构建 / 贡献**：Node.js `^22.19.0 || >=24`，pnpm `11.7.0`（建议经 corepack 启用）；开发 pin 的 DSH 为 `0.2.2-alpha.2`。
+**从源码构建 / 贡献**：Node.js `^22.19.0 || >=24`，pnpm `11.7.0`（建议经 corepack 启用）；开发 pin 的 DSH 为 `0.2.2-rc.1`。
 
 **运行平台**：任何能运行受支持 DSH Web 的环境；DeepSeek Harness Desktop 将本包作为内置 runtime 插件集成。
 

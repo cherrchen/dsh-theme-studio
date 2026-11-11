@@ -36,7 +36,7 @@ Once it is up, open **Settings → General**: the "Themes" row sits between the 
 
 **Using the plugin**: a Web profile on one of the supported DSH releases — an exact match, not a range; the list lives under [DSH compatibility](#dsh-compatibility). `dsh plugin` handles the install; no local Node toolchain is needed.
 
-**Building from source / contributing**: Node.js `^22.19.0 || >=24`, pnpm `11.7.0` (enable via corepack); the dev-pinned DSH is `0.2.2-alpha.2`.
+**Building from source / contributing**: Node.js `^22.19.0 || >=24`, pnpm `11.7.0` (enable via corepack); the dev-pinned DSH is `0.2.2-rc.1`.
 
 **Platforms**: any environment that runs a supported DSH Web; DeepSeek Harness Desktop integrates this package as a built-in runtime plugin.
 
