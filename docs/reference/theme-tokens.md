@@ -2,7 +2,7 @@
 
 ## Status and Sources
 
-Current，2026-11-11（0.2.2-rc.2 审查补充）。数据由当前编译 preset 与源码派生表达式核对；权威仍是 [presets.ts](../../src/client/presets.ts) 与 [chrome-tokens.ts](../../src/client/chrome-tokens.ts)，不是此文的快照。修改源码后应重新审阅表，不以历史颜色覆盖新源码。
+Current，2026-11-12（0.2.2-rc.2 提升）。数据由当前编译 preset 与源码派生表达式核对；权威仍是 [presets.ts](../../src/client/presets.ts) 与 [chrome-tokens.ts](../../src/client/chrome-tokens.ts)，不是此文的快照。修改源码后应重新审阅表，不以历史颜色覆盖新源码。
 
 ## Palette model
 
@@ -358,7 +358,7 @@ Current，2026-11-11（0.2.2-rc.2 审查补充）。数据由当前编译 preset
 
 DSH 0.2 提升新增八项语义表达式：document-selection、label-deep-diving、label-deep-diving-shimmer、label-shimmer、switch-thumb、turn-trigger-bg、turn-trigger-bg-hover、menu-group-header-fill。源码与上游角色之间的证据见 [compatibility matrix](../development/dsh-compatibility.md)。旧 host 能接受 overlay-only token，但这不保证某个名字在旧版本已有可见消费者。
 
-DSH 0.2.2-rc.2 的官方样式表新增 37 个 `--dsw-*` 名称（悬浮预览卡、JSON 树、图表、macOS 毛玻璃侧栏等）。插件派生其中 15 个：悬浮预览卡背景与副文字/完成态/错误态（与 Tooltip 同用暗色气泡，文字和状态从 bgBase/brand/error 抬高）、三个图表色（品牌、次级文字与两者混合）、JSON 树七个语法角色（键/数值/关键字取 brand 向文字色收敛，字符串取 success，标点取 labelPrimary，图标取 labelSecondary，悬停取 labelPrimary 的 4%/5% 淡色）。其余 22 个不覆写：9 个经已覆写的静态色或别名自动落到主题值（border-selected、card-fill、card-fill-hover、guide-hero、toast-action、trajectory-accent、sidebar-right-flash 浅色、sidebar-tint、glass-collapsed-hover），13 个是官方刻意的白色/中性/玻璃透明值（card-tile-fill、hovercard-label-primary、label-on-color、tooltip-label、file-upload-track、sidebar-right-flash 深色与七项 darwin 毛玻璃填充/洗色），保留它们不引入主题色偏差。旧 host 不引用这些名称，作为未引用 override 安全共存；`pnpm audit:tokens` 会把它们计入 extra 或 retained。
+DSH 0.2.2-rc.2 的官方样式表新增 37 个 `--dsw-*` 名称（悬浮预览卡、JSON 树、图表、macOS 毛玻璃侧栏等）。插件派生其中 15 个：悬浮预览卡背景与副文字/完成态/错误态（与 Tooltip 同用暗色气泡，文字和状态从 bgBase/brand/error 抬高）、三个图表色（品牌、次级文字与两者混合）、JSON 树七个语法角色（键/数值/关键字取 brand 向文字色收敛，字符串取 success，标点取 labelPrimary，图标取 labelSecondary，悬停取 labelPrimary 的 4%/5% 淡色）。其余 22 个不覆写：9 个经已覆写的静态色或别名自动落到主题值（border-selected、card-fill、card-fill-hover、guide-hero、toast-action、trajectory-accent、sidebar-right-flash 浅色、sidebar-tint、glass-collapsed-hover），13 个是官方刻意的白色/中性/玻璃透明值（card-tile-fill、hovercard-label-primary、label-on-color、tooltip-label、file-upload-track、sidebar-right-flash 深色与七项 darwin 毛玻璃填充/洗色），保留它们不引入主题色偏差。旧 host 不引用这些名称，作为未引用 override 安全共存。在 `0.2.2-rc.2` 运行时上 `pnpm audit:tokens` 报告 166 covered、1 extra、291 official retained：派生的 15 项全部被引用，唯一的 extra 是旧宿主保留的 `sidebar-nav-item-hover`。
 
 ## 扩展约束
 

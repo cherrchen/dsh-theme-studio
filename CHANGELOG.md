@@ -8,17 +8,13 @@
 
 ### Added
 
-- 支持 DSH `0.2.2-alpha.3` 与 `0.2.2-rc.1`，开发基线同步提升至 `0.2.2-rc.1`（Cordis `4.1.0`、Schemastery `3.19.0`）。
-- 派生 token 新增悬浮预览卡、上下文图表与 JSON 树共 15 项（`--dsw-alias-hovercard-*`、`--dsw-alias-chart-*`、`--dsw-alias-json-tree-*`），覆盖 DSH `0.2.2-rc.2` 的界面新增 surface；旧版本把它们当作未引用的多余 override 安全忽略。
+- 支持 DSH `0.2.2-alpha.3`、`0.2.2-rc.1` 与 `0.2.2-rc.2`，开发基线同步提升至 `0.2.2-rc.2`（Cordis `4.1.0`、Schemastery `3.19.0`）。
+- 派生 token 新增悬浮预览卡、上下文图表与 JSON 树共 15 项（`--dsw-alias-hovercard-*`、`--dsw-alias-chart-*`、`--dsw-alias-json-tree-*`），覆盖 DSH `0.2.2-rc.2` 的界面新增 surface；旧版本把它们当作未引用的多余 override 安全忽略。手动编辑器的可编辑 token 面因此由每 scheme 152 项扩为 167 项。
 
 ### Fixed
 
 - 适配 Cordis 4.1 收窄的 `ctx.on` 事件键类型：Host 设置订阅的结构面不再把事件名限定为 `string`，新版宿主上构建不再报 TS2345。
 - 颜色选择器定位不再依赖 `@deepseek-ai/dsh-client-ui-primitives` 的 `useAnchoredPosition`：DSH `0.2.2-rc.2` 删除了该导出，现在按导出存在性复用宿主实现，缺失时使用同契约本地实现，面板照常贴住触发器并受视口约束。
-
-### Changed
-
-- 为 DSH `0.2.2-rc.2` 的界面与类型变化提前适配；该版本尚未发布到 npm，受支持清单、DSH peers 与开发基线仍为 `0.2.2-rc.1`，发布后另行提升并补矩阵证据。
 
 ## [0.1.7] - 2026-10-30
 
