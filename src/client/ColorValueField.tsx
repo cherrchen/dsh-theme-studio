@@ -7,7 +7,8 @@
  */
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Button, Input, useAnchoredPosition, useDismissOnOutsidePointer } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, Input, useDismissOnOutsidePointer } from '@deepseek-ai/dsh-client-ui-primitives'
+import { useAnchoredPosition } from '../compat/anchored-position.ts'
 import { Checkbox, MenuSurface, SegmentedControl } from '../compat/ui-atoms.tsx'
 import { CloseIcon } from '../compat/menu-icons.tsx'
 import { parseColorMix, resolveCssColor, resolvePreviewColor } from './contrast-colors.ts'

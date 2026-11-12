@@ -841,17 +841,20 @@
   gap: 8px;
 }
 
-/* Color picker popover: panel elevation, no hardcoded shadow. */
+/* Color picker popover: panel elevation, no hardcoded shadow. The placement
+ * hook publishes the visual-viewport bounds on this element; the dvh/vw
+ * fallbacks apply only before placement. */
 .palettePop {
   z-index: 1100;
   display: flex;
   flex-direction: column;
   gap: 10px;
   width: 320px;
-  max-width: calc(100vw - 16px);
-  max-height: calc(100dvh - 32px);
+  max-width: var(--dsh-anchored-max-width, calc(100vw - 16px));
+  max-height: var(--dsh-anchored-max-height, calc(100dvh - 32px));
   box-sizing: border-box;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px;
   border: 0.5px solid var(--dsw-alias-border-l2);
   border-radius: var(--dsw-radius-lg, 12px);

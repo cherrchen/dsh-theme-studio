@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { BuiltinPresetRegistry } from '../../src/client/catalog.ts'
 import { CHROME_TOKEN_NAMES } from '../../src/client/chrome-tokens.ts'
+import { contrastRatio } from '../../src/client/contrast.ts'
 import { BUILTIN_PRESETS } from '../../src/client/presets.ts'
 import { NAME_KEYS } from '../../src/client/ThemeStudioRow.tsx'
 import { STAGE1_TOKENS } from '../../src/client/types.ts'
@@ -104,6 +105,43 @@ describe('BUILTIN_PRESETS', () => {
     expect(claude.tokens.dark['--dsw-alias-tooltip-bg']).toBe('color-mix(in srgb, #1F1E1D 70%, black)')
     expect(claude.tokens.dark['--dsw-alias-toast-bg']).toBe('color-mix(in srgb, #1F1E1D 75%, black)')
     expect(claude.tokens.dark['--dsw-alias-toast-label']).toBe('#FAF9F5')
+  })
+
+  it('derives the 0.2.2-rc.2 hover card, chart, and JSON tree roles from the palette', () => {
+    for (const preset of BUILTIN_PRESETS) {
+      for (const scheme of ['light', 'dark'] as const) {
+        const tokens = preset.tokens[scheme]
+        const bubble = tokens['--dsw-alias-hovercard-bg']
+        const success = tokens['--dsw-alias-state-success-primary']
+        expect(bubble).toBe(tokens['--dsw-alias-tooltip-bg'])
+        expect(tokens['--dsw-alias-chart-messages']).toBe(tokens['--dsw-alias-brand-primary'])
+        expect(tokens['--dsw-alias-chart-system']).toBe(tokens['--dsw-alias-label-secondary'])
+        expect(tokens['--dsw-alias-chart-tools']).toBe(
+          `color-mix(in srgb, ${tokens['--dsw-alias-brand-primary']} 70%, ${tokens['--dsw-alias-label-secondary']})`,
+        )
+        expect(tokens['--dsw-alias-hovercard-label-secondary']).toContain(bubble)
+        expect(tokens['--dsw-alias-hovercard-label-tertiary']).toContain(bubble)
+        expect(tokens['--dsw-alias-json-tree-string']).toBe(
+          scheme === 'light'
+            ? `color-mix(in srgb, ${success} 45%, black)`
+            : `color-mix(in srgb, ${success} 70%, white)`,
+        )
+        expect(tokens['--dsw-alias-json-tree-punctuation']).toBe(tokens['--dsw-alias-label-primary'])
+        expect(tokens['--dsw-alias-json-tree-icon']).toBe(tokens['--dsw-alias-label-secondary'])
+        expect(tokens['--dsw-alias-hovercard-state-error']).toContain(tokens['--dsw-alias-state-error-primary'])
+      }
+    }
+  })
+
+  it('keeps hover-card secondary ink brighter than tertiary on every bubble', () => {
+    for (const preset of BUILTIN_PRESETS) {
+      for (const scheme of ['light', 'dark'] as const) {
+        const tokens = preset.tokens[scheme]
+        const bubble = tokens['--dsw-alias-hovercard-bg']
+        expect(contrastRatio(tokens['--dsw-alias-hovercard-label-secondary'], bubble))
+          .toBeGreaterThan(contrastRatio(tokens['--dsw-alias-hovercard-label-tertiary'], bubble))
+      }
+    }
   })
 
   it('covers every builtin id in NAME_KEYS so the preview bar does not fall back to Default', () => {

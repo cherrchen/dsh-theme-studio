@@ -40,8 +40,9 @@ const pair = (id: string, foreground: string, background: string, minimum = 4.5,
 
 /**
  * Normal text on five principal surfaces, code syntax on code-block fill,
- * toast/tooltip/menu copy, and focus indicators. Decorative borders, disabled
- * labels, gradients and actual DOM placement are outside this diagnostic scope.
+ * toast/tooltip/hover-card/menu copy, JSON-tree ink on its host surface, and
+ * focus indicators. Decorative borders, disabled labels, gradients and actual
+ * DOM placement are outside this diagnostic scope.
  */
 export const DEFAULT_CONTRAST_PAIRS: readonly ThemeContrastPair[] = Object.freeze([
   ...surfaces.flatMap(surface => text.map(label => pair(`${label}/${surface}`, token(label), token(surface)))),
@@ -49,6 +50,9 @@ export const DEFAULT_CONTRAST_PAIRS: readonly ThemeContrastPair[] = Object.freez
     .map(name => pair(`code/${name}`, `--shiki-token-${name}`, token('markdown-code-block'))),
   pair('toast', token('toast-label'), token('toast-bg')),
   pair('tooltip', '#ffffff', token('tooltip-bg')),
+  pair('hovercard/secondary', token('hovercard-label-secondary'), token('hovercard-bg')),
+  pair('hovercard/tertiary', token('hovercard-label-tertiary'), token('hovercard-bg')),
+  pair('json-tree/string', token('json-tree-string'), token('bg-layer-1')),
   pair('menu/primary', token('label-primary'), '--dsw-menu-surface-fill', 4.5, token('bg-base')),
   pair('menu/secondary', token('label-secondary'), '--dsw-menu-surface-fill', 4.5, token('bg-base')),
   ...surfaces.map(surface => pair(`focus/${surface}`, '--dsw-focus-ring-color', token(surface), 3)),

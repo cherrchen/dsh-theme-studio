@@ -69,6 +69,21 @@ export function deriveChrome(palette: ChromePalette): Readonly<Record<string, st
   const bubble = dark ? mix(bgBase, 'black', 70) : labelPrimary
   const toastBg = dark ? mix(bgBase, 'black', 75) : labelPrimary
   const toastLabel = dark ? labelPrimary : bgBase
+  // Hover cards sit on the same dark bubble in both schemes. Mix their copy
+  // from that bubble, not the page: a dark scheme's bubble is darker than
+  // bgBase, so page-derived ink loses contrast. Lower bubble shares are
+  // brighter, which keeps secondary ahead of tertiary.
+  const onBubbleSecondary = mix(bubble, 'white', dark ? 40 : 20)
+  const onBubbleTertiary = mix(bubble, 'white', dark ? 50 : 42)
+  const onBubbleBrand = mix(brand, 'white', 60)
+  const onBubbleError = mix(error, 'white', 55)
+  // Syntax accents stay brand-hued but move toward the page ink so 12px JSON
+  // keys and literals clear the code surface in both schemes.
+  const readableAccent = mix(brand, labelPrimary, 70)
+  // JSON tree strings are 12px text on the layer-1 surface, but success is a
+  // state fill. Darken it for light schemes and lift it for dark schemes while
+  // keeping the green hue.
+  const readableSuccess = dark ? mix(success, 'white', 70) : mix(success, 'black', 45)
 
   return {
     '--dsw-alias-label-tertiary': mix(labelSecondary, bgBase, 72),
@@ -136,6 +151,9 @@ export function deriveChrome(palette: ChromePalette): Readonly<Record<string, st
     '--dsw-alias-state-warn-tertiary': fade(warn, 16),
     '--dsw-alias-state-idle-primary': mix(labelSecondary, bgBase, 45),
     '--dsw-alias-state-done-primary': brand,
+    '--dsw-alias-chart-messages': brand,
+    '--dsw-alias-chart-system': labelSecondary,
+    '--dsw-alias-chart-tools': mix(brand, labelSecondary, 70),
     '--dsw-alias-illustration-background': bgLayer1,
     '--dsw-alias-illustration-surface': bgLayer2,
     '--dsw-alias-illustration-backing': illustrationBacking,
@@ -154,6 +172,18 @@ export function deriveChrome(palette: ChromePalette): Readonly<Record<string, st
     '--dsw-alias-toast-bg': toastBg,
     '--dsw-alias-toast-label': toastLabel,
     '--dsw-alias-tooltip-bg': bubble,
+    '--dsw-alias-hovercard-bg': bubble,
+    '--dsw-alias-hovercard-label-secondary': onBubbleSecondary,
+    '--dsw-alias-hovercard-label-tertiary': onBubbleTertiary,
+    '--dsw-alias-hovercard-state-done': onBubbleBrand,
+    '--dsw-alias-hovercard-state-error': onBubbleError,
+    '--dsw-alias-json-tree-hover': fade(labelPrimary, dark ? 5 : 4),
+    '--dsw-alias-json-tree-icon': labelSecondary,
+    '--dsw-alias-json-tree-keyword': readableAccent,
+    '--dsw-alias-json-tree-number': readableAccent,
+    '--dsw-alias-json-tree-property': mix(brand, labelPrimary, 55),
+    '--dsw-alias-json-tree-punctuation': labelPrimary,
+    '--dsw-alias-json-tree-string': readableSuccess,
 
     '--dsw-specific-sidebar-nav-item-active': bgLayer2,
     '--dsw-specific-sidebar-nav-item-hover': mix(sidebar, labelPrimary, 92),

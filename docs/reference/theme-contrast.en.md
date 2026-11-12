@@ -2,16 +2,18 @@
 
 中文：[theme-contrast.md](./theme-contrast.md)
 
-Stage 2 evaluates 48 semantic pairs in each scheme (96 per theme). The formulas use sRGB relative luminance with the 0.04045 transfer-function boundary and `(lighter + 0.05) / (darker + 0.05)`. Comparisons use full precision. A displayed rounded ratio is never used to decide a pass. Normal text uses 4.5:1 from [WCAG 2.2 SC 1.4.3](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html); focus indicators use 3:1 from [SC 1.4.11](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html).
+Stage 2 evaluates 51 semantic pairs in each scheme (102 per theme). The formulas use sRGB relative luminance with the 0.04045 transfer-function boundary and `(lighter + 0.05) / (darker + 0.05)`. Comparisons use full precision. A displayed rounded ratio is never used to decide a pass. Normal text uses 4.5:1 from [WCAG 2.2 SC 1.4.3](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html); focus indicators use 3:1 from [SC 1.4.11](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html).
 
 ## Coverage and interpretation
 
 - Primary/secondary labels, links, and error/success/warning text on base, layer 1, layer 2, overlay, and sidebar surfaces: 30 pairs.
 - Nine Shiki syntax colors on the code-block surface: 9 pairs.
 - Toast, tooltip, primary/secondary menu text: 4 pairs. Tooltip foreground is the official static white token, which Theme Studio intentionally leaves unchanged. Translucent menu fill is evaluated over the base surface.
+- Hover-card secondary and tertiary copy on the hover-card bubble: 2 pairs.
+- JSON-tree string ink on the layer-1 surface the host's JSON tree root paints: 1 pair.
 - Focus ring on the five principal surfaces: 5 pairs.
 
-The default pairs represent expected semantic uses, not an inventory of the rendered DOM. A token used as normal text is tested at 4.5:1 even if another host happens to use it only as an icon. Decorative borders and disabled/dimmed labels are excluded. Derived caption/tertiary labels, inline-code surfaces, button copy, gradients, font size/weight, inherited host tokens, actual backdrop placement, and other plugins' layers are not covered. A passing report does not establish WCAG conformance for a theme or host.
+The default pairs represent expected semantic uses, not an inventory of the rendered DOM. A token used as normal text is tested at 4.5:1 even if another host happens to use it only as an icon. Decorative borders and disabled/dimmed labels are excluded. Derived caption/tertiary labels outside hover cards, inline-code surfaces, button copy, gradients, font size/weight, inherited host tokens, actual backdrop placement, and other plugins' layers are not covered. A passing report does not establish WCAG conformance for a theme or host.
 
 Supported color inputs are 3/4/6/8-digit hex, numeric/percentage RGB(A), `black`, `white`, `transparent`, token names, `var()` references (including fallbacks), and nested `color-mix(in srgb, …)`. Mixing uses premultiplied alpha and CSS percentage normalization; foreground alpha is composited onto the evaluated background. A translucent background requires an explicit opaque backdrop. Missing/cyclic references, malformed or unsupported values, and unresolved backgrounds yield `unknown` with a reason; they never pass silently. The resolver does not read the DOM or rely on browser-only color parsing.
 
@@ -19,26 +21,26 @@ Supported color inputs are 3/4/6/8-digit hex, numeric/percentage RGB(A), `black`
 
 ## Builtin baseline
 
-Measured 2026-10-02. There are 768 evaluated checks, 188 below their specified threshold, and no unknown results. The palettes keep their established colors. Claude Cream dark and OLED dark pass all default pairs; neither theme passes both schemes. This baseline documents existing failures rather than certifying or repairing them.
+Measured 2026-11-12. There are 816 evaluated checks: 628 pass, 188 are below their specified threshold, and no result is unknown. The palettes keep their established colors. Claude Cream dark and OLED dark pass all default pairs; neither theme passes both schemes. This baseline documents existing failures rather than certifying or repairing them.
 
 | Theme | Scheme | Passed | Below minimum | Unknown | Lowest ratio (rounded) |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Claude | light | 30 | 18 | 0 | 2.687 |
-| Claude | dark | 27 | 21 | 0 | 3.411 |
-| Codex | light | 33 | 15 | 0 | 2.791 |
-| Codex | dark | 44 | 4 | 0 | 3.886 |
-| Claude Cream | light | 40 | 8 | 0 | 3.134 |
-| Claude Cream | dark | 48 | 0 | 0 | 5.271 |
-| Graphite | light | 34 | 14 | 0 | 4.098 |
-| Graphite | dark | 42 | 6 | 0 | 3.950 |
-| OLED | light | 32 | 16 | 0 | 2.951 |
-| OLED | dark | 48 | 0 | 0 | 6.247 |
-| Nordic | light | 20 | 28 | 0 | 1.509 |
-| Nordic | dark | 33 | 15 | 0 | 1.803 |
-| Paper | light | 31 | 17 | 0 | 3.561 |
-| Paper | dark | 47 | 1 | 0 | 4.468 |
-| Warm | light | 24 | 24 | 0 | 2.402 |
-| Warm | dark | 47 | 1 | 0 | 4.367 |
+| Claude | light | 33 | 18 | 0 | 2.687 |
+| Claude | dark | 30 | 21 | 0 | 3.411 |
+| Codex | light | 36 | 15 | 0 | 2.791 |
+| Codex | dark | 47 | 4 | 0 | 3.886 |
+| Claude Cream | light | 43 | 8 | 0 | 3.134 |
+| Claude Cream | dark | 51 | 0 | 0 | 5.071 |
+| Graphite | light | 37 | 14 | 0 | 4.098 |
+| Graphite | dark | 45 | 6 | 0 | 3.950 |
+| OLED | light | 35 | 16 | 0 | 2.951 |
+| OLED | dark | 51 | 0 | 0 | 5.281 |
+| Nordic | light | 23 | 28 | 0 | 1.509 |
+| Nordic | dark | 36 | 15 | 0 | 1.803 |
+| Paper | light | 34 | 17 | 0 | 3.561 |
+| Paper | dark | 50 | 1 | 0 | 4.468 |
+| Warm | light | 27 | 24 | 0 | 2.402 |
+| Warm | dark | 50 | 1 | 0 | 4.367 |
 
 To reproduce from a checkout:
 
