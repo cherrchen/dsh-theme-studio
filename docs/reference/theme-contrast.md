@@ -8,7 +8,7 @@ Current，Stage 2，实现于 `509b88e`。规则真源是 [contrast.ts](../../sr
 
 ## 默认规则目录
 
-每种模式 48 个配对，每主题两种模式共 96 项。
+每种模式 51 个配对，每主题两种模式共 102 项。
 
 | 组 | 前景 | 背景 | 数量 | 最低阈值 |
 | --- | --- | --- | ---: | ---: |
@@ -16,12 +16,14 @@ Current，Stage 2，实现于 `509b88e`。规则真源是 [contrast.ts](../../sr
 | 代码语法 | Shiki comment、punctuation、string、string-expression、keyword、constant、function、link、parameter | markdown-code-block | 9 | 4.5:1 |
 | Toast | toast-label | toast-bg | 1 | 4.5:1 |
 | Tooltip | 静态白色 #ffffff | tooltip-bg | 1 | 4.5:1 |
+| 悬浮预览卡文字 | hovercard-label-secondary、hovercard-label-tertiary | hovercard-bg | 2 | 4.5:1 |
+| JSON 树字符串 | json-tree-string | bg-layer-1 | 1 | 4.5:1 |
 | 菜单文字 | label-primary、label-secondary | dsw-menu-surface-fill，透明部分叠在 bg-base | 2 | 4.5:1 |
 | 焦点指示 | dsw-focus-ring-color | 上述五个 principal surface | 5 | 3:1 |
 
 alias 名自动加 `--dsw-alias-`，specific 名使用 `--dsw-specific-`；Shiki 使用 `--shiki-token-`。check id 可定位角色与表面，例如 `link/bg-base`、`code/keyword`、`focus/specific-sidebar-fill`。tooltip 的静态白色是宿主已知语义，不代表任意缺失 token 都可用白色兜底。
 
-默认配对是期望的语义用途，不是 DOM 使用清单。可能只用于图标的状态色，当前按普通文字保守测试；host 是否实际使用这个配对必须另查。装饰边框、disabled/dimmed 文字不属于规则。caption/tertiary 文字、inline code 背景、按钮文字、渐变、字体大小/粗细、继承宿主 token、真实菜单底色、其他插件覆盖层均未全部覆盖。通过报告只表明被检查配对通过。
+默认配对是期望的语义用途，不是 DOM 使用清单。可能只用于图标的状态色，当前按普通文字保守测试；host 是否实际使用这个配对必须另查。装饰边框、disabled/dimmed 文字不属于规则。hover card 以外的 caption/tertiary 文字、inline code 背景、按钮文字、渐变、字体大小/粗细、继承宿主 token、真实菜单底色、其他插件覆盖层均未全部覆盖。JSON 树字符串按宿主 root 实际绘制的 `bg-layer-1` 背景检查。通过报告只表明被检查配对通过。
 
 ## sRGB 计算
 
@@ -64,26 +66,26 @@ unknown 不计入 pass，但不会阻止后续 check 继续计算。报告的生
 
 ## 内置测量基线
 
-测量于 2026-10-02。8 个主题、16 个模式共 768 项：580 passed、188 failed、0 unknown。Claude Cream dark 与 OLED dark 在默认配对范围内全部通过；没有一个内置主题的两种模式都全部通过。此表记录现有不足，配色保持原值。
+测量于 2026-11-12。8 个主题、16 个模式共 816 项：628 passed、188 failed、0 unknown。Claude Cream dark 与 OLED dark 在默认配对范围内全部通过；没有一个内置主题的两种模式都全部通过。此表记录现有不足，配色保持原值。
 
 | 主题 | 模式 | Passed | Failed | Unknown | 最低比值（显示值） |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Claude | light | 30 | 18 | 0 | 2.687 |
-| Claude | dark | 27 | 21 | 0 | 3.411 |
-| Codex | light | 33 | 15 | 0 | 2.791 |
-| Codex | dark | 44 | 4 | 0 | 3.886 |
-| Claude Cream | light | 40 | 8 | 0 | 3.134 |
-| Claude Cream | dark | 48 | 0 | 0 | 5.271 |
-| Graphite | light | 34 | 14 | 0 | 4.098 |
-| Graphite | dark | 42 | 6 | 0 | 3.950 |
-| OLED | light | 32 | 16 | 0 | 2.951 |
-| OLED | dark | 48 | 0 | 0 | 6.247 |
-| Nordic | light | 20 | 28 | 0 | 1.509 |
-| Nordic | dark | 33 | 15 | 0 | 1.803 |
-| Paper | light | 31 | 17 | 0 | 3.561 |
-| Paper | dark | 47 | 1 | 0 | 4.468 |
-| Warm | light | 24 | 24 | 0 | 2.402 |
-| Warm | dark | 47 | 1 | 0 | 4.367 |
+| Claude | light | 33 | 18 | 0 | 2.687 |
+| Claude | dark | 30 | 21 | 0 | 3.411 |
+| Codex | light | 36 | 15 | 0 | 2.791 |
+| Codex | dark | 47 | 4 | 0 | 3.886 |
+| Claude Cream | light | 43 | 8 | 0 | 3.134 |
+| Claude Cream | dark | 51 | 0 | 0 | 5.071 |
+| Graphite | light | 37 | 14 | 0 | 4.098 |
+| Graphite | dark | 45 | 6 | 0 | 3.950 |
+| OLED | light | 35 | 16 | 0 | 2.951 |
+| OLED | dark | 51 | 0 | 0 | 5.281 |
+| Nordic | light | 23 | 28 | 0 | 1.509 |
+| Nordic | dark | 36 | 15 | 0 | 1.803 |
+| Paper | light | 34 | 17 | 0 | 3.561 |
+| Paper | dark | 50 | 1 | 0 | 4.468 |
+| Warm | light | 27 | 24 | 0 | 2.402 |
+| Warm | dark | 50 | 1 | 0 | 4.367 |
 
 表中最低值对应不同 minimum，不能用全表单一最低值推断 passed；例如 Claude Cream light 最低 focus 比值超过 3，但部分普通文字仍低于 4.5。
 

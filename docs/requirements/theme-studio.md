@@ -79,7 +79,7 @@ Host accepted snapshot 是持久 authority；preview 不进入 durable settings�
 
 ### 可读性与诚实诊断
 
-默认规则覆盖普通文字、链接、状态文字、代码语法、toast/tooltip/menu 与焦点指示。普通文字阈值为 4.5:1，焦点指示为 3:1，比较不能先四舍五入。范围、色值语法、透明合成、基线与未覆盖项以[对比度参考](../reference/theme-contrast.md)为准。内置主题有失败配对；当前不能声称所有主题或完整宿主 UI 符合 WCAG。
+默认规则覆盖普通文字、链接、状态文字、代码语法、toast/tooltip、悬浮预览卡文字、JSON 树字符串、menu 与焦点指示。普通文字阈值为 4.5:1，焦点指示为 3:1，比较不能先四舍五入。范围、色值语法、透明合成、基线与未覆盖项以[对比度参考](../reference/theme-contrast.md)为准。内置主题有失败配对；当前不能声称所有主题或完整宿主 UI 符合 WCAG。
 
 ### UI 与可访问性
 

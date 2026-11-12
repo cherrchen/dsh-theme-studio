@@ -15,6 +15,9 @@
 
 - 适配 Cordis 4.1 收窄的 `ctx.on` 事件键类型：Host 设置订阅的结构面不再把事件名限定为 `string`，新版宿主上构建不再报 TS2345。
 - 颜色选择器定位不再依赖 `@deepseek-ai/dsh-client-ui-primitives` 的 `useAnchoredPosition`：DSH `0.2.2-rc.2` 删除了该导出，现在按导出存在性复用宿主实现，缺失时使用同契约本地实现，面板照常贴住触发器并受视口约束。
+- 悬浮预览卡的次要/三级文字改从卡片气泡底色派生，恢复“次要强于三级”的层级，并把两条文字/气泡配对纳入默认对比度诊断。
+- JSON 树字符串改用按明暗 scheme 向黑/白收敛的 success 文本色，Nordic 浅色等主题不再出现低于 2:1 的浅绿字符串；该角色纳入默认对比度诊断。
+- 颜色选择器浮层消费定位 hook 发布的 `--dsh-anchored-max-width`/`--dsh-anchored-max-height`，移动键盘缩小 `visualViewport` 时在可用区域内滚动，不再把下部控件留在键盘后。
 
 ## [0.1.7] - 2026-10-30
 

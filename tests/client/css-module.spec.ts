@@ -35,6 +35,8 @@ describe('Theme Studio CSS module injection', () => {
     expect(css).toContain(classes.editorDialog)
     expect(css).toContain('min(1100px')
     expect(css).toContain('overflow-y:auto')
+    expect(css).toContain('var(--dsh-anchored-max-width')
+    expect(css).toContain('var(--dsh-anchored-max-height')
     expect(css).toContain(classes.row)
     expect(css).not.toContain('.module.css')
     const tagId = `${PACKAGE_NAME}/ThemeStudioRow.module.css`

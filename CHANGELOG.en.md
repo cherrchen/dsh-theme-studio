@@ -15,6 +15,9 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 - Adapt to the narrower `ctx.on` event-key type in Cordis 4.1: the Host settings subscription face no longer requires the event name to be `string`, so newer hosts no longer fail the build with TS2345.
 - Color-picker placement no longer depends on `useAnchoredPosition` from `@deepseek-ai/dsh-client-ui-primitives`: DSH `0.2.2-rc.2` dropped that export, so the plugin now reuses the host hook when it exists and otherwise uses a local implementation of the same contract, keeping the panel anchored and viewport-clamped.
+- Hover-card secondary and tertiary copy now derives from the card bubble, restoring the secondary-above-tertiary hierarchy; both text/bubble pairs join the default contrast diagnostics.
+- JSON-tree strings now use a scheme-specific success ink pulled toward black or white, removing the sub-2:1 pale-green strings in Nordic light; the role joins the default contrast diagnostics.
+- The color-picker popover consumes the placement hook's `--dsh-anchored-max-width`/`--dsh-anchored-max-height`, so it scrolls within the visual viewport instead of leaving lower controls behind a mobile keyboard.
 
 ## [0.1.7] - 2026-10-30
 

@@ -6,6 +6,7 @@ import { useRef } from 'react'
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 async function loadAdapter(exports: Record<string, unknown>) {
@@ -72,6 +73,27 @@ describe('anchored-position compat adapter', () => {
     expect(panel.getAttribute('data-top')).toBeNull()
     expect(panel.style.getPropertyValue('--dsh-anchored-max-width')).toBe('')
     expect(panel.style.getPropertyValue('--dsh-anchored-max-height')).toBe('')
+  })
+
+  it('bounds a picker taller than the visual viewport', async () => {
+    stubGeometry()
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, get: () => 500 })
+    vi.stubGlobal('visualViewport', {
+      height: 400,
+      width: 375,
+      offsetTop: 0,
+      offsetLeft: 0,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })
+    const adapter = await loadAdapter({})
+    const view = render(<Harness adapter={adapter} open />)
+    const panel = view.getByTestId('panel')
+    // 400 visual pixels minus the 8px margins, and 375 minus both margins.
+    expect(panel.style.getPropertyValue('--dsh-anchored-max-width')).toBe('359px')
+    expect(panel.style.getPropertyValue('--dsh-anchored-max-height')).toBe('384px')
+    // A 500px panel cannot fit: the clamp can only pin its top to the margin.
+    expect(panel.getAttribute('data-top')).toBe('8')
   })
 
   it('clamps a host-supplied anchor rect inside the viewport margins', async () => {
