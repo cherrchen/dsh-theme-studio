@@ -306,3 +306,22 @@ rc.3 真实 Chromium 的主题/外观共存、悬停预览、取消、应用、�
 
 本轮未执行 tag、npm publish 或 GitHub Release。
 2026-11-12 发布准备时复核近期 main 相关 CI：[PR #19 的 CI run 42980480044](https://github.com/cherrchen/dsh-theme-studio/actions/runs/42980480044) 与合并后的 main push CI（run [43010767409](https://github.com/cherrchen/dsh-theme-studio/actions/runs/43010767409)）各 74 个检查全部成功；[PR #20 的 CI run 43222225982](https://github.com/cherrchen/dsh-theme-studio/actions/runs/43222225982) 与 main push CI（run [43227013752](https://github.com/cherrchen/dsh-theme-studio/actions/runs/43227013752)，`7c9964d`）各 77 个检查全部成功。两个 PR 已依次合并为 main 的 `ebeae03`、`7c9964d`。2026-11-09 的 [Upgrade smoke run 42620494604](https://github.com/cherrchen/dsh-theme-studio/actions/runs/42620494604) 在候选 `0.2.2-rc.1` 上失败：该 run 的隔离矩阵在 v0.1.7 源码的 `prepare` 阶段报 `src/index.ts` 的 TS2345，与本轮 PR #19 放宽事件键结构面所修的问题相同；该 scheduled workflow（每周一 04:17 UTC）此后未再运行，本轮也未重跑，v0.1.8 包含该修复。这些结果补充远端平台证据，不能当作 v0.1.8 版本号与文档变更或 tag 全量浏览器验证已经执行。
+
+## DSH 0.2.2-rc.3 提升（2026-11-17）
+
+审查来源为本地 `deepseek-harness` 仓库标签 `dsh-v0.2.2-rc.2` → `dsh-v0.2.2-rc.3`，并用 npm 上该精确版本的已发布包复核；区间内没有其他已发布版本。`@deepseek-ai/dsh-settings@0.2.2-rc.3` 与 `@deepseek-ai/dsh@0.2.2-rc.3` 于 2026-11-13T07:45Z 与 08:05Z 发布，registry `dist-tags.next` 指向 rc.3（`latest` 仍为 `0.2.2-rc.1`）。
+
+区间共 6 个提交、515 个文件（+10988/−669）：一个 `feat(experimental)` 新增 DeepSeek 官网对话导入，一个桌面安装器 restart-status 修复，一个 CI bubblewrap 下载修复，其余 380 个 `package.json` 是版本号 bump，另含 lockfile、文档与快照改动。共享运行时版本未变（Cordis `4.1.0`、Schemastery `3.19.0`、cosmokit `1.9.0`、loader/include/group/hmr `1.1.0`、timer `1.2.0`），vendor 源树无差异。
+
+| 接缝 | 上游变化及风险 | 插件处理 |
+| --- | --- | --- |
+| 宿主加载 | `packages/boot/app-boot` 的 `plugin-compatibility.ts` 与 recompose 在区间内没有实现变更 | 继续只用 DSH peers 精确版本清单表达支持范围；契约检查不变 |
+| ui-primitives | 只新增 `IconUploadOutlineRegular`/`IconUploadOutlineMedium` 与 `upload-outline` artwork，未删除或改名插件使用的 `Menu`/`Button`/`Modal` 与 chevron 导出 | 结构探测面（`ui-atoms.tsx`、`menu-icons.tsx`）不变，不新增版本分支 |
+| ui-workspace | 新增 `workspace.picker` Component Factory、`WorkspacePickerFactory` 与 `workspace.picker.directoryFlow` 槽位；`WorkspacePicker` 改为复用共享 surface 的内部实现，导出的 props 类型未变 | Theme Creator 只经 `ctx.get('uiWorkspace')` 的 `startSession.length >= 2` 能力探测使用该服务，两参签名不变；不消费 workspace 槽位或 Factory，无需改动 |
+| ui-theme、设置 Host、设置 Client、ui-slots、ui-renderer、connection、remotes、store、locale、skill | 目标区间 `src/` 无实现变更（只有包版本号与文档/测试改动） | 沿用 `overrideTokens`、双 settings 通道与结构探测，不新增版本分支 |
+| 语义 token | `ui-theme` 样式表在区间内没有增删 token 名 | 编辑器可编辑 token 面保持每 scheme 167 项；`pnpm audit:tokens` 在 rc.3 运行时上报告 166 covered、1 extra、291 official retained，与 rc.2 相同，唯一 extra 仍是旧宿主保留的 `sidebar-nav-item-hover` |
+| 其他客户端与工具 | ui-sidebar、ui-directory-picker-browse/native、session-log-export、cordis-client-runner 槽位目录、experimental 新包与 official-bundles 注册有改动 | 均非插件消费面，不新增适配 |
+
+适配结论：区间没有破坏性 seam 变化，本轮不需要源码适配；工作内容是 npm 发布后提升支持清单、全部 DSH peers、开发 pin、overrides、release-age 例外与 lockfile。
+
+验证：2026-11-17 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，先执行 `node scripts/run-dsh-matrix.mjs --candidate 0.2.2-rc.3` 在隔离副本验证，install、`compat:check`（candidate 判定）、lint、typecheck、build、完整单测（385 passed、1 个条件性 legacy-provider skip）、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 行为矩阵与真实 CLI profile 组合十一项全部退出 0，判定为 `candidate probe consistent`。提升后正式基线 `pnpm compat:check` 与 `pnpm verify:all` 通过；支持模式隔离矩阵对 `0.2.2-rc.3`、上一基线 `0.2.2-rc.2` 与最老支持的 `0.1.5-rc.2` 各执行同一十一项步骤，全部退出 0，逐命令结果见[本批次证据](./dsh-compatibility-rc3-promotion-results-2026-11-17.json)。其余二十二版没有在本机重跑，由本分支 PR 的三个平台 CI 按同一清单覆盖。本轮没有设置 `DSH_BROWSER_E2E`，不声称本机验证真实浏览器旅程、桌面呈现或 Linux/Windows 本机结果；也未执行 tag、npm publish 或 GitHub Release。
