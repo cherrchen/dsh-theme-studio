@@ -34,6 +34,7 @@ export const SUPPORTED_DSH_RELEASES = [
   '0.2.2-alpha.3',
   '0.2.2-rc.1',
   '0.2.2-rc.2',
+  '0.2.2-rc.3',
 ] as const
 
 /** One release this plugin claims to support. */
