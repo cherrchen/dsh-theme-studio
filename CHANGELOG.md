@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- 支持 DSH `0.2.2-rc.4`，开发基线同步提升至 `0.2.2-rc.4`（Cordis `4.1.0`、Schemastery `3.19.0`）。
+
 ## [0.1.9] - 2026-11-17
 
 ### Added
