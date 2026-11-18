@@ -327,3 +327,21 @@ rc.3 真实 Chromium 的主题/外观共存、悬停预览、取消、应用、�
 验证：2026-11-17 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，先执行 `node scripts/run-dsh-matrix.mjs --candidate 0.2.2-rc.3` 在隔离副本验证，install、`compat:check`（candidate 判定）、lint、typecheck、build、完整单测（385 passed、1 个条件性 legacy-provider skip）、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 行为矩阵与真实 CLI profile 组合十一项全部退出 0，判定为 `candidate probe consistent`。提升后正式基线 `pnpm compat:check` 与 `pnpm verify:all` 通过；支持模式隔离矩阵对 `0.2.2-rc.3`、上一基线 `0.2.2-rc.2` 与最老支持的 `0.1.5-rc.2` 各执行同一十一项步骤，全部退出 0，逐命令结果见[本批次证据](./dsh-compatibility-rc3-promotion-results-2026-11-17.json)。其余二十二版没有在本机重跑，由本分支 PR 的三个平台 CI 按同一清单覆盖。本轮没有设置 `DSH_BROWSER_E2E`，不声称本机验证真实浏览器旅程、桌面呈现或 Linux/Windows 本机结果；也未执行 tag、npm publish 或 GitHub Release。
 
 2026-11-17 发布准备：v0.1.9 相对 v0.1.8 只包含 PR #21 的 DSH `0.2.2-rc.3` 支持与文档同步，没有新增 seam 或 token 变更，本轮没有重跑 rc.3 以外的全矩阵；PR #21 合并后的 main push CI（run [44067043106](https://github.com/cherrchen/dsh-theme-studio/actions/runs/44067043106)）在准备时仍在排队，结果以该 run 的最终状态为准。准备时未创建 tag、未执行 npm publish 或 GitHub Release。
+
+## DSH 0.2.2-rc.4 提升（2026-11-18）
+
+审查来源为本地 `deepseek-harness` 仓库标签 `dsh-v0.2.2-rc.3` → `dsh-v0.2.2-rc.4`，并用 npm 上该精确版本的已发布包复核；区间内没有其他已发布版本。`@deepseek-ai/dsh-settings@0.2.2-rc.4` 与 `@deepseek-ai/dsh@0.2.2-rc.4` 于 2026-11-17T16:41Z 与 17:03Z 发布，registry `dist-tags.next` 指向 rc.4（CLI 的 `latest` 仍为 `0.2.2-rc.1`）。
+
+区间共 8 个提交、395 个文件（+579/−429）：一个 `feat(llm-deepseek)` 内容安全审核开关、拒绝处理修复与对应的 refusal-code 升级指南，两个 liveshare 隧道/凭据时间修复，其余 380 个 `package.json` 是版本号 bump，另含文档与快照改动；区间没有 lockfile 变更。共享运行时版本未变（Cordis `4.1.0`、Schemastery `3.19.0`、cosmokit `1.9.0`、loader/include/group/hmr `1.1.0`、timer `1.2.0`），vendor 源树无差异。对 12 个接缝包、`dsh-app-boot` 与 CLI 的 npm tarball 做逐文件比对：接缝包除 `package.json` 的版本号（及其 DSH 依赖版本）外无差异，CLI 包只新增 refusal-code 升级指南文档。
+
+| 接缝 | 上游变化及风险 | 插件处理 |
+| --- | --- | --- |
+| 宿主加载 | `packages/boot/app-boot` 的 `plugin-compatibility.ts` 与 recompose 在区间内没有实现变更 | 继续只用 DSH peers 精确版本清单表达支持范围；契约检查不变 |
+| ui-theme、设置 Host、设置 Client、ui-slots、ui-primitives、ui-renderer、ui-workspace、connection、remotes、store、locale、skill | 目标区间 `src/` 无实现变更，npm tarball 逐文件比对除 `package.json` 版本字段外无差异 | 沿用 `overrideTokens`、双 settings 通道与结构探测，不新增版本分支 |
+| 语义 token | `ui-theme` 样式表在区间内没有增删 token 名 | 编辑器可编辑 token 面保持每 scheme 167 项；`pnpm audit:tokens` 在 rc.4 运行时上报告 166 covered、1 extra、291 official retained，与 rc.3 相同，唯一 extra 仍是旧宿主保留的 `sidebar-nav-item-hover` |
+| LLM 内容拒绝 | 新增 `CONTENT_REFUSED` 错误码、`safetyCheck` 开关与 refusal-code 升级指南 | 插件不消费 LLM provider、该错误码或升级指南，不需要适配 |
+| liveshare 与 CI | Electron Node 模式下启动隧道 worker、凭据可用期改从真实时钟派生 | 均非插件消费面，不新增适配 |
+
+适配结论：区间没有破坏性 seam 变化，本轮不需要源码适配；工作内容是 npm 发布后提升支持清单、全部 DSH peers、开发 pin、overrides、release-age 例外与 lockfile。
+
+验证：2026-11-18 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，先执行 `node scripts/run-dsh-matrix.mjs --candidate 0.2.2-rc.4` 在隔离副本验证，install、`compat:check`（candidate 判定）、lint、typecheck、build、完整单测（385 passed、1 个条件性 legacy-provider skip）、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 行为矩阵与真实 CLI profile 组合十一项全部退出 0，判定为 `candidate probe consistent`。提升后正式基线 `pnpm compat:check` 与 `pnpm verify:all` 通过；支持模式隔离矩阵对 `0.2.2-rc.4`、上一基线 `0.2.2-rc.3` 与最老支持的 `0.1.5-rc.2` 各执行同一十一项步骤，全部退出 0，逐命令结果见[本批次证据](./dsh-compatibility-rc4-promotion-results-2026-11-18.json)。其余二十三版没有在本机重跑，由本分支 PR 的三个平台 CI 按同一清单覆盖。本轮没有设置 `DSH_BROWSER_E2E`，不声称本机验证真实浏览器旅程、桌面呈现或 Linux/Windows 本机结果；也未执行 tag、npm publish 或 GitHub Release。
