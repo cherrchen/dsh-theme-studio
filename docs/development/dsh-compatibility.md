@@ -328,6 +328,7 @@ rc.3 真实 Chromium 的主题/外观共存、悬停预览、取消、应用、�
 
 2026-11-17 发布准备：v0.1.9 相对 v0.1.8 只包含 PR #21 的 DSH `0.2.2-rc.3` 支持与文档同步，没有新增 seam 或 token 变更，本轮没有重跑 rc.3 以外的全矩阵；PR #21 合并后的 main push CI（run [44067043106](https://github.com/cherrchen/dsh-theme-studio/actions/runs/44067043106)）在准备时仍在排队，结果以该 run 的最终状态为准。准备时未创建 tag、未执行 npm publish 或 GitHub Release。
 
+
 ## DSH 0.2.2-rc.4 提升（2026-11-18）
 
 审查来源为本地 `deepseek-harness` 仓库标签 `dsh-v0.2.2-rc.3` → `dsh-v0.2.2-rc.4`，并用 npm 上该精确版本的已发布包复核；区间内没有其他已发布版本。`@deepseek-ai/dsh-settings@0.2.2-rc.4` 与 `@deepseek-ai/dsh@0.2.2-rc.4` 于 2026-11-17T16:41Z 与 17:03Z 发布，registry `dist-tags.next` 指向 rc.4（CLI 的 `latest` 仍为 `0.2.2-rc.1`）。
@@ -345,3 +346,5 @@ rc.3 真实 Chromium 的主题/外观共存、悬停预览、取消、应用、�
 适配结论：区间没有破坏性 seam 变化，本轮不需要源码适配；工作内容是 npm 发布后提升支持清单、全部 DSH peers、开发 pin、overrides、release-age 例外与 lockfile。
 
 验证：2026-11-18 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，先执行 `node scripts/run-dsh-matrix.mjs --candidate 0.2.2-rc.4` 在隔离副本验证，install、`compat:check`（candidate 判定）、lint、typecheck、build、完整单测（385 passed、1 个条件性 legacy-provider skip）、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 行为矩阵与真实 CLI profile 组合十一项全部退出 0，判定为 `candidate probe consistent`。提升后正式基线 `pnpm compat:check` 与 `pnpm verify:all` 通过；支持模式隔离矩阵对 `0.2.2-rc.4`、上一基线 `0.2.2-rc.3` 与最老支持的 `0.1.5-rc.2` 各执行同一十一项步骤，全部退出 0，逐命令结果见[本批次证据](./dsh-compatibility-rc4-promotion-results-2026-11-18.json)。其余二十三版没有在本机重跑，由本分支 PR 的三个平台 CI 按同一清单覆盖。本轮没有设置 `DSH_BROWSER_E2E`，不声称本机验证真实浏览器旅程、桌面呈现或 Linux/Windows 本机结果；也未执行 tag、npm publish 或 GitHub Release。
+
+2026-11-18 发布准备：v0.1.10 相对 v0.1.9 只包含 PR #22 的 DSH `0.2.2-rc.4` 支持与文档同步（支持清单、peers、开发 pin、overrides 与 lockfile），没有新增 seam 或 token 变更，本轮没有重跑 rc.4 以外的全矩阵；PR #22 合并后的 main push CI（run [44251804793](https://github.com/cherrchen/dsh-theme-studio/actions/runs/44251804793)）在准备时已成功。准备时未创建 tag、未执行 npm publish 或 GitHub Release。
