@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-11-19
+
 ### Added
 
 - 支持 DSH `0.2.2-rc.5`，开发基线同步提升至 `0.2.2-rc.5`（Cordis `4.1.0`、Schemastery `3.19.0`）。
@@ -152,7 +154,8 @@
 - Host 侧持久化当前主题选择，并兼容受支持 DSH 版本间的 register/settingsScope 与 Config/configure/configForms 差异；设置服务停止重供后可重新启动主题行。
 - 发布 standalone Host、Client bundle、TypeScript 声明和 `cordis.patch.yml`，并声明精确的 DSH 兼容版本。
 
-[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.10...HEAD
+[Unreleased]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.11...HEAD
+[0.1.11]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.9...v0.1.10
 [0.1.9]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/cherrchen/dsh-theme-studio/compare/v0.1.7...v0.1.8
