@@ -348,3 +348,22 @@ rc.3 真实 Chromium 的主题/外观共存、悬停预览、取消、应用、�
 验证：2026-11-18 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，先执行 `node scripts/run-dsh-matrix.mjs --candidate 0.2.2-rc.4` 在隔离副本验证，install、`compat:check`（candidate 判定）、lint、typecheck、build、完整单测（385 passed、1 个条件性 legacy-provider skip）、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 行为矩阵与真实 CLI profile 组合十一项全部退出 0，判定为 `candidate probe consistent`。提升后正式基线 `pnpm compat:check` 与 `pnpm verify:all` 通过；支持模式隔离矩阵对 `0.2.2-rc.4`、上一基线 `0.2.2-rc.3` 与最老支持的 `0.1.5-rc.2` 各执行同一十一项步骤，全部退出 0，逐命令结果见[本批次证据](./dsh-compatibility-rc4-promotion-results-2026-11-18.json)。其余二十三版没有在本机重跑，由本分支 PR 的三个平台 CI 按同一清单覆盖。本轮没有设置 `DSH_BROWSER_E2E`，不声称本机验证真实浏览器旅程、桌面呈现或 Linux/Windows 本机结果；也未执行 tag、npm publish 或 GitHub Release。
 
 2026-11-18 发布准备：v0.1.10 相对 v0.1.9 只包含 PR #22 的 DSH `0.2.2-rc.4` 支持与文档同步（支持清单、peers、开发 pin、overrides 与 lockfile），没有新增 seam 或 token 变更，本轮没有重跑 rc.4 以外的全矩阵；PR #22 合并后的 main push CI（run [44251804793](https://github.com/cherrchen/dsh-theme-studio/actions/runs/44251804793)）在准备时已成功。准备时未创建 tag、未执行 npm publish 或 GitHub Release。
+
+## DSH 0.2.2-rc.5 提升（2026-11-19）
+
+审查来源为本地 `deepseek-harness` 仓库标签 `dsh-v0.2.2-rc.4` → `dsh-v0.2.2-rc.5`，并用 npm 上该精确版本的已发布包复核；区间内没有其他已发布版本。`@deepseek-ai/dsh-settings@0.2.2-rc.5` 与 `@deepseek-ai/dsh@0.2.2-rc.5` 于 2026-11-18T12:53Z 与 13:17Z 发布，registry `dist-tags.next` 指向 rc.5（CLI 的 `latest` 仍为 `0.2.2-rc.1`）。
+
+区间共 5 个提交、433 个文件（+917/−594）：一个 web 搜索默认提供方改动（base 组合不再固定 `web.searchProvider`，`dsh-web` 按模型路由选择，含升级指南与设置页文案）、一个 liveshare 测试时钟修复，其余 380 个 `package.json` 是版本号 bump，另含文档与快照改动；区间没有 vendor 与 lockfile 变更。共享运行时版本未变（Cordis `4.1.0`、Schemastery `3.19.0`、cosmokit `1.9.0`、loader/include/group/hmr `1.1.0`、timer `1.2.0`）。对 12 个接缝包、`dsh-app-boot` 与 CLI 的 npm tarball 做逐文件比对：13 个包除 `package.json` 版本字段外逐字节一致；`dsh-api-remotes` 只有生成产物 `lib/client.js`/`.map` 内嵌的 typert `sourceLocation` 行号随 `packages/web/web/src/index.ts` 移动（152→174），类型声明与其余内容不变；CLI 只改文档并新增 web 搜索升级指南。14 个包的 `.d.ts` 导出名零增删。
+
+| 接缝 | 上游变化及风险 | 插件处理 |
+| --- | --- | --- |
+| 宿主加载 | `packages/boot/app-boot` 的 `plugin-compatibility.ts` 与 recompose 在区间内没有实现变更，tarball 除 `package.json` 外逐字节一致 | 继续只用 DSH peers 精确版本清单表达支持范围；契约检查不变 |
+| ui-theme、设置 Host、设置 Client、ui-slots、ui-primitives、ui-renderer、ui-workspace、connection、remotes、store、locale、skill | 目标区间 `src/` 无实现变更；12 个接缝包 tarball 除包版本（及其内部 DSH 依赖版本）外逐字节一致，`.d.ts` 导出名零增删 | 沿用 `overrideTokens`、双 settings 通道与结构探测，不新增版本分支 |
+| 语义 token | `ui-theme` 样式表在区间内没有增删 token 名：两个版本的唯一 `--dsw-*` 名称各 462 个，排序后集合完全相同 | 编辑器可编辑 token 面保持每 scheme 167 项；`pnpm audit:tokens` 在 rc.5 运行时上报告 166 covered、1 extra、291 official retained，与 rc.4 相同，唯一 extra 仍是旧宿主保留的 `sidebar-nav-item-hover` |
+| remotes 生成产物 | `dsh-api-remotes` 的 `lib/client.js`/`.map` 仅内嵌 typert `sourceLocation` 行号变化，类型声明与其余内容逐字节一致 | 运行期行为无差异，不新增适配 |
+| web 搜索默认提供方 | base 组合删除 `web.searchProvider` 固定值，`dsh-web` 按模型路由在 legacy Messages 搜索与 DeepSeek Search API 之间选择；`WebSearchRequest` 新增可选 `llmProvider`，设置页新增「自动选择」文案，上游新增升级指南 | 插件不消费 `ctx.web`、web 搜索工具或该设置页，不需要适配 |
+| CLI 与其他客户端 | CLI tarball 只改文档（config-catalog、subsystems/web 与新增升级指南）；`ui-settings-web-search`、`tool-cordis` 目录文本与 `apps/web` 测试均非插件消费面 | 不新增适配 |
+
+适配结论：区间没有破坏性 seam 变化，本轮不需要源码适配；工作内容是 npm 发布后提升支持清单、全部 DSH peers、开发 pin、overrides、release-age 例外与 lockfile。
+
+验证：2026-11-19 在 macOS arm64、Node 24.18.0、pnpm 11.7.0 上，先执行 `node scripts/run-dsh-matrix.mjs --candidate 0.2.2-rc.5` 在隔离副本验证，install、`compat:check`（candidate 判定）、lint、typecheck、build、完整单测（385 passed、1 个条件性 legacy-provider skip）、docs check、token audit、真实 tarball 安装、官方 ThemeRuntime 行为矩阵与真实 CLI profile 组合十一项全部退出 0，判定为 `candidate probe consistent`。提升后正式基线 `pnpm compat:check` 与 `pnpm verify:all` 通过；支持模式隔离矩阵对 `0.2.2-rc.5`、上一基线 `0.2.2-rc.4` 与最老支持的 `0.1.5-rc.2` 各执行同一十一项步骤，全部退出 0，逐命令结果见[本批次证据](./dsh-compatibility-rc5-promotion-results-2026-11-19.json)。其余二十四版没有在本机重跑，由本分支 PR 的三个平台 CI 按同一清单覆盖。本轮没有设置 `DSH_BROWSER_E2E`，不声称本机验证真实浏览器旅程、桌面呈现或 Linux/Windows 本机结果；也未执行 tag、npm publish 或 GitHub Release。
